@@ -1,0 +1,370 @@
+openapi: 3.0.3
+info:
+  title: May Day API
+  description: |
+    API Contract cho hệ thống Quản lý Bệnh án Điện tử May Day.
+    Phiên bản này đã loại bỏ hoàn toàn các module AI và Dynamic Form Builder.
+    Cấu trúc Bệnh án được fix cứng cho Mày đay Cấp tính và Mạn tính, 
+    sử dụng JSONB payload để quản lý 183 biến số lâm sàng.
+  version: 1.0.0
+servers:
+  - url: https://api.mayday.vn/api/v1
+    description: Production Server
+  - url: http://localhost:3000/api/v1
+    description: Local Development Server
+
+tags:
+  - name: Auth & Profile
+    description: Quản lý xác thực và thông tin người dùng
+  - name: Medical Records
+    description: Khởi tạo, cập nhật (BN/BS) và chốt hồ sơ bệnh án
+  - name: PROMs (UAS7 & AAS7)
+    description: Theo dõi thang điểm đánh giá hàng ngày của bệnh nhân
+  - name: Lesion Tracking
+    description: Quản lý đợt tổn thương, vị trí và ảnh tiến triển
+  - name: Media
+    description: Tải lên và quản lý tệp đính kèm
+  - name: Notifications
+    description: Firebase Cloud Messaging (FCM)
+
+paths:
+  # ==========================================
+  # AUTH & PROFILE
+  # ==========================================
+  /auth/login:
+    post:
+      tags: [Auth & Profile]
+      summary: Đăng nhập hệ thống
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, password]
+              properties:
+                phone:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Đăng nhập thành công, trả về JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /auth/signup:
+    post:
+      tags: [Auth & Profile]
+      summary: Bệnh nhân tự đăng ký tài khoản
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '201':
+          description: Tạo tài khoản thành công
+
+  /profile:
+    get:
+      tags: [Auth & Profile]
+      summary: Lấy hồ sơ cá nhân hiện tại
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Thông tin user (Hành chính, BHYT)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+    put:
+      tags: [Auth & Profile]
+      summary: Cập nhật hồ sơ cá nhân
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfile'
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  # ==========================================
+  # MEDICAL RECORDS (BỆNH ÁN CỐT LÕI)
+  # ==========================================
+  /medical-records:
+    post:
+      tags: [Medical Records]
+      summary: Khởi tạo hồ sơ bệnh án mới (Cấp hoặc Mạn)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [record_type]
+              properties:
+                patient_id:
+                  type: integer
+                  description: Chỉ bắt buộc nếu người tạo là Bác sĩ
+                record_type:
+                  type: string
+                  enum: [ACUTE, CHRONIC]
+                  description: Loại bệnh án Cấp tính hay Mạn tính
+      responses:
+        '201':
+          description: Tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicalRecordBase'
+
+  /medical-records/{id}/patient-data:
+    put:
+      tags: [Medical Records]
+      summary: Bệnh nhân cập nhật dữ liệu tự khai (44 biến)
+      description: |
+        Endpoint để BN nhập các dữ liệu như: Thời gian khởi phát, Đặc điểm sẩn phù, Phù mạch, Tiền sử, Thuốc đã dùng.
+        Dữ liệu truyền lên là một Object JSON linh hoạt (JSONB).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientClinicalData'
+      responses:
+        '200':
+          description: Đã lưu dữ liệu bệnh nhân
+
+  /medical-records/{id}/doctor-data:
+    put:
+      tags: [Medical Records]
+      summary: Bác sĩ cập nhật dữ liệu khám & điều trị (137 biến)
+      description: |
+        Endpoint để BS nhập Khám thực thể, Cận lâm sàng, Chẩn đoán (CSU/CIndU), Phác đồ điều trị.
+        Dữ liệu truyền lên là một Object JSON linh hoạt (JSONB).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DoctorClinicalData'
+      responses:
+        '200':
+          description: Đã lưu dữ liệu bác sĩ
+
+  /medical-records/{id}/accept:
+    post:
+      tags: [Medical Records]
+      summary: Bác sĩ tiếp nhận bệnh án
+      description: Chuyển status từ 'pending' sang 'in_progress', gán assigned_doctor_id.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Tiếp nhận thành công
+
+  /medical-records/{id}/complete:
+    post:
+      tags: [Medical Records]
+      summary: Bác sĩ chốt bệnh án
+      description: Chuyển status sang 'completed'. Khóa không cho phép sửa đổi dữ liệu.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Đã chốt bệnh án
+
+  # ==========================================
+  # PROMs (THEO DÕI HẰNG NGÀY)
+  # ==========================================
+  /proms/eligibility:
+    get:
+      tags: [PROMs (UAS7 & AAS7)]
+      summary: Kiểm tra BN có bệnh án đang active để chấm điểm không
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Trả về true/false và medical_record_id nếu có
+
+  /proms/daily-score:
+    post:
+      tags: [PROMs (UAS7 & AAS7)]
+      summary: Ghi nhận điểm UAS7 và AAS7 hằng ngày
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DailyPromsScore'
+      responses:
+        '201':
+          description: Lưu điểm thành công
+          
+    get:
+      tags: [PROMs (UAS7 & AAS7)]
+      summary: Xem lịch sử điểm của bệnh nhân
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: patient_id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Mảng lịch sử điểm
+
+  # ==========================================
+  # MEDIA (KHO ẢNH)
+  # ==========================================
+  /media/upload:
+    post:
+      tags: [Media]
+      summary: Tải ảnh đính kèm lên hệ thống (MinIO/S3)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                category:
+                  type: string
+                  enum: [LESION_PHOTO, PRESCRIPTION, AVATAR, GENERAL]
+      responses:
+        '201':
+          description: Trả về attachment_id và file_url
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ------------------
+    # AUTH SCHEMAS
+    # ------------------
+    AuthResponse:
+      type: object
+      properties:
+        code: { type: string, example: "1000" }
+        message: { type: string, example: "OK" }
+        data:
+          type: object
+          properties:
+            token: { type: string }
+            user_info:
+              type: object
+              properties:
+                user_id: { type: integer }
+                full_name: { type: string }
+                role_id: { type: integer }
+
+    SignupRequest:
+      type: object
+      required: [full_name, phone, password]
+      properties:
+        full_name: { type: string }
+        phone: { type: string }
+        password: { type: string }
+        gender: { type: string, enum: [male, female, other] }
+
+    UserProfile:
+      type: object
+      properties:
+        year_of_birth: { type: integer }
+        ethnic: { type: string }
+        city_address: { type: string }
+        health_insurance_number: { type: string }
+
+    # ------------------
+    # MEDICAL RECORD SCHEMAS
+    # ------------------
+    MedicalRecordBase:
+      type: object
+      properties:
+        medical_record_id: { type: integer }
+        patient_id: { type: integer }
+        assigned_doctor_id: { type: integer }
+        record_type: { type: string, enum: [ACUTE, CHRONIC] }
+        status: { type: string, enum: [pending, in_progress, completed, cancelled] }
+        created_at: { type: string, format: date-time }
+
+    PatientClinicalData:
+      type: object
+      description: |
+        Payload JSONB chứa 44 biến số do bệnh nhân tự khai (UI Nhánh B - Bảng biến Bệnh nhân).
+        Ví dụ các key: thoi_gian_khoi_phat_tuan, bieu_hien_qua_trinh_benh, dac_diem_san_phu_khong_thuoc (Array), ...
+      additionalProperties: true
+
+    DoctorClinicalData:
+      type: object
+      description: |
+        Payload JSONB chứa 107 biến số do bác sĩ nhập và 30 biến từ HIS (Bảng biến Bác sĩ v2).
+        Ví dụ các key: chan_doan_chinh, phan_nhom_csu, nhom_dieu_tri (Array), asst_duong_kinh_mm, ...
+      additionalProperties: true
+
+    # ------------------
+    # PROMs SCHEMAS
+    # ------------------
+    DailyPromsScore:
+      type: object
+      required: [medical_record_id, score_date]
+      properties:
+        medical_record_id: { type: integer }
+        score_date: { type: string, example: "2026-10-03" }
+        uas7_so_luong_san: { type: integer, description: "Điểm sẩn phù HSS7 (0-3)" }
+        uas7_muc_do_ngua: { type: integer, description: "Điểm ngứa ISS7 (0-3)" }
+        aas7_co_dot_sung_phu: { type: boolean, description: "Có đợt phù mạch trong 24h không" }
+        aas7_thoi_diem: { type: string }
+        aas7_muc_kho_chiu: { type: integer }
+        aas7_han_che_hoat_dong: { type: integer }
+        aas7_anh_huong_ngoai_hinh: { type: integer }
+        aas7_do_nang_tong_the: { type: integer }
