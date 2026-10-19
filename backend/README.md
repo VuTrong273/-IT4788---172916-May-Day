@@ -1,124 +1,64 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# May Day backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend cho hệ thống May Day, viết bằng NestJS và TypeScript. Mobile và web sẽ cùng gọi API này. Hợp đồng API của dự án nằm trong [OpenAPI](<../Docs/[MayDay] openapi.yaml>); README này chỉ hướng dẫn chạy và làm việc với code backend.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Trạng thái hiện tại
 
-## Description
+Backend đã có bộ khung NestJS và cấu hình môi trường. Hiện chỉ có route mẫu `GET /` trả về `Hello World!` để kiểm tra server. Chưa có API `/api/v1`, đăng nhập, kết nối PostgreSQL/MinIO hay Docker Compose. Route mẫu không phải chức năng của May Day.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Các chức năng cần triển khai được mô tả trong [phạm vi backend](../Docs/CHUC_NANG_BACKEND.md). Đừng dùng tài khoản demo hard-code trong mobile để kết luận backend đã tích hợp xong.
 
-## Project setup
+## Chạy trên máy cá nhân
 
-```bash
-$ npm install
+Để thống nhất môi trường phát triển, dùng Node.js 24.15 trở lên và npm. Mức này cũng đáp ứng yêu cầu của công cụ tạo module NestJS. Từ thư mục gốc repository:
+
+```powershell
+cd backend
+npm ci
+Copy-Item .env.example .env
+npm run start:dev
 ```
 
-## Compile and run the project
+Trước khi chạy `start:dev`, mở `backend/.env` và điền `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `JWT_SECRET` cùng mật khẩu trong `DATABASE_URL`. `JWT_SECRET` cần ít nhất 32 ký tự; không dùng lại secret mẫu hoặc commit file `.env`. Cấu hình thiếu/sai sẽ khiến server dừng với tên biến cần sửa. PostgreSQL và MinIO **chưa được kết nối**, nên việc server chạy không chứng minh hai dịch vụ đó đã hoạt động.
 
-```bash
-# development
-$ npm run start
+Mặc định server nghe ở `http://localhost:3000`. Mở PowerShell khác và thử:
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```powershell
+Invoke-RestMethod http://localhost:3000/
 ```
 
-## Run tests
+Kết quả hiện tại là `Hello World!`. `start:dev` tự khởi động lại khi sửa code; nhấn `Ctrl+C` để dừng. Chưa cần chạy Docker ở bước này.
 
-```bash
-# unit tests
-$ npm run test
+## Kiểm tra trước khi commit
 
-# e2e tests
-$ npm run test:e2e
+Chạy trong thư mục `backend/`:
 
-# test coverage
-$ npm run test:cov
+```powershell
+npm run build
+npm run lint
+npm test
+npm run test:e2e
 ```
 
-## Deployment
+`build` kiểm tra biên dịch; `lint` kiểm tra mã nguồn; `test` chạy unit test; `test:e2e` gọi thử ứng dụng qua HTTP. Các test hiện tại kiểm tra cấu hình môi trường và route mẫu, chưa kiểm tra nghiệp vụ May Day. Khi thêm một API, bổ sung test cho cả trường hợp thành công, dữ liệu sai và sai quyền.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## Các file chính
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+- `src/main.ts`: đọc `.env`, kiểm tra cấu hình rồi khởi động ứng dụng ở `PORT` (mặc định `3000`).
+- `src/config/env.ts`: đọc và kiểm tra cấu hình PostgreSQL, MinIO, JWT trước khi server mở cổng; chưa tạo kết nối đến các dịch vụ này.
+- `src/app.module.ts`: module gốc, nơi nối các module nghiệp vụ về sau.
+- `src/app.controller.ts`: route HTTP mẫu; controller nhận request và trả response.
+- `src/app.service.ts`: logic mẫu được controller gọi.
+- `src/app.controller.spec.ts`, `test/app.e2e-spec.ts`: test mẫu.
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+Khi bắt đầu làm API thật, tạo module theo từng phần nghiệp vụ như auth, profile, medical records; không dồn toàn bộ endpoint vào `AppController`.
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Quy ước khi phát triển API
 
-## Observability
+- Đọc endpoint, schema, mã lỗi và quyền trong [OpenAPI](<../Docs/[MayDay] openapi.yaml>) trước khi code. Cấu trúc database tham chiếu [schema SQL](../Database/000_RelationshipTable.sql) và [seed RBAC](../Database/001_Seed_RBAC.sql).
+- Base path dự kiến là `/api/v1`; response có dạng `{code, message, data}` theo OpenAPI. **Bộ khung hiện tại chưa áp dụng các quy ước này.**
+- PRD xác định ba nhóm actor Patient, Staff, Admin. Bản demo đầu tiên dùng các role mặc định `admin`, `doctor`, `patient`; `doctor` không đại diện cho toàn bộ Staff. Xem [phạm vi chức năng backend](../Docs/CHUC_NANG_BACKEND.md).
+- Không commit `.env`, mật khẩu, token hoặc dữ liệu bệnh nhân thật. `.env.example` chỉ liệt kê tên biến và giá trị minh họa, không chứa secret thật.
+- Nếu cần thay đổi request/response hoặc quyền so với OpenAPI, thống nhất với người làm mobile/web và cập nhật tài liệu trước khi ghép code.
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
-
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
-
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
-
-To add it to this project:
-
-```bash
-$ npm install @nestjs/observe
-```
-
-Then follow the [setup guide](https://docs.nestjs.com/observability/overview) - it takes a single import and an app key.
-
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Phạm vi hiện tại là chạy và demo hệ thống cục bộ theo [PRD](<../Docs/[MayDay] Product Requirements Document.pdf>), chưa phải hướng dẫn triển khai production.
