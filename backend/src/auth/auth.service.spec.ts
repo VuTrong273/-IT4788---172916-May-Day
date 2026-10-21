@@ -2,6 +2,7 @@ import { HttpException } from '@nestjs/common';
 import { compare, hash } from 'bcryptjs';
 import { jwtVerify } from 'jose';
 import { AuthService } from './auth.service.js';
+import { MailService } from './mail.service.js';
 import { LoginUser, UserRepository } from './user.repository.js';
 
 const SECRET = 'test-secret-with-at-least-thirty-two-characters';
@@ -18,6 +19,15 @@ describe('AuthService', () => {
   const previousSecret = process.env.JWT_SECRET;
   let findByPhone: ReturnType<typeof vi.fn>;
   let createPatient: ReturnType<typeof vi.fn>;
+  let blacklistToken: ReturnType<typeof vi.fn>;
+  let findPasswordHash: ReturnType<typeof vi.fn>;
+  let changePassword: ReturnType<typeof vi.fn>;
+  let findRecoveryTarget: ReturnType<typeof vi.fn>;
+  let requestPasswordReset: ReturnType<typeof vi.fn>;
+  let finishPasswordReset: ReturnType<typeof vi.fn>;
+  let requestRecoveryEmail: ReturnType<typeof vi.fn>;
+  let verifyRecoveryEmail: ReturnType<typeof vi.fn>;
+  let sendOtp: ReturnType<typeof vi.fn>;
   let service: AuthService;
 
   beforeAll(async () => {
@@ -36,7 +46,31 @@ describe('AuthService', () => {
       is_active: 1,
       created_at: new Date('2026-10-21T00:00:00.000Z'),
     });
-    service = new AuthService({ findByPhone, createPatient } as unknown as UserRepository);
+    blacklistToken = vi.fn().mockResolvedValue(undefined);
+    findPasswordHash = vi.fn().mockImplementation(() => USER.password_hash);
+    changePassword = vi.fn().mockResolvedValue(true);
+    findRecoveryTarget = vi.fn().mockResolvedValue({
+      user_id: 1,
+      recovery_email: 'patient@example.com',
+      is_active: 1,
+    });
+    requestPasswordReset = vi.fn().mockResolvedValue(true);
+    finishPasswordReset = vi.fn().mockResolvedValue('success');
+    requestRecoveryEmail = vi.fn().mockResolvedValue(true);
+    verifyRecoveryEmail = vi.fn().mockResolvedValue('success');
+    sendOtp = vi.fn().mockResolvedValue(undefined);
+    service = new AuthService({
+      findByPhone,
+      createPatient,
+      blacklistToken,
+      findPasswordHash,
+      changePassword,
+      findRecoveryTarget,
+      requestPasswordReset,
+      finishPasswordReset,
+      requestRecoveryEmail,
+      verifyRecoveryEmail,
+    } as unknown as UserRepository, { sendOtp } as unknown as MailService);
   });
 
   afterAll(() => {
@@ -73,6 +107,66 @@ describe('AuthService', () => {
     expect(payload.jti).toBeTruthy();
     expect(payload.exp).toBeGreaterThan(payload.iat!);
     expect(payload.issued_at_ms).toBeGreaterThanOrEqual(payload.iat! * 1000);
+  });
+
+  it('emails a real OTP without returning it in the forgot-password response', async () => {
+    const response = await service.forgotPassword({ email: 'Patient@Example.com' });
+    expect(response).toMatchObject({ code: '1000', data: { expires_in: 600 } });
+    expect(response.data).not.toHaveProperty('dev_otp');
+    expect(findRecoveryTarget).toHaveBeenCalledWith('patient@example.com');
+    expect(requestPasswordReset).toHaveBeenCalledWith(1, expect.stringMatching(/^[0-9a-f]{64}$/));
+    expect(sendOtp).toHaveBeenCalledWith('patient@example.com', expect.stringMatching(/^\d{6}$/), 'reset');
+  });
+
+  it('uses the same OTP hash for sending and resetting a password', async () => {
+    await service.forgotPassword({ email: 'patient@example.com' });
+    const code = sendOtp.mock.calls[0][1] as string;
+    await service.resetPassword({
+      email: 'Patient@Example.com',
+      otp: code,
+      new_password: 'NewPassword1',
+      confirm_password: 'NewPassword1',
+    });
+    expect(finishPasswordReset).toHaveBeenCalledWith(
+      'patient@example.com',
+      requestPasswordReset.mock.calls[0][1],
+      expect.any(String),
+    );
+  });
+
+  it('does not reveal whether an account has a recovery email', async () => {
+    findRecoveryTarget.mockResolvedValue(null);
+    const response = await service.forgotPassword({ email: 'unknown@example.com' });
+    expect(response.code).toBe('1000');
+    expect(sendOtp).not.toHaveBeenCalled();
+  });
+
+  it('sends email verification only after checking the current password', async () => {
+    await service.requestRecoveryEmail(
+      { userId: 1, roleId: 1, jti: 'jti', expiresAt: 1 },
+      { email: 'Patient@Example.com', password: 'Admin@123' },
+    );
+    expect(requestRecoveryEmail).toHaveBeenCalledWith(
+      1, 'patient@example.com', expect.stringMatching(/^[0-9a-f]{64}$/),
+    );
+    expect(sendOtp).toHaveBeenCalledWith('patient@example.com', expect.stringMatching(/^\d{6}$/), 'verify');
+  });
+
+  it('returns OTP error for an invalid reset code', async () => {
+    finishPasswordReset.mockResolvedValue('invalid');
+    await expect(service.resetPassword({
+      email: 'patient@example.com', otp: '123456', new_password: 'NewPassword1', confirm_password: 'NewPassword1',
+    })).rejects.toMatchObject({ response: { code: '3004' }, status: 400 });
+  });
+
+  it('requires email, not phone, for password recovery', async () => {
+    await expect(service.forgotPassword({ phone: USER.phone })).rejects.toMatchObject({
+      response: { code: '2001' }, status: 400,
+    });
+    await expect(service.forgotPassword({ email: 'not-an-email' })).rejects.toMatchObject({
+      response: { code: '2003' }, status: 400,
+    });
+    expect(findRecoveryTarget).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -179,6 +273,98 @@ describe('AuthService', () => {
     createPatient.mockRejectedValue(new Error('private database details'));
     await expect(service.signup({
       full_name: 'A', phone: '0912345678', password: 'Abc@1234',
+    })).rejects.toMatchObject({
+      status: 503,
+      response: { code: '9902', message: 'Database error', data: {} },
+    });
+  });
+
+  it('blacklists the current token until its expiration time', async () => {
+    const result = await service.logout({
+      userId: 7,
+      roleId: 3,
+      jti: 'current-jti',
+      expiresAt: 1_800_000_000,
+    });
+
+    expect(blacklistToken).toHaveBeenCalledWith(
+      7,
+      'current-jti',
+      new Date(1_800_000_000_000),
+    );
+    expect(result).toEqual({ code: '1000', message: 'OK', data: {} });
+  });
+
+  it('maps a logout database failure to 9902', async () => {
+    blacklistToken.mockRejectedValue(new Error('private database details'));
+    await expect(service.logout({
+      userId: 7,
+      roleId: 3,
+      jti: 'current-jti',
+      expiresAt: 1_800_000_000,
+    })).rejects.toMatchObject({
+      status: 503,
+      response: { code: '9902', message: 'Database error', data: {} },
+    });
+  });
+
+  const sessionUser = {
+    userId: 1,
+    roleId: 1,
+    jti: 'change-jti',
+    expiresAt: 1_800_000_000,
+  };
+
+  it('changes the password and revokes the current token', async () => {
+    const result = await service.changePassword(sessionUser, {
+      old_password: 'Admin@123',
+      new_password: 'New@12345',
+      confirm_password: 'New@12345',
+    });
+
+    expect(result).toEqual({ code: '1000', message: 'OK', data: {} });
+    expect(findPasswordHash).toHaveBeenCalledWith(1);
+    const [userId, expectedHash, newHash, jti, expiresAt] = changePassword.mock.calls[0];
+    expect(userId).toBe(1);
+    expect(expectedHash).toBe(USER.password_hash);
+    expect(await compare('New@12345', newHash as string)).toBe(true);
+    expect(jti).toBe('change-jti');
+    expect(expiresAt).toEqual(new Date(1_800_000_000_000));
+  });
+
+  it.each([
+    [null, '2007'],
+    [{ old_password: 'Admin@123' }, '2001'],
+    [{ old_password: 123, new_password: 'New@12345', confirm_password: 'New@12345' }, '2002'],
+    [{ old_password: 'Admin@123', new_password: 'short', confirm_password: 'short' }, '2003'],
+    [{ old_password: 'Admin@123', new_password: 'New@12345', confirm_password: 'different' }, '2003'],
+    [{ old_password: 'Admin@123', new_password: 'Admin@123', confirm_password: 'Admin@123' }, '2003'],
+  ])('rejects invalid change-password input', async (body, code) => {
+    await expect(service.changePassword(sessionUser, body)).rejects.toMatchObject({
+      status: 400,
+      response: { code },
+    });
+    expect(findPasswordHash).not.toHaveBeenCalled();
+  });
+
+  it('rejects an incorrect old password', async () => {
+    await expect(service.changePassword(sessionUser, {
+      old_password: 'Wrong@123', new_password: 'New@12345', confirm_password: 'New@12345',
+    })).rejects.toMatchObject({ status: 400, response: { code: '3009' } });
+    expect(changePassword).not.toHaveBeenCalled();
+  });
+
+  it('rejects a concurrent password change', async () => {
+    changePassword.mockResolvedValue(false);
+    await expect(service.changePassword(sessionUser, {
+      old_password: 'Admin@123', new_password: 'New@12345', confirm_password: 'New@12345',
+    })).rejects.toMatchObject({ status: 400, response: { code: '3009' } });
+  });
+
+  it('maps change-password database failures to 9902', async () => {
+    changePassword.mockRejectedValue(new Error('private database details'));
+    await expect(service.changePassword(sessionUser, {
+      old_password: 'Admin@123', new_password: 'New@12345', confirm_password: 'New@12345',
     })).rejects.toMatchObject({
       status: 503,
       response: { code: '9902', message: 'Database error', data: {} },

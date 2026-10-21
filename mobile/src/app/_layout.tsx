@@ -23,6 +23,9 @@ export default function RootLayout() {
         <Stack.Screen name="signup" options={{ title: 'Đăng ký bệnh nhân' }} />
         <Stack.Screen name="dashboard" options={{ headerShown: false }} />
         <Stack.Screen name="profile" options={{ title: 'Hồ sơ của tôi' }} />
+        <Stack.Screen name="change-password" options={{ title: 'Đổi mật khẩu' }} />
+        <Stack.Screen name="recovery-email" options={{ title: 'Email khôi phục' }} />
+        <Stack.Screen name="forgot-password" options={{ title: 'Quên mật khẩu' }} />
       </Stack>
     </ThemeProvider>
   );

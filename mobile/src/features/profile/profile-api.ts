@@ -7,6 +7,7 @@ export type Profile = {
   user_id: number;
   full_name: string;
   phone: string;
+  recovery_email?: string | null;
   role_id: number;
   gender?: 'male' | 'female' | 'other' | null;
   year_of_birth?: number | null;

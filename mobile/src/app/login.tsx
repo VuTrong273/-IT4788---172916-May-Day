@@ -23,10 +23,12 @@ import { getUserRole, roleLabels } from '@/features/auth/roles';
 import { saveSession } from '@/features/auth/session';
 
 export default function LoginScreen() {
-  const params = useLocalSearchParams<{ role?: string; registered?: string }>();
+  const params = useLocalSearchParams<{ role?: string; registered?: string; password_reset?: string }>();
   const role = getUserRole(params.role);
   const [submitMessage, setSubmitMessage] = useState(
-    params.registered === '1' ? 'Đăng ký thành công. Hãy đăng nhập.' : '',
+    params.password_reset === '1'
+      ? 'Đặt lại mật khẩu thành công. Hãy đăng nhập.'
+      : params.registered === '1' ? 'Đăng ký thành công. Hãy đăng nhập.' : '',
   );
   const [submitError, setSubmitError] = useState(false);
 
@@ -124,6 +126,13 @@ export default function LoginScreen() {
               </Text>
             </Pressable>
           </View>
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push({ pathname: '/forgot-password', params: { role } })}
+            style={styles.signupLink}>
+            <Text style={styles.signupLinkText}>Quên mật khẩu?</Text>
+          </Pressable>
 
           {role === 'patient' ? (
             <Pressable

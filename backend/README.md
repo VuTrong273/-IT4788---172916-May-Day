@@ -4,7 +4,7 @@ Backend cho hệ thống May Day, viết bằng NestJS và TypeScript. Mobile v�
 
 ## Trạng thái hiện tại
 
-Backend đã có bộ khung NestJS, cấu hình môi trường và Docker Compose để chạy API cùng PostgreSQL, kho ảnh S3 trên máy cá nhân. Khi tạo volume PostgreSQL mới, Compose nạp hai file SQL trong `Database/` để tạo bảng và dữ liệu RBAC mẫu. `POST /api/v1/auth/signup` tạo tài khoản bệnh nhân và hồ sơ trong cùng transaction. `POST /api/v1/auth/login` kiểm tra mật khẩu bcrypt và cấp JWT có `jti`, hết hạn sau một giờ. Các route API còn lại mặc định phải có JWT hợp lệ; guard kiểm tra chữ ký, hạn dùng, trạng thái tài khoản, danh sách token bị thu hồi và thời điểm đổi mật khẩu. Sau xác thực, guard tra `(method, path)` trong `api_endpoints` và quyền của role qua `permissions_endpoints`, `role_permissions`; không có quyền thì trả `403 / 3101`. Endpoint chưa được đăng ký cũng bị từ chối. `GET /api/v1/profile` trả hồ sơ của người đang đăng nhập. Route `GET /` vẫn chỉ trả `Hello World!` để kiểm tra server. Chưa triển khai lưu ảnh.
+Backend đã có bộ khung NestJS, cấu hình môi trường và Docker Compose để chạy API cùng PostgreSQL, kho ảnh S3 trên máy cá nhân. Khi tạo volume PostgreSQL mới, Compose nạp hai file SQL trong `Database/` để tạo bảng và dữ liệu RBAC mẫu. `POST /api/v1/auth/signup` tạo tài khoản bệnh nhân và hồ sơ trong cùng transaction. `POST /api/v1/auth/login` kiểm tra mật khẩu bcrypt và cấp JWT có `jti`, hết hạn sau một giờ. `POST /api/v1/auth/logout` đưa `jti` vào `token_blacklist`, khiến token đó không dùng lại được. `PUT /api/v1/auth/change-password` kiểm tra mật khẩu cũ, lưu hash mật khẩu mới và thu hồi phiên hiện tại. Luồng quên mật khẩu gửi OTP thật qua Gmail tới email khôi phục đã xác minh. Các route API còn lại mặc định phải có JWT hợp lệ; guard kiểm tra chữ ký, hạn dùng, trạng thái tài khoản, danh sách token bị thu hồi và thời điểm đổi mật khẩu. Sau xác thực, guard tra `(method, path)` trong `api_endpoints` và quyền của role qua `permissions_endpoints`, `role_permissions`; không có quyền thì trả `403 / 3101`. Endpoint chưa được đăng ký cũng bị từ chối. `GET /api/v1/profile` trả hồ sơ của người đang đăng nhập; `PUT /api/v1/profile` cập nhật từng phần hồ sơ của chính người đó. Route `GET /` vẫn chỉ trả `Hello World!` để kiểm tra server. Chưa triển khai lưu ảnh.
 
 Các chức năng cần triển khai được mô tả trong [phạm vi backend](../Docs/CHUC_NANG_BACKEND.md). Mobile hiện chỉ dùng API thật; phải cấu hình `EXPO_PUBLIC_API_URL` trước khi đăng nhập.
 
@@ -17,6 +17,8 @@ Copy-Item .env.example .env
 ```
 
 Trong `.env`, điền `POSTGRES_PASSWORD`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `JWT_SECRET`. Sửa `DATABASE_URL` để dùng đúng user, mật khẩu, tên DB và cổng PostgreSQL ở `localhost` nếu sau này chạy API trực tiếp bằng npm. Mật khẩu DB cho cấu hình Compose hiện tại nên chỉ dùng chữ/số để ghép vào URL kết nối; không commit `.env`. `JWT_SECRET` cần ít nhất 32 ký tự. Các giá trị trong `.env.example` chỉ là ví dụ, không phải secret dùng được.
+
+Để gửi OTP qua Gmail, thêm `GMAIL_USER` (địa chỉ Gmail gửi) và `GMAIL_APP_PASSWORD` (App Password của tài khoản đó) vào `.env`. Gmail yêu cầu bật xác minh hai bước để tạo App Password. Không dùng mật khẩu đăng nhập Gmail thường; không đưa App Password vào chat, log hoặc Git. Nếu chưa cấu hình, các API gửi OTP sẽ trả lỗi `502 / 9903`; đăng nhập và các API khác vẫn dùng được.
 
 ```powershell
 docker compose up --build -d
@@ -48,6 +50,24 @@ Invoke-RestMethod -Uri 'http://localhost:3000/api/v1/profile' -Headers @{ Author
 Kết quả thành công có `code: "1000"` và `data` là hồ sơ admin. Nếu gọi `/api/v1/profile` không có token, API trả HTTP 401 với `code: "3003"`. Token sai hoặc đã hết hạn lần lượt trả `3001` hoặc `3002`.
 
 Để tạo tài khoản bệnh nhân, mở app, chọn **Bệnh nhân → Đăng ký**, nhập họ tên, số điện thoại mới và mật khẩu tối thiểu 6 ký tự. Backend tự gán role `patient`, băm mật khẩu và tạo cả hồ sơ trong bảng `patients`. Sau khi đăng ký, app chuyển về màn hình đăng nhập. Số điện thoại đã tồn tại trả `409 / 3006`; API không trả mật khẩu hoặc hash.
+
+Để thử đăng xuất, đăng nhập trên app rồi bấm **Đăng xuất**. App gọi `POST /api/v1/auth/logout` với JWT hiện tại và xóa phiên đã lưu trên điện thoại. Backend trả `200 / 1000`; dùng lại JWT đó sẽ bị từ chối với `401 / 3001`. Nếu mạng hoặc backend lỗi, app vẫn xóa phiên cục bộ nhưng thông báo chưa thu hồi được token trên server.
+
+Để thử đổi mật khẩu, đăng nhập trên app rồi vào **Đổi mật khẩu**. Nhập mật khẩu hiện tại và mật khẩu mới (ít nhất 6 ký tự, khác mật khẩu hiện tại). Thành công thì phiên hiện tại bị thu hồi, app xóa token lưu trên máy và yêu cầu đăng nhập lại. Mật khẩu cũ không còn đăng nhập được; mật khẩu mới đăng nhập được. Mật khẩu hiện tại sai trả `400 / 3009`.
+
+Để thử quên mật khẩu: đăng nhập trên app → **Xem hồ sơ của tôi → Thiết lập email khôi phục**. Nhập email bạn kiểm soát và mật khẩu hiện tại; nhận OTP qua email rồi nhập mã để xác minh. Mỗi tài khoản có tối đa một email khôi phục, một email không dùng cho hai tài khoản. Sau đó đăng xuất, ở màn hình đăng nhập bấm **Quên mật khẩu?**, nhập **email đã xác minh**; OTP sẽ được gửi trực tiếp đến email đó, không cần nhập số điện thoại. Mã có hiệu lực 10 phút, sai 5 lần phải gửi lại. Thành công thì đăng nhập bằng mật khẩu mới. Backend không trả OTP trong API hay ghi OTP vào log.
+
+### Cập nhật database đang có dữ liệu
+
+Nếu đã chạy dự án trước khi thêm email khôi phục, **không xóa volume**. Mở PowerShell trong `backend/` và chạy migration một lần, trước khi dùng các API email:
+
+```powershell
+Get-Content -Raw -LiteralPath ..\Database\migrations\002_recovery_email.sql | docker compose exec -T db psql -v ON_ERROR_STOP=1 -U mayday -d mayday
+```
+
+Nếu bạn đã đổi `POSTGRES_USER` hoặc `POSTGRES_DB` trong `.env`, thay `mayday` ở lệnh cho khớp. Migration có thể chạy lại an toàn. Sau đó cấu hình Gmail trong `.env` và chạy `docker compose up --build -d api`.
+
+Để thử cập nhật hồ sơ, vào **Xem hồ sơ của tôi → Chỉnh sửa họ tên → Lưu thay đổi**. App gửi `PUT /api/v1/profile` cùng JWT. Backend chỉ lấy ID người dùng từ token, không nhận ID từ body; trường `phone` và `role_id` không được sửa qua API này. Các trường hành chính của bệnh nhân trong OpenAPI cũng được hỗ trợ qua API, nhưng giao diện hiện mới cho sửa họ tên.
 
 ```powershell
 docker compose down
@@ -96,8 +116,8 @@ npm run test:e2e
 - `src/main.ts`: đọc `.env`, kiểm tra cấu hình rồi khởi động ứng dụng ở `PORT` (mặc định `3000`).
 - `src/config/env.ts`: đọc và kiểm tra cấu hình PostgreSQL, MinIO, JWT trước khi server mở cổng.
 - `src/app.module.ts`: module gốc, nơi nối các module nghiệp vụ.
-- `src/auth/`: API đăng ký bệnh nhân, đăng nhập, truy vấn tài khoản, cấp và kiểm tra JWT.
-- `src/profile/`: API xem hồ sơ cá nhân của người đang đăng nhập.
+- `src/auth/`: API đăng ký bệnh nhân, đăng nhập, đăng xuất, truy vấn tài khoản, cấp và kiểm tra JWT.
+- `src/profile/`: API xem và cập nhật hồ sơ cá nhân của người đang đăng nhập.
 - `src/app.controller.ts`: route HTTP mẫu; controller nhận request và trả response.
 - `src/app.service.ts`: logic mẫu được controller gọi.
 - `src/app.controller.spec.ts`, `test/app.e2e-spec.ts`: test mẫu.
@@ -107,7 +127,7 @@ Khi bắt đầu làm API thật, tạo module theo từng phần nghiệp vụ 
 ## Quy ước khi phát triển API
 
 - Đọc endpoint, schema, mã lỗi và quyền trong [OpenAPI](<../Docs/[MayDay] openapi.yaml>) trước khi code. Cấu trúc database tham chiếu [schema SQL](../Database/000_RelationshipTable.sql) và [seed RBAC](../Database/001_Seed_RBAC.sql).
-- API nghiệp vụ dùng base path `/api/v1`; response có dạng `{code, message, data}` theo OpenAPI. Hiện đã có `POST /auth/signup`, `POST /auth/login` và `GET /profile`; route mẫu `GET /` nằm ngoài API nghiệp vụ.
+- API nghiệp vụ dùng base path `/api/v1`; response có dạng `{code, message, data}` theo OpenAPI. Hiện đã có `POST /auth/signup`, `POST /auth/login`, `POST /auth/logout`, `PUT /auth/change-password`, `GET /profile` và `PUT /profile`; route mẫu `GET /` nằm ngoài API nghiệp vụ.
 - PRD xác định ba nhóm actor Patient, Staff, Admin. Bản demo đầu tiên dùng các role mặc định `admin`, `doctor`, `patient`; `doctor` không đại diện cho toàn bộ Staff. Xem [phạm vi chức năng backend](../Docs/CHUC_NANG_BACKEND.md).
 - Không commit `.env`, mật khẩu, token hoặc dữ liệu bệnh nhân thật. `.env.example` chỉ liệt kê tên biến và giá trị minh họa, không chứa secret thật.
 - Nếu cần thay đổi request/response hoặc quyền so với OpenAPI, thống nhất với người làm mobile/web và cập nhật tài liệu trước khi ghép code.

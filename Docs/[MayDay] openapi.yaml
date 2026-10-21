@@ -20,7 +20,9 @@ info:
     | POST | `/auth/signup` | Đăng ký tài khoản bệnh nhân | công khai |
     | POST | `/auth/login` | Đăng nhập | công khai |
     | POST | `/auth/logout` | Đăng xuất | admin, doctor, patient |
-    | POST | `/auth/forgot-password` | Quên mật khẩu - gửi OTP | công khai |
+    | POST | `/auth/recovery-email` | Gửi OTP xác minh email khôi phục *(bổ sung)* | admin, doctor, patient |
+    | POST | `/auth/recovery-email/verify` | Xác minh email khôi phục *(bổ sung)* | admin, doctor, patient |
+    | POST | `/auth/forgot-password` | Quên mật khẩu - gửi OTP qua email | công khai |
     | POST | `/auth/reset-password` | Đặt lại mật khẩu bằng OTP *(bổ sung)* | công khai |
     | PUT | `/auth/change-password` | Đổi mật khẩu | admin, doctor, patient |
     | POST | `/auth/admin/create-staff` | Admin tạo tài khoản nhân viên | admin |
@@ -175,7 +177,8 @@ info:
 
     ## 3. Đăng nhập & mật khẩu
     - Đăng ký (`/auth/signup`) luôn tạo **bệnh nhân** (`role_id` = role `patient`). Nhân viên do Admin tạo (`/auth/admin/create-staff`).
-    - Quên mật khẩu: `/auth/forgot-password` sinh OTP 6 số, **lưu hash** vào `users.reset_token`, hết hạn sau **10 phút** (`3005`). Ở môi trường **dev**, SMS được mock: OTP in ra log server và trả thêm `data.dev_otp` (chỉ khi `NODE_ENV=development`). Sau đó gọi `/auth/reset-password`. Sai OTP quá 5 lần → huỷ OTP.
+    - Email khôi phục phải được xác minh bằng OTP trước khi sử dụng. `/auth/recovery-email` yêu cầu JWT và mật khẩu hiện tại, gửi mã qua Gmail SMTP; `/auth/recovery-email/verify` xác minh mã rồi lưu email.
+    - Mỗi tài khoản có tối đa một email khôi phục đã xác minh; một email không thuộc hai tài khoản. Quên mật khẩu dùng **email** làm đầu vào, không dùng số điện thoại. `/auth/forgot-password` sinh OTP 6 số, lưu HMAC hash vào `users.reset_token`, hết hạn sau **10 phút** (`3005`) và gửi đến email đó. Không trả OTP trong API hoặc log. Sau đó gọi `/auth/reset-password` với email và OTP. Sai OTP 5 lần → huỷ OTP. Yêu cầu gửi mã mới bị giới hạn một lần/phút cho mỗi tài khoản; phản hồi không tiết lộ email có tài khoản hay không.
     - Đổi mật khẩu thành công: cập nhật `users.password_changed_at`, mọi token cũ mất hiệu lực.
     - Số điện thoại hợp lệ: 10 số, đầu `03, 05, 07, 08, 09` (lỗi `2004`).
 
@@ -406,6 +409,38 @@ paths:
         '403': {$ref: '#/components/responses/E403_3101'}
         '500': {$ref: '#/components/responses/E500_9901'}
         '503': {$ref: '#/components/responses/E503_9902'}
+  /auth/recovery-email:
+    post:
+      tags: [Auth]
+      summary: Gửi mã xác minh email khôi phục
+      operationId: requestRecoveryEmail
+      description: Cần JWT và mật khẩu hiện tại. Gửi OTP 6 số tới email mới, hiệu lực 10 phút. Một yêu cầu/phút.
+      x-permission: auth.change_password
+      x-roles: [admin, doctor, patient]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/RequestRecoveryEmailRequest'}}}
+      responses:
+        '200': {description: Đã gửi OTP, content: {application/json: {schema: {$ref: '#/components/schemas/ForgotPasswordResponse'}}}}
+        '400': {description: Dữ liệu không hợp lệ hoặc mật khẩu sai}
+        '401': {description: Chưa đăng nhập}
+        '502': {description: Không gửi được email}
+  /auth/recovery-email/verify:
+    post:
+      tags: [Auth]
+      summary: Xác minh email khôi phục
+      operationId: verifyRecoveryEmail
+      description: Cần JWT. Sai mã 5 lần thì phải yêu cầu mã mới.
+      x-permission: auth.change_password
+      x-roles: [admin, doctor, patient]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/VerifyRecoveryEmailRequest'}}}
+      responses:
+        '200': {description: Email đã được xác minh, content: {application/json: {schema: {$ref: '#/components/schemas/EmptyResponse'}}}}
+        '400': {description: OTP sai hoặc hết hạn}
+        '401': {description: Chưa đăng nhập}
+        '409': {description: Email đã được tài khoản khác sử dụng}
   /auth/forgot-password:
     post:
       tags: [Auth]
@@ -414,12 +449,11 @@ paths:
       description: |-
         **API công khai** - không cần token.
 
-        Sinh OTP 6 số, lưu **hash** vào `users.reset_token`, `reset_token_expires = now() + 10 phút`, gửi SMS. Dev: SMS mock, OTP in ra log và trả thêm `data.dev_otp` khi `NODE_ENV=development`.
+        Nhận email khôi phục đã xác minh. Sinh OTP 6 số, lưu HMAC hash vào `users.reset_token`, `reset_token_expires = now() + 10 phút`, gửi Gmail SMTP tới email đó. Không trả OTP qua API. Phản hồi chung cả khi email không tồn tại.
 
         **Mã trả về (HTTP: code nghiệp vụ):**
         - **200**: 1000
-        - **400**: 2001, 2002, 2004, 2007
-        - **404**: 3007
+        - **400**: 2001, 2002, 2003, 2007
         - **500**: 9901
         - **502**: 9903
         - **503**: 9902
@@ -435,13 +469,12 @@ paths:
               schema: {$ref: '#/components/schemas/ForgotPasswordResponse'}
               examples:
                 success_1000:
-                  summary: 1000 - OTP has been sent to your phone
+                  summary: 1000 - Yêu cầu đã được tiếp nhận
                   value:
                     code: '1000'
-                    message: OTP has been sent to your phone
-                    data: {expires_in: 600, dev_otp: '123456'}
-        '400': {$ref: '#/components/responses/E400_2001_2002_2004_2007'}
-        '404': {$ref: '#/components/responses/E404_3007'}
+                    message: If an email is registered, an OTP has been sent
+                    data: {expires_in: 600}
+        '400': {$ref: '#/components/responses/E400_2001_2002_2003_2007'}
         '500': {$ref: '#/components/responses/E500_9901'}
         '502': {$ref: '#/components/responses/E502_9903'}
         '503': {$ref: '#/components/responses/E503_9902'}
@@ -455,12 +488,11 @@ paths:
 
         **API công khai** - không cần token.
 
-        Xác thực OTP rồi đặt mật khẩu mới. Thành công: xoá `reset_token`, cập nhật `password_changed_at`. Sai OTP quá 5 lần → huỷ OTP (phải gọi lại forgot-password).
+        Xác thực OTP cho email rồi đặt mật khẩu mới. Thành công: xoá `reset_token`, cập nhật `password_changed_at`. Sai OTP 5 lần → huỷ OTP (phải gọi lại forgot-password).
 
         **Mã trả về (HTTP: code nghiệp vụ):**
         - **200**: 1000
-        - **400**: 2001, 2002, 2003, 2004, 2007, 3004, 3005
-        - **404**: 3007
+        - **400**: 2001, 2002, 2003, 2007, 3004, 3005
         - **500**: 9901
         - **503**: 9902
       security: []
@@ -474,8 +506,7 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/EmptyResponse'}
               examples: {success_1000: {summary: 1000 - OK, value: {code: '1000', message: OK, data: {}}}}
-        '400': {$ref: '#/components/responses/E400_2001_2002_2003_2004_2007_3004_3005'}
-        '404': {$ref: '#/components/responses/E404_3007'}
+        '400': {$ref: '#/components/responses/E400_2001_2002_2003_2007_3004_3005'}
         '500': {$ref: '#/components/responses/E500_9901'}
         '503': {$ref: '#/components/responses/E503_9902'}
   /auth/change-password:
@@ -5417,6 +5448,7 @@ components:
         user_id: {type: integer, example: 15}
         full_name: {type: string, example: Nguyễn Văn A}
         phone: {type: string, example: '0912345678'}
+        recovery_email: {type: string, format: email, nullable: true, readOnly: true, example: user@example.com}
         role_id: {type: integer, example: 3}
         gender: {type: string, enum: [male, female, other], nullable: true, example: male}
         year_of_birth: {type: integer, nullable: true, example: 1995}
@@ -5994,28 +6026,30 @@ components:
             type: object
             properties:
               expires_in: {type: integer, description: Số giây OTP còn hiệu lực., example: 600}
-              dev_otp: {type: string, description: CHỈ có ở môi trường dev., example: '123456'}
+    RequestRecoveryEmailRequest:
+      type: object
+      properties:
+        email: {type: string, format: email, maxLength: 254, example: user@example.com}
+        password: {type: string, format: password}
+      required: [email, password]
+    VerifyRecoveryEmailRequest:
+      type: object
+      properties:
+        otp: {type: string, pattern: '^\d{6}$', example: '123456'}
+      required: [otp]
     ForgotPasswordRequest:
       type: object
       properties:
-        phone:
-          type: string
-          description: SĐT 10 số, đầu 03/05/07/08/09.
-          pattern: ^(03|05|07|08|09)[0-9]{8}$
-          example: '0912345678'
-      required: [phone]
+        email: {type: string, format: email, maxLength: 254, example: user@example.com}
+      required: [email]
     ResetPasswordRequest:
       type: object
       properties:
-        phone:
-          type: string
-          description: SĐT 10 số, đầu 03/05/07/08/09.
-          pattern: ^(03|05|07|08|09)[0-9]{8}$
-          example: '0912345678'
+        email: {type: string, format: email, maxLength: 254, example: user@example.com}
         otp: {type: string, pattern: '^\d{6}$', example: '123456'}
         new_password: {type: string, description: Mật khẩu tối thiểu 6 ký tự., minLength: 6, example: Abc@1234}
         confirm_password: {type: string, description: 'Phải trùng `new_password` (nếu không: 2003).', example: Abc@1234}
-      required: [phone, otp, new_password, confirm_password]
+      required: [email, otp, new_password, confirm_password]
     ChangePasswordRequest:
       type: object
       properties:
@@ -7155,6 +7189,18 @@ components:
             R2002: {$ref: '#/components/examples/R2002'}
             R2003: {$ref: '#/components/examples/R2003'}
             R2004: {$ref: '#/components/examples/R2004'}
+            R2007: {$ref: '#/components/examples/R2007'}
+            R3004: {$ref: '#/components/examples/R3004'}
+            R3005: {$ref: '#/components/examples/R3005'}
+    E400_2001_2002_2003_2007_3004_3005:
+      description: Yêu cầu không hợp lệ - 2001, 2002, 2003, 2007, 3004, 3005
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorResponse'}
+          examples:
+            R2001: {$ref: '#/components/examples/R2001'}
+            R2002: {$ref: '#/components/examples/R2002'}
+            R2003: {$ref: '#/components/examples/R2003'}
             R2007: {$ref: '#/components/examples/R2007'}
             R3004: {$ref: '#/components/examples/R3004'}
             R3005: {$ref: '#/components/examples/R3005'}

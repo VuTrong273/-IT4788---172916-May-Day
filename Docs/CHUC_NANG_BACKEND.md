@@ -15,7 +15,7 @@ Bản demo đầu tiên có ba role mặc định `admin`, `doctor`, `patient`; 
 
 ## 2. Tài khoản và hồ sơ cá nhân
 
-- Bệnh nhân đăng ký; mọi người đăng nhập/đăng xuất, đổi mật khẩu, quên/đặt lại mật khẩu qua OTP. Bản demo dùng OTP mock ở môi trường development theo OpenAPI, không gửi SMS thật.
+- Bệnh nhân đăng ký; mọi người đăng nhập/đăng xuất, đổi mật khẩu, quên/đặt lại mật khẩu qua OTP gửi tới email khôi phục đã xác minh. Mỗi email chỉ thuộc một tài khoản; luồng quên mật khẩu nhập email, không nhập số điện thoại. Bản demo dùng Gmail SMTP thật, không trả OTP qua API hoặc in vào log.
 - JWT phải bị từ chối khi hết hạn, đăng xuất, tài khoản bị khóa hoặc mật khẩu đã đổi. Mật khẩu và OTP chỉ lưu dạng hash.
 - `GET/PUT /profile` trả và cập nhật đúng hồ sơ của người đang đăng nhập; thông tin bệnh nhân và nhân viên khác nhau.
 - Mốc tích hợp đầu tiên: mobile/web đăng nhập bằng tài khoản trong DB rồi xem được hồ sơ thật, không dùng dữ liệu hard-code trong app.

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -7,6 +7,7 @@ import { roleOptions, type UserRole } from "@/features/auth/roles";
 import { getSession } from "@/features/auth/session";
 
 export default function HomeScreen() {
+  const params = useLocalSearchParams<{ password_changed?: string }>();
   const [selectedRole, setSelectedRole] = useState<UserRole>("patient");
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const currentRole = roleOptions.find((role) => role.value === selectedRole);
@@ -45,6 +46,11 @@ export default function HomeScreen() {
         </View>
 
         <Text style={styles.title}>Mayday{`\n`}đồng hành cùng bạn</Text>
+        {params.password_changed === '1' ? (
+          <Text accessibilityRole="alert" style={styles.successMessage}>
+            Đổi mật khẩu thành công. Vui lòng đăng nhập lại.
+          </Text>
+        ) : null}
         <Text style={styles.subtitle}>
           Màn hình React Native đầu tiên của bạn. Hãy chọn một vai trò để xem
           state của component thay đổi.
@@ -161,6 +167,15 @@ const styles = StyleSheet.create({
     color: "#52645F",
     fontSize: 16,
     lineHeight: 24,
+  },
+  successMessage: {
+    marginTop: 16,
+    borderRadius: 12,
+    backgroundColor: '#D9F3E8',
+    color: '#087A55',
+    fontSize: 15,
+    fontWeight: '700',
+    padding: 14,
   },
   sectionTitle: {
     marginTop: 34,

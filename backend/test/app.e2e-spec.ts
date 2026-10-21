@@ -3,12 +3,18 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { SignJWT } from 'jose';
+import { hash } from 'bcryptjs';
 import { AppModule } from './../src/app.module.js';
 import { UserRepository } from './../src/auth/user.repository.js';
+import { MailService } from './../src/auth/mail.service.js';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
   let findEndpointAccess: ReturnType<typeof vi.fn>;
+  let blacklistToken: ReturnType<typeof vi.fn>;
+  let updateProfile: ReturnType<typeof vi.fn>;
+  let changePassword: ReturnType<typeof vi.fn>;
+  let passwordHash: string;
   const previousSecret = process.env.JWT_SECRET;
   const secret = 'e2e-secret-with-at-least-thirty-two-characters';
   const profile = {
@@ -34,28 +40,48 @@ describe('AppController (e2e)', () => {
     room_id: null,
   };
 
-  beforeAll(() => {
+  beforeAll(async () => {
     process.env.JWT_SECRET = secret;
+    passwordHash = await hash('Admin@123', 4);
   });
 
   beforeEach(async () => {
+    const blacklistedJtis = new Set<string>();
+    blacklistToken = vi.fn().mockImplementation((_: number, jti: string) => {
+      blacklistedJtis.add(jti);
+    });
+    changePassword = vi.fn().mockImplementation((_: number, __: string, ___: string, jti: string) => {
+      blacklistedJtis.add(jti);
+      return true;
+    });
     findEndpointAccess = vi.fn().mockResolvedValue({
       is_public: 0,
       is_allowed: true,
     });
+    updateProfile = vi.fn().mockImplementation((_: number, changes: { full_name?: string }) => ({
+      ...profile,
+      ...changes,
+    }));
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
       .overrideProvider(UserRepository)
       .useValue({
-        findAuthState: vi.fn().mockResolvedValue({
+        findAuthState: vi.fn().mockImplementation((_: number, jti: string) => ({
           role_id: 1,
           is_active: 1,
           password_changed_at: null,
-          is_blacklisted: false,
-        }),
+          is_blacklisted: blacklistedJtis.has(jti),
+        })),
         findProfile: vi.fn().mockResolvedValue(profile),
+        updateProfile,
         findEndpointAccess,
+        blacklistToken,
+        findPasswordHash: vi.fn().mockImplementation(() => passwordHash),
+        changePassword,
+        findRecoveryTarget: vi.fn().mockResolvedValue(null),
+        requestRecoveryEmail: vi.fn().mockResolvedValue(true),
+        verifyRecoveryEmail: vi.fn().mockResolvedValue('success'),
         createPatient: vi.fn().mockResolvedValue({
           user_id: 2,
           full_name: 'Nguyễn Văn A',
@@ -66,6 +92,8 @@ describe('AppController (e2e)', () => {
           created_at: new Date('2026-10-21T00:00:00.000Z'),
         }),
       })
+      .overrideProvider(MailService)
+      .useValue({ sendOtp: vi.fn().mockResolvedValue(undefined) })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -89,6 +117,26 @@ describe('AppController (e2e)', () => {
         message: 'Invalid phone number format',
         data: {},
       });
+  });
+
+  it('/api/v1/auth/forgot-password does not reveal unknown accounts or OTPs', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/auth/forgot-password')
+      .send({ email: 'unknown@example.com' })
+      .expect(200);
+    expect(response.body).toEqual({
+      code: '1000',
+      message: 'If an email is registered, an OTP has been sent',
+      data: { expires_in: 600 },
+    });
+  });
+
+  it('/api/v1/auth/forgot-password requires email instead of phone', () => {
+    return request(app.getHttpServer())
+      .post('/api/v1/auth/forgot-password')
+      .send({ phone: '0912345678' })
+      .expect(400)
+      .expect({ code: '2001', message: 'Missing required parameter', data: {} });
   });
 
   it('/api/v1/auth/signup creates a patient without a token', () => {
@@ -117,6 +165,81 @@ describe('AppController (e2e)', () => {
       .expect({ code: '3003', message: 'User not authenticated', data: {} });
   });
 
+  it('/api/v1/auth/logout revokes the token for later requests', async () => {
+    const token = await new SignJWT({})
+      .setProtectedHeader({ alg: 'HS256' })
+      .setSubject('1')
+      .setJti('logout-jti')
+      .setIssuedAt()
+      .setExpirationTime('1h')
+      .sign(new TextEncoder().encode(secret));
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/logout')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200)
+      .expect({ code: '1000', message: 'OK', data: {} });
+    expect(blacklistToken).toHaveBeenCalledWith(
+      1,
+      'logout-jti',
+      expect.any(Date),
+    );
+    expect(findEndpointAccess).toHaveBeenCalledWith(
+      1,
+      'POST',
+      '/api/v1/auth/logout',
+    );
+
+    await request(app.getHttpServer())
+      .get('/api/v1/profile')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(401)
+      .expect({ code: '3001', message: 'Token is invalid', data: {} });
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/logout')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(401);
+  });
+
+  it('/api/v1/auth/change-password revokes the current token', async () => {
+    const token = await new SignJWT({})
+      .setProtectedHeader({ alg: 'HS256' })
+      .setSubject('1')
+      .setJti('change-jti')
+      .setIssuedAt()
+      .setExpirationTime('1h')
+      .sign(new TextEncoder().encode(secret));
+
+    await request(app.getHttpServer())
+      .put('/api/v1/auth/change-password')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        old_password: 'Admin@123',
+        new_password: 'New@12345',
+        confirm_password: 'New@12345',
+      })
+      .expect(200)
+      .expect({ code: '1000', message: 'OK', data: {} });
+    expect(changePassword).toHaveBeenCalledWith(
+      1,
+      passwordHash,
+      expect.any(String),
+      'change-jti',
+      expect.any(Date),
+    );
+    expect(findEndpointAccess).toHaveBeenCalledWith(
+      1,
+      'PUT',
+      '/api/v1/auth/change-password',
+    );
+
+    await request(app.getHttpServer())
+      .get('/api/v1/profile')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(401)
+      .expect({ code: '3001', message: 'Token is invalid', data: {} });
+  });
+
   it('/api/v1/profile returns the current user profile', async () => {
     const token = await new SignJWT({})
       .setProtectedHeader({ alg: 'HS256' })
@@ -136,6 +259,25 @@ describe('AppController (e2e)', () => {
       'GET',
       '/api/v1/profile',
     );
+  });
+
+  it('/api/v1/profile updates only the authenticated user', async () => {
+    const token = await new SignJWT({})
+      .setProtectedHeader({ alg: 'HS256' })
+      .setSubject('1')
+      .setJti('update-jti')
+      .setIssuedAt()
+      .setExpirationTime('1h')
+      .sign(new TextEncoder().encode(secret));
+
+    await request(app.getHttpServer())
+      .put('/api/v1/profile')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ full_name: 'Tên mới' })
+      .expect(200)
+      .expect({ code: '1000', message: 'OK', data: { ...profile, full_name: 'Tên mới' } });
+    expect(updateProfile).toHaveBeenCalledWith(1, { full_name: 'Tên mới' });
+    expect(findEndpointAccess).toHaveBeenCalledWith(1, 'PUT', '/api/v1/profile');
   });
 
   it('/api/v1/profile denies a role whose permission was revoked', async () => {

@@ -90,6 +90,13 @@ export default function DashboardScreen() {
 
         <Pressable
           accessibilityRole="button"
+          onPress={() => router.push('/change-password')}
+          style={({ pressed }) => [styles.button, styles.secondaryButton, pressed && styles.pressed]}>
+          <Text style={styles.buttonText}>Đổi mật khẩu</Text>
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
           accessibilityState={{ disabled: isLoggingOut }}
           disabled={isLoggingOut}
           onPress={handleLogout}
@@ -123,6 +130,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#15966C',
   },
   pressed: { opacity: 0.75 },
+  secondaryButton: { marginTop: 12, backgroundColor: '#087A55' },
   logoutButton: { marginTop: 12, backgroundColor: '#57716A' },
   buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
 });

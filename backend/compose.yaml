@@ -68,6 +68,8 @@ services:
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?Set MINIO_SECRET_KEY in .env}
       MINIO_BUCKET: ${MINIO_BUCKET:?Set MINIO_BUCKET in .env}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      GMAIL_USER: ${GMAIL_USER:-}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
     ports:
       - "${API_BIND_HOST:-127.0.0.1}:${API_PORT:-3000}:3000"
     depends_on:

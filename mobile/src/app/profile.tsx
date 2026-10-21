@@ -150,6 +150,13 @@ export default function ProfileScreen() {
               <ProfileRow label="Họ tên" value={profile.full_name} />
             )}
             <ProfileRow label="Số điện thoại" value={profile.phone} />
+            <ProfileRow label="Email khôi phục" value={profile.recovery_email} />
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push('/recovery-email')}
+              style={styles.retryButton}>
+              <Text style={styles.retryText}>Thiết lập email khôi phục</Text>
+            </Pressable>
             <ProfileRow
               label="Giới tính"
               value={profile.gender ? genderLabels[profile.gender] : null}
