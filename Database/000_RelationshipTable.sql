@@ -140,6 +140,13 @@ CREATE TABLE users (
     reset_token         VARCHAR(255),
     reset_token_expires TIMESTAMPTZ,                                 -- now() + 10 phút
     reset_attempts      SMALLINT NOT NULL DEFAULT 0,                 -- đếm số lần nhập sai OTP
+    reset_sent_at       TIMESTAMPTZ,
+    recovery_email     VARCHAR(254),
+    pending_recovery_email VARCHAR(254),
+    email_verify_token VARCHAR(64),
+    email_verify_expires TIMESTAMPTZ,
+    email_verify_sent_at TIMESTAMPTZ,
+    email_verify_attempts SMALLINT NOT NULL DEFAULT 0,
     -- Token JWT cấp trước mốc này bị coi là vô hiệu (đổi/đặt lại mật khẩu)
     password_changed_at TIMESTAMPTZ,
     created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -150,6 +157,8 @@ CREATE TABLE users (
 CREATE INDEX idx_users_role      ON users(role_id);
 CREATE INDEX idx_users_full_name ON users(lower(full_name));           -- tìm kiếm theo tên
 CREATE INDEX idx_users_active    ON users(is_active);
+CREATE UNIQUE INDEX uq_users_recovery_email_lower ON users(lower(recovery_email))
+    WHERE recovery_email IS NOT NULL;
 
 -- 1.10 staffs (hồ sơ nhân viên: bác sĩ, điều dưỡng, admin...) ---------------
 CREATE TABLE staffs (

@@ -117,6 +117,8 @@ INSERT INTO api_endpoints (name, method, path, description, is_public) VALUES
   ('forgotPassword', 'POST', '/api/v1/auth/forgot-password', 'Quên mật khẩu - gửi OTP', 1),
   ('resetPassword', 'POST', '/api/v1/auth/reset-password', 'Đặt lại mật khẩu bằng OTP', 1),
   ('changePassword', 'PUT', '/api/v1/auth/change-password', 'Đổi mật khẩu', 0),
+  ('requestRecoveryEmail', 'POST', '/api/v1/auth/recovery-email', 'Gửi OTP xác minh email khôi phục', 0),
+  ('verifyRecoveryEmail', 'POST', '/api/v1/auth/recovery-email/verify', 'Xác minh email khôi phục', 0),
   ('adminCreateStaff', 'POST', '/api/v1/auth/admin/create-staff', 'Admin tạo tài khoản nhân viên', 0),
   ('getProfile', 'GET', '/api/v1/profile', 'Xem hồ sơ cá nhân', 0),
   ('updateProfile', 'PUT', '/api/v1/profile', 'Cập nhật hồ sơ cá nhân', 0),
@@ -222,6 +224,8 @@ INSERT INTO permissions_endpoints (permission_id, endpoint_id)
 SELECT p.permission_id, a.endpoint_id FROM (VALUES
   ('auth.session', 'POST', '/api/v1/auth/logout'),
   ('auth.change_password', 'PUT', '/api/v1/auth/change-password'),
+  ('auth.change_password', 'POST', '/api/v1/auth/recovery-email'),
+  ('auth.change_password', 'POST', '/api/v1/auth/recovery-email/verify'),
   ('auth.create_staff', 'POST', '/api/v1/auth/admin/create-staff'),
   ('profile.read', 'GET', '/api/v1/profile'),
   ('profile.update', 'PUT', '/api/v1/profile'),
