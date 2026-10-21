@@ -77,23 +77,14 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
   },
-  lessonBox: {
-    marginTop: 28,
-    borderWidth: 1,
-    borderColor: '#D9E4E0',
-    borderRadius: 15,
-    padding: 16,
+  signupLink: {
+    alignSelf: 'center',
+    marginTop: 24,
+    padding: 10,
   },
-  lessonTitle: {
+  signupLinkText: {
     color: '#087A55',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-  },
-  lessonText: {
-    marginTop: 7,
-    color: '#63756F',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

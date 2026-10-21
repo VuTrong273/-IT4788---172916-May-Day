@@ -81,15 +81,6 @@ export default function DashboardScreen() {
           Bạn đã vào màn hình chính. Phiên đăng nhập được đọc từ SecureStore.
         </Text>
 
-        {session.token === 'demo-token' ? (
-          <View style={styles.demoCard}>
-            <Text style={styles.demoTitle}>Chế độ học thử</Text>
-            <Text style={styles.demoText}>
-              Đây là dữ liệu giả. Chức năng bệnh án sẽ được thêm ở các bài sau.
-            </Text>
-          </View>
-        ) : null}
-
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push('/profile')}
@@ -123,9 +114,6 @@ const styles = StyleSheet.create({
   eyebrow: { color: '#087A55', fontSize: 13, fontWeight: '800' },
   title: { marginTop: 18, color: '#102A25', fontSize: 30, fontWeight: '800' },
   description: { marginTop: 12, color: '#63756F', fontSize: 16, lineHeight: 24 },
-  demoCard: { marginTop: 30, borderRadius: 16, backgroundColor: '#D9F3E8', padding: 18 },
-  demoTitle: { color: '#087A55', fontSize: 16, fontWeight: '800' },
-  demoText: { marginTop: 6, color: '#28634F', fontSize: 14, lineHeight: 21 },
   button: {
     minHeight: 54,
     marginTop: 30,

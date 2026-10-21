@@ -20,6 +20,7 @@ export default function RootLayout() {
         }}>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ title: 'Đăng nhập' }} />
+        <Stack.Screen name="signup" options={{ title: 'Đăng ký bệnh nhân' }} />
         <Stack.Screen name="dashboard" options={{ headerShown: false }} />
         <Stack.Screen name="profile" options={{ title: 'Hồ sơ của tôi' }} />
       </Stack>

@@ -22,15 +22,6 @@ export class SessionExpiredError extends Error {}
 
 export const profileApi = {
   async getProfile(session: Session): Promise<Profile> {
-    if (!apiUrl && session.token === 'demo-token' && __DEV__) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return {
-        ...session.user,
-        gender: 'male',
-        year_of_birth: 1995,
-      };
-    }
-
     if (!apiUrl) throw new Error('Chưa cấu hình địa chỉ backend.');
 
     try {
@@ -64,16 +55,6 @@ export const profileApi = {
     session: Session,
     changes: Pick<Profile, 'full_name'>,
   ): Promise<Profile> {
-    if (!apiUrl && session.token === 'demo-token' && __DEV__) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return {
-        ...session.user,
-        ...changes,
-        gender: 'male',
-        year_of_birth: 1995,
-      };
-    }
-
     if (!apiUrl) throw new Error('Chưa cấu hình địa chỉ backend.');
 
     try {

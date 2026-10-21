@@ -18,7 +18,14 @@ export async function saveSession(session: Session): Promise<void> {
 
 export async function getSession(): Promise<Session | null> {
   const stored = await SecureStore.getItemAsync(SESSION_KEY);
-  return stored ? (JSON.parse(stored) as Session) : null;
+  if (!stored) return null;
+
+  const session = JSON.parse(stored) as Session;
+  if (session.token === 'demo-token') {
+    await clearSession();
+    return null;
+  }
+  return session;
 }
 
 export async function clearSession(): Promise<void> {

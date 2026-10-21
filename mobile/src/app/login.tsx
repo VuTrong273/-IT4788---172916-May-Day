@@ -23,9 +23,11 @@ import { getUserRole, roleLabels } from '@/features/auth/roles';
 import { saveSession } from '@/features/auth/session';
 
 export default function LoginScreen() {
-  const params = useLocalSearchParams<{ role?: string }>();
+  const params = useLocalSearchParams<{ role?: string; registered?: string }>();
   const role = getUserRole(params.role);
-  const [submitMessage, setSubmitMessage] = useState('');
+  const [submitMessage, setSubmitMessage] = useState(
+    params.registered === '1' ? 'Đăng ký thành công. Hãy đăng nhập.' : '',
+  );
   const [submitError, setSubmitError] = useState(false);
 
   const {
@@ -81,7 +83,7 @@ export default function LoginScreen() {
               maxLength={10}
               name="phone"
               onValueChange={() => setSubmitMessage('')}
-              placeholder="0912345678"
+              placeholder="Nhập số điện thoại"
             />
 
             <FormTextInput
@@ -123,13 +125,15 @@ export default function LoginScreen() {
             </Pressable>
           </View>
 
-          <View style={styles.lessonBox}>
-            <Text style={styles.lessonTitle}>BẠN ĐANG HỌC GÌ?</Text>
-            <Text style={styles.lessonText}>
-              Tài khoản demo: 0912345678 / 123456. Sau khi đăng nhập, phiên
-              được lưu vào SecureStore trên điện thoại.
-            </Text>
-          </View>
+          {role === 'patient' ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push('/signup')}
+              style={styles.signupLink}>
+              <Text style={styles.signupLinkText}>Chưa có tài khoản? Đăng ký</Text>
+            </Pressable>
+          ) : null}
+
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

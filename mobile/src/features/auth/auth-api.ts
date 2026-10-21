@@ -18,34 +18,48 @@ type LoginResponse = {
   };
 };
 
-async function demoLogin(values: LoginFormValues): Promise<LoginResponse> {
-  await new Promise((resolve) => setTimeout(resolve, 600));
+type SignupRequest = {
+  full_name: string;
+  phone: string;
+  password: string;
+};
 
-  if (values.phone !== '0912345678' || values.password !== '123456') {
-    throw new Error('Tài khoản demo không đúng. Hãy dùng 0912345678 / 123456.');
-  }
-
-  return {
-    code: '1000',
-    message: 'OK',
-    data: {
-      token: 'demo-token',
-      user_info: {
-        user_id: 15,
-        full_name: 'Nguyễn Văn A',
-        phone: values.phone,
-        role_id: 3,
-      },
-    },
+type SignupResponse = {
+  code: string;
+  message: string;
+  data: {
+    user_id: number;
+    full_name: string;
+    phone: string;
+    role_id: number;
   };
-}
+};
 
 export const authApi = {
-  async login(values: LoginFormValues): Promise<LoginResponse> {
-    if (!apiUrl) {
-      if (__DEV__) return demoLogin(values);
-      throw new Error('Chưa cấu hình địa chỉ backend.');
+  async signup(values: SignupRequest): Promise<SignupResponse> {
+    if (!apiUrl) throw new Error('Chưa cấu hình địa chỉ backend.');
+
+    try {
+      const response = await apiClient.post<SignupResponse>('/auth/signup', values);
+      if (response.data.code !== '1001') {
+        throw new Error(response.data.message || 'Đăng ký thất bại.');
+      }
+      return response.data;
+    } catch (error) {
+      if (isAxiosError<{ code?: string; message?: string }>(error)) {
+        if (error.response?.data?.code === '3006') {
+          throw new Error('Số điện thoại này đã được đăng ký.');
+        }
+        throw new Error(
+          error.response?.data?.message ??
+            'Không kết nối được backend. Hãy kiểm tra mạng và địa chỉ API.',
+        );
+      }
+      throw error;
     }
+  },
+  async login(values: LoginFormValues): Promise<LoginResponse> {
+    if (!apiUrl) throw new Error('Chưa cấu hình địa chỉ backend.');
 
     try {
       const response = await apiClient.post<LoginResponse>('/auth/login', values);
@@ -66,7 +80,6 @@ export const authApi = {
     }
   },
   async logout(token: string): Promise<void> {
-    if (token === 'demo-token') return;
     if (!apiUrl) throw new Error('Chưa cấu hình địa chỉ backend.');
 
     try {
