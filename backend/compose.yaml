@@ -70,6 +70,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       GMAIL_USER: ${GMAIL_USER:-}
       GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
     ports:
       - "${API_BIND_HOST:-127.0.0.1}:${API_PORT:-3000}:3000"
     depends_on:

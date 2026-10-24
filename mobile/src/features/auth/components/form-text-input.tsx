@@ -1,5 +1,6 @@
 import { type Control, type FieldPath, useController } from 'react-hook-form';
 import {
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -24,6 +25,8 @@ type FormTextInputProps = Pick<
   label: string;
   name: FieldPath<LoginFormValues>;
   onValueChange?: () => void;
+  accessoryLabel?: string;
+  onAccessoryPress?: () => void;
 };
 
 export function FormTextInput({
@@ -31,6 +34,8 @@ export function FormTextInput({
   label,
   name,
   onValueChange,
+  accessoryLabel,
+  onAccessoryPress,
   ...inputProps
 }: FormTextInputProps) {
   const {
@@ -41,17 +46,29 @@ export function FormTextInput({
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput
-        {...inputProps}
-        onBlur={onBlur}
-        onChangeText={(text) => {
-          onChange(text);
-          onValueChange?.();
-        }}
-        placeholderTextColor="#91A19C"
-        style={[styles.input, error && styles.inputError]}
-        value={value}
-      />
+      <View style={styles.inputContainer}>
+        <TextInput
+          {...inputProps}
+          accessibilityLabel={label}
+          onBlur={onBlur}
+          onChangeText={(text) => {
+            onChange(text);
+            onValueChange?.();
+          }}
+          placeholderTextColor="#91A19C"
+          style={[styles.input, accessoryLabel && styles.inputWithAccessory, error && styles.inputError]}
+          value={value}
+        />
+        {accessoryLabel && onAccessoryPress ? (
+          <Pressable
+            accessibilityLabel={accessoryLabel === 'Hiện' ? 'Hiện mật khẩu' : 'Ẩn mật khẩu'}
+            accessibilityRole="button"
+            onPress={onAccessoryPress}
+            style={styles.accessory}>
+            <Text style={styles.accessoryText}>{accessoryLabel}</Text>
+          </Pressable>
+        ) : null}
+      </View>
       {error ? <Text style={styles.errorText}>{error.message}</Text> : null}
     </View>
   );
@@ -66,6 +83,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
+  inputContainer: {
+    position: 'relative',
+  },
   input: {
     minHeight: 54,
     borderWidth: 1,
@@ -75,6 +95,23 @@ const styles = StyleSheet.create({
     color: '#102A25',
     fontSize: 16,
     paddingHorizontal: 16,
+  },
+  inputWithAccessory: {
+    paddingRight: 78,
+  },
+  accessory: {
+    minWidth: 62,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 6,
+    top: 5,
+  },
+  accessoryText: {
+    color: '#087A55',
+    fontSize: 14,
+    fontWeight: '700',
   },
   inputError: {
     borderColor: '#C43D4B',

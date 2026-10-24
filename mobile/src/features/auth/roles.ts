@@ -1,10 +1,10 @@
 export type UserRole = 'patient' | 'doctor' | 'admin';
 
-export const roleOptions: Array<{
+export const roleOptions: {
   value: UserRole;
   label: string;
   description: string;
-}> = [
+}[] = [
   {
     value: 'patient',
     label: 'Bệnh nhân',
@@ -18,7 +18,7 @@ export const roleOptions: Array<{
   {
     value: 'admin',
     label: 'Quản trị viên',
-    description: 'Quản lý người dùng, cơ sở và biểu mẫu.',
+    description: 'Quản trị hệ thống trên Web app.',
   },
 ];
 

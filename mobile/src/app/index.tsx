@@ -10,7 +10,6 @@ export default function HomeScreen() {
   const params = useLocalSearchParams<{ password_changed?: string }>();
   const [selectedRole, setSelectedRole] = useState<UserRole>("patient");
   const [isCheckingSession, setIsCheckingSession] = useState(true);
-  const currentRole = roleOptions.find((role) => role.value === selectedRole);
 
   useEffect(() => {
     let active = true;
@@ -18,7 +17,7 @@ export default function HomeScreen() {
     getSession()
       .then((session) => {
         if (!active) return;
-        if (session) router.replace('/dashboard');
+        if (session) router.replace('/home');
         else setIsCheckingSession(false);
       })
       .catch(() => {
@@ -42,18 +41,17 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>MAY DAY • BÀI 1</Text>
+          <Text style={styles.badgeText}>MAY DAY</Text>
         </View>
 
-        <Text style={styles.title}>Mayday{`\n`}đồng hành cùng bạn</Text>
+        <Text style={styles.title}>Chăm sóc sức khỏe{`\n`}cùng May Day</Text>
         {params.password_changed === '1' ? (
           <Text accessibilityRole="alert" style={styles.successMessage}>
             Đổi mật khẩu thành công. Vui lòng đăng nhập lại.
           </Text>
         ) : null}
         <Text style={styles.subtitle}>
-          Màn hình React Native đầu tiên của bạn. Hãy chọn một vai trò để xem
-          state của component thay đổi.
+          Chọn vai trò của bạn để truy cập đúng không gian làm việc.
         </Text>
 
         <Text style={styles.sectionTitle}>
@@ -98,14 +96,6 @@ export default function HomeScreen() {
           })}
         </View>
 
-        <View style={styles.resultCard}>
-          <Text style={styles.resultLabel}>STATE HIỆN TẠI</Text>
-          <Text style={styles.resultValue}>{currentRole?.label}</Text>
-          <Text style={styles.resultCode}>
-            selectedRole = &quot;{selectedRole}&quot;
-          </Text>
-        </View>
-
         <Pressable
           accessibilityRole="button"
           onPress={() =>
@@ -116,13 +106,8 @@ export default function HomeScreen() {
             pressed && styles.continueButtonPressed,
           ]}
         >
-          <Text style={styles.continueButtonText}>Tiếp tục đăng nhập</Text>
+          <Text style={styles.continueButtonText}>Tiếp tục</Text>
         </Pressable>
-
-        <Text style={styles.lessonNote}>
-          Tiếp theo: tạo màn hình đăng nhập và di chuyển giữa hai màn hình bằng
-          Expo Router.
-        </Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -138,9 +123,12 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
+    width: '100%',
+    maxWidth: 560,
+    alignSelf: 'center',
     paddingHorizontal: 24,
     paddingTop: 28,
-    paddingBottom: 120,
+    paddingBottom: 48,
   },
   badge: {
     alignSelf: "flex-start",
@@ -240,33 +228,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  resultCard: {
-    marginTop: 24,
-    borderRadius: 18,
-    backgroundColor: "#123C32",
-    padding: 20,
-  },
-  resultLabel: {
-    color: "#9FDCC7",
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1,
-  },
-  resultValue: {
-    marginTop: 8,
-    color: "#FFFFFF",
-    fontSize: 22,
-    fontWeight: "800",
-  },
-  resultCode: {
-    marginTop: 10,
-    color: "#CDEDE1",
-    fontFamily: "monospace",
-    fontSize: 13,
-  },
   continueButton: {
     minHeight: 52,
-    marginTop: 18,
+    marginTop: 26,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 16,
@@ -280,12 +244,5 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "700",
-  },
-  lessonNote: {
-    marginTop: 20,
-    color: "#63756F",
-    fontSize: 14,
-    fontStyle: "italic",
-    lineHeight: 21,
   },
 });
