@@ -8,6 +8,10 @@ Backend đã có bộ khung NestJS, cấu hình môi trường và Docker Compos
 
 Các chức năng cần triển khai được mô tả trong [phạm vi backend](../Docs/CHUC_NANG_BACKEND.md). Mobile hiện chỉ dùng API thật; phải cấu hình `EXPO_PUBLIC_API_URL` trước khi đăng nhập.
 
+### Luồng bệnh án dành cho bác sĩ đã triển khai
+
+Backend hỗ trợ `GET /api/v1/medical_records/all` (lọc `status`, phân trang), `GET /api/v1/medical_records/:id`, `GET /api/v1/medical_records/:id/summary` và `POST /api/v1/medical_records/:id/accept`. Bác sĩ xem được bệnh án `pending` chưa ai nhận và bệnh án đã gán cho chính mình. Bệnh nhân chỉ xem được bệnh án của mình; admin có thể xem mọi bệnh án. API tiếp nhận cập nhật có điều kiện `pending` và chưa có bác sĩ, vì vậy hai bác sĩ không thể nhận cùng một hồ sơ. Mobile đã có trang **Bệnh án chờ → Chi tiết → Tiếp nhận** và **Đang khám** dùng dữ liệu thật. Khi chưa có bệnh án, màn hình sẽ hiển thị trạng thái trống.
+
 ## Chạy bằng Docker Compose
 
 Mở Docker Desktop trước. Từ thư mục `backend/`:
@@ -19,6 +23,8 @@ Copy-Item .env.example .env
 Trong `.env`, điền `POSTGRES_PASSWORD`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `JWT_SECRET`. Sửa `DATABASE_URL` để dùng đúng user, mật khẩu, tên DB và cổng PostgreSQL ở `localhost` nếu sau này chạy API trực tiếp bằng npm. Mật khẩu DB cho cấu hình Compose hiện tại nên chỉ dùng chữ/số để ghép vào URL kết nối; không commit `.env`. `JWT_SECRET` cần ít nhất 32 ký tự. Các giá trị trong `.env.example` chỉ là ví dụ, không phải secret dùng được.
 
 Để gửi OTP qua Gmail, thêm `GMAIL_USER` (địa chỉ Gmail gửi) và `GMAIL_APP_PASSWORD` (App Password của tài khoản đó) vào `.env`. Gmail yêu cầu bật xác minh hai bước để tạo App Password. Không dùng mật khẩu đăng nhập Gmail thường; không đưa App Password vào chat, log hoặc Git. Nếu chưa cấu hình, các API gửi OTP sẽ trả lỗi `502 / 9903`; đăng nhập và các API khác vẫn dùng được.
+
+Khi chạy Expo Web ở `http://localhost:8081`, backend ở chế độ `development` tự cho phép origin này gọi API qua CORS. Nếu web chạy từ địa chỉ hoặc cổng khác, thêm origin đầy đủ vào `CORS_ORIGINS` trong `.env` (nhiều origin ngăn bằng dấu phẩy) rồi tạo lại container API. Môi trường không phải `development` không tự mở CORS; cần khai báo rõ các origin được phép.
 
 ```powershell
 docker compose up --build -d

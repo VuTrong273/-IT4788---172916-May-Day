@@ -36,8 +36,6 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     let active = true;
-    setIsLoading(true);
-    setErrorMessage('');
 
     async function loadProfile() {
       try {
@@ -117,7 +115,7 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>Hồ sơ của tôi</Text>
         <Text style={styles.subtitle}>
-          Dữ liệu được tải qua API bằng token đã lưu trên điện thoại.
+          Xem và cập nhật thông tin cá nhân của bạn.
         </Text>
 
         {isLoading ? (
@@ -127,7 +125,11 @@ export default function ProfileScreen() {
             <Text style={styles.errorText}>{errorMessage}</Text>
             <Pressable
               accessibilityRole="button"
-              onPress={() => setRetryCount((count) => count + 1)}
+              onPress={() => {
+                setIsLoading(true);
+                setErrorMessage('');
+                setRetryCount((count) => count + 1);
+              }}
               style={styles.retryButton}>
               <Text style={styles.retryText}>Thử lại</Text>
             </Pressable>
@@ -218,7 +220,7 @@ function ProfileRow({ label, value }: { label: string; value?: string | null }) 
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#F5FAF8' },
-  container: { flexGrow: 1, padding: 24 },
+  container: { flexGrow: 1, width: '100%', maxWidth: 680, alignSelf: 'center', padding: 24 },
   title: { color: '#102A25', fontSize: 30, fontWeight: '800' },
   subtitle: { marginTop: 8, color: '#63756F', fontSize: 15, lineHeight: 22 },
   loading: { marginTop: 40 },

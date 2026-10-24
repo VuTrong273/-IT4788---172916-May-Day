@@ -31,6 +31,7 @@ export default function LoginScreen() {
       : params.registered === '1' ? 'Đăng ký thành công. Hãy đăng nhập.' : '',
   );
   const [submitError, setSubmitError] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const {
     control,
@@ -43,6 +44,7 @@ export default function LoginScreen() {
 
   async function handleLogin(values: LoginFormValues) {
     setSubmitMessage('');
+    setSubmitError(false);
 
     try {
       const response = await authApi.login(values);
@@ -50,13 +52,18 @@ export default function LoginScreen() {
         token: response.data.token,
         user: response.data.user_info,
       });
-      router.replace('/dashboard');
+      router.replace('/home');
     } catch (error) {
       setSubmitError(true);
       setSubmitMessage(
         error instanceof Error ? error.message : 'Đăng nhập thất bại.',
       );
     }
+  }
+
+  function clearMessage() {
+    setSubmitMessage('');
+    setSubmitError(false);
   }
 
   return (
@@ -67,16 +74,24 @@ export default function LoginScreen() {
         <ScrollView
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled">
+          <View style={styles.brandRow}>
+            <View style={styles.brandMark}>
+              <Text style={styles.brandMarkText}>+</Text>
+            </View>
+            <Text style={styles.brandName}>MAY DAY</Text>
+          </View>
+
           <View style={styles.roleBadge}>
-            <Text style={styles.roleBadgeText}>{roleLabels[role]}</Text>
+            <Text style={styles.roleBadgeText}>Dành cho {roleLabels[role].toLowerCase()}</Text>
           </View>
 
           <Text style={styles.title}>Chào mừng trở lại</Text>
           <Text style={styles.subtitle}>
-            Nhập số điện thoại và mật khẩu để tiếp tục.
+            Đăng nhập để tiếp tục sử dụng May Day.
           </Text>
 
           <View style={styles.form}>
+            <Text style={styles.formTitle}>Thông tin đăng nhập</Text>
             <FormTextInput
               autoComplete="tel"
               control={control}
@@ -84,22 +99,31 @@ export default function LoginScreen() {
               label="Số điện thoại"
               maxLength={10}
               name="phone"
-              onValueChange={() => setSubmitMessage('')}
+              onValueChange={clearMessage}
               placeholder="Nhập số điện thoại"
             />
 
             <FormTextInput
               autoCapitalize="none"
               autoComplete="current-password"
+              accessoryLabel={isPasswordVisible ? 'Ẩn' : 'Hiện'}
               control={control}
               label="Mật khẩu"
               name="password"
+              onAccessoryPress={() => setIsPasswordVisible((value) => !value)}
               onSubmitEditing={handleSubmit(handleLogin)}
-              onValueChange={() => setSubmitMessage('')}
+              onValueChange={clearMessage}
               placeholder="Nhập mật khẩu"
               returnKeyType="done"
-              secureTextEntry
+              secureTextEntry={!isPasswordVisible}
             />
+
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push({ pathname: '/forgot-password', params: { role } })}
+              style={styles.forgotLink}>
+              <Text style={styles.forgotLinkText}>Quên mật khẩu?</Text>
+            </Pressable>
 
             {submitMessage ? (
               <View
@@ -127,22 +151,17 @@ export default function LoginScreen() {
             </Pressable>
           </View>
 
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push({ pathname: '/forgot-password', params: { role } })}
-            style={styles.signupLink}>
-            <Text style={styles.signupLinkText}>Quên mật khẩu?</Text>
-          </Pressable>
-
           {role === 'patient' ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.push('/signup')}
-              style={styles.signupLink}>
-              <Text style={styles.signupLinkText}>Chưa có tài khoản? Đăng ký</Text>
-            </Pressable>
+            <View style={styles.signupRow}>
+              <Text style={styles.signupPrompt}>Chưa có tài khoản?</Text>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push('/signup')}
+                style={styles.signupLink}>
+                <Text style={styles.signupLinkText}>Đăng ký ngay</Text>
+              </Pressable>
+            </View>
           ) : null}
-
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
