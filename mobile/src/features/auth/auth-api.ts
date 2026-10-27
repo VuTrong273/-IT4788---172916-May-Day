@@ -4,6 +4,11 @@ import { apiClient, apiUrl } from '@/api/client';
 
 import type { LoginFormValues } from './login-schema';
 
+function connectionMessage(error: unknown): string {
+  const timedOut = isAxiosError(error) && error.code === 'ECONNABORTED';
+  return `${timedOut ? 'Backend không phản hồi trong 10 giây' : 'Không kết nối được backend'} (${apiUrl}). Hãy kiểm tra backend đang chạy, IP máy tính và kết nối cùng Wi-Fi.`;
+}
+
 type LoginResponse = {
   code: string;
   message: string;
@@ -75,7 +80,7 @@ export const authApi = {
         }
         throw new Error(
           error.response?.data?.message ??
-            'Không kết nối được backend. Hãy kiểm tra mạng và địa chỉ API.',
+            connectionMessage(error),
         );
       }
       throw error;
@@ -96,7 +101,7 @@ export const authApi = {
       if (isAxiosError<{ message?: string }>(error)) {
         throw new Error(
           error.response?.data?.message ??
-            'Không kết nối được backend. Hãy kiểm tra mạng và địa chỉ API.',
+            connectionMessage(error),
         );
       }
       throw error;

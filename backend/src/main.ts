@@ -20,6 +20,7 @@ async function bootstrap() {
       allowedHeaders: ['Authorization', 'Content-Type'],
     });
   }
-  await app.listen(config.port);
+  // Accept LAN connections from phones running the Expo app.
+  await app.listen(config.port, '0.0.0.0');
 }
 await bootstrap();
