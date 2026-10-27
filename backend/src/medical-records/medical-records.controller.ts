@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post, Query, Req } from '@nestjs/common';
 import type { AuthenticatedRequest } from '../auth/jwt-auth.guard.js';
 import { MedicalRecordsService } from './medical-records.service.js';
 
@@ -6,9 +6,20 @@ import { MedicalRecordsService } from './medical-records.service.js';
 export class MedicalRecordsController {
   constructor(private readonly records: MedicalRecordsService) {}
 
+  @Post()
+  @HttpCode(201)
+  create(@Req() request: AuthenticatedRequest, @Body() body: unknown) {
+    return this.records.create(request.user, body);
+  }
+
   @Get('all')
   list(@Req() request: AuthenticatedRequest, @Query() query: Record<string, unknown>) {
     return this.records.list(request.user, query);
+  }
+
+  @Get('patients/:id/history')
+  history(@Req() request: AuthenticatedRequest, @Param('id') id: string) {
+    return this.records.history(request.user, id);
   }
 
   @Get(':id/summary')

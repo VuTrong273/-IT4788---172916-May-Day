@@ -103,7 +103,9 @@ export default function MedicalRecordDetailScreen() {
 
         {record.status === 'in_progress' ? <View style={styles.message}>
           <Text style={styles.actionTitle}>Đang khám</Text>
-          <Text style={styles.secondary}>Bệnh án đã được tiếp nhận. Phần câu trả lời, xét nghiệm và kê đơn sẽ được triển khai ở bước tiếp theo.</Text>
+          <Text style={styles.secondary}>{isDoctor
+            ? 'Bệnh án đã được tiếp nhận và được gán cho bạn.'
+            : 'Bác sĩ đã tiếp nhận bệnh án của bạn. Kết quả khám sẽ xuất hiện khi bệnh án được hoàn tất.'}</Text>
         </View> : null}
       </> : null}
     </ScrollView>

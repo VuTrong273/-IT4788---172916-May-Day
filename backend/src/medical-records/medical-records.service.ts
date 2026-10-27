@@ -77,6 +77,60 @@ export class MedicalRecordsService {
     return { code: '1000', message: 'OK', data: await this.readableRecord(user, id) };
   }
 
+  async create(user: AuthenticatedUser, body: unknown) {
+    const role = await this.role(user);
+    if (role !== 'patient' && role !== 'doctor') return fail('3101', 'Permission denied', HttpStatus.FORBIDDEN);
+    if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+      return fail('2007', 'Request body is invalid', HttpStatus.BAD_REQUEST);
+    }
+    const input = body as Record<string, unknown>;
+    if (input.template_id === undefined || (role === 'doctor' && input.patient_id === undefined)) {
+      return fail('2001', 'Missing required parameter', HttpStatus.BAD_REQUEST);
+    }
+    if (typeof input.template_id !== 'string' ||
+      (role === 'doctor' && (typeof input.patient_id !== 'number' || !Number.isSafeInteger(input.patient_id)))) {
+      return fail('2002', 'Invalid parameter type', HttpStatus.BAD_REQUEST);
+    }
+    if (input.answers !== undefined && (!Array.isArray(input.answers) || input.answers.length > 0)) {
+      return fail('2007', 'Initial answers are not supported yet', HttpStatus.BAD_REQUEST);
+    }
+    const templateId = input.template_id.trim();
+    const patientId = role === 'patient' ? user.userId : input.patient_id as number;
+    if (!templateId || templateId.length > 225 || patientId < 1) {
+      return fail('2003', 'Invalid parameter value', HttpStatus.BAD_REQUEST);
+    }
+    try {
+      if (!await this.records.activeTemplateExists(templateId)) {
+        return fail('4101', 'Template not found', HttpStatus.NOT_FOUND);
+      }
+      if (!await this.records.patientExists(patientId)) {
+        return fail('2003', 'Invalid patient', HttpStatus.BAD_REQUEST);
+      }
+      const result = await this.records.create(patientId, user.userId, templateId);
+      return { code: '1001', message: 'Created successfully', data: result };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      return fail('9902', 'Database error', HttpStatus.SERVICE_UNAVAILABLE);
+    }
+  }
+
+  async history(user: AuthenticatedUser, rawPatientId: string) {
+    const patientId = positiveInteger(rawPatientId);
+    const role = await this.role(user);
+    if (role === 'patient' && patientId !== user.userId) {
+      return fail('3106', 'Patient does not own this medical record', HttpStatus.FORBIDDEN);
+    }
+    if (!['patient', 'doctor', 'admin'].includes(role ?? '')) {
+      return fail('3101', 'Permission denied', HttpStatus.FORBIDDEN);
+    }
+    try {
+      const data = await this.records.history(patientId, role === 'doctor' ? user.userId : undefined);
+      return { code: '1000', message: 'OK', data };
+    } catch {
+      return fail('9902', 'Database error', HttpStatus.SERVICE_UNAVAILABLE);
+    }
+  }
+
   async summary(user: AuthenticatedUser, id: string) {
     const record = await this.readableRecord(user, id);
     let patientName;

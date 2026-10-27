@@ -4,8 +4,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { appColors } from '@/constants/app-theme';
 import { useAuthenticatedSession } from '@/features/auth/use-authenticated-session';
+import { ManageTemplates } from '@/features/admin/manage-templates';
+import { ClinicalWorkspace } from '@/features/doctor/clinical-workspace';
 import { MedicalRecordList } from '@/features/doctor/medical-record-list';
 import { getDemoRole, getFeatureRoute } from '@/features/navigation/feature-routes';
+import { CreateMedicalRecord } from '@/features/patient/create-medical-record';
+import { MyMedicalRecords } from '@/features/patient/my-medical-records';
 
 export default function FeatureScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -18,6 +22,12 @@ export default function FeatureScreen() {
 
   if (isAllowed && (slug === 'pending-records' || slug === 'in-progress-records')) {
     return <MedicalRecordList session={session} status={slug === 'pending-records' ? 'pending' : 'in_progress'} />;
+  }
+  if (isAllowed && slug === 'create-medical-record') return <CreateMedicalRecord session={session} />;
+  if (isAllowed && slug === 'my-medical-records') return <MyMedicalRecords session={session} />;
+  if (isAllowed && slug === 'manage-templates') return <ManageTemplates session={session} />;
+  if (isAllowed && (slug === 'lab-requests' || slug === 'prescriptions')) {
+    return <ClinicalWorkspace session={session} mode={slug === 'lab-requests' ? 'labs' : 'prescriptions'} />;
   }
 
   return (

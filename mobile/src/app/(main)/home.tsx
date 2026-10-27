@@ -14,7 +14,7 @@ export default function HomeScreen() {
   const role = session ? getDemoRole(session.user.role_id) : null;
   const quickSlugs = role === 'patient'
     ? ['create-medical-record', 'my-medical-records', 'uas7']
-    : [];
+    : role === 'admin' ? ['manage-templates'] : [];
   const quickFeatures = quickSlugs.map(getFeatureRoute).filter((item) => item !== undefined);
 
   if (!session) return <SafeAreaView style={styles.safeArea} />;
@@ -49,11 +49,11 @@ export default function HomeScreen() {
           <View style={styles.heroAccent} />
           <Text style={styles.heroEyebrow}>MAY DAY / KHÔNG GIAN CỦA BẠN</Text>
           <Text style={styles.heroTitle}>
-            {role === 'patient' ? 'Theo dõi sức khỏe\ntừng ngày' : 'Quản lý tài khoản\ncủa bạn'}
+            {role === 'patient' ? 'Theo dõi sức khỏe\ntừng ngày' : 'Quản lý hệ thống\nMay Day'}
           </Text>
           <Text style={styles.heroDescription}>
             {role === 'admin'
-              ? 'Các nghiệp vụ quản trị sẽ được thực hiện trên Web app.'
+              ? 'Tạo và quản lý mẫu phiếu khám cho hệ thống.'
               : 'Các mục bên dưới đưa bạn đến đúng công việc cần làm. Những chức năng đang hoàn thiện sẽ được ghi rõ.'}
           </Text>
         </View>
@@ -62,7 +62,7 @@ export default function HomeScreen() {
           <>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Truy cập nhanh</Text>
-              <Text style={styles.sectionHint}>Dành cho bệnh nhân</Text>
+              <Text style={styles.sectionHint}>{role === 'admin' ? 'Dành cho quản trị viên' : 'Dành cho bệnh nhân'}</Text>
             </View>
             <View style={styles.featureList}>
               {quickFeatures.map((feature, index) => (

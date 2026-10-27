@@ -16,13 +16,20 @@ describe('MedicalRecordsService', () => {
   const findById = vi.fn();
   const accept = vi.fn();
   const patientName = vi.fn();
+  const activeTemplateExists = vi.fn();
+  const patientExists = vi.fn();
+  const create = vi.fn();
+  const history = vi.fn();
   let service: MedicalRecordsService;
 
   beforeEach(() => {
     vi.resetAllMocks();
     roleName.mockResolvedValue('doctor');
     findById.mockResolvedValue(record);
-    service = new MedicalRecordsService({ roleName, list, findById, accept, patientName } as unknown as MedicalRecordsRepository);
+    activeTemplateExists.mockResolvedValue(true);
+    patientExists.mockResolvedValue(true);
+    service = new MedicalRecordsService({ roleName, list, findById, accept, patientName,
+      activeTemplateExists, patientExists, create, history } as unknown as MedicalRecordsRepository);
   });
 
   it('limits the doctor list to pending records and their own assignments', async () => {
@@ -57,5 +64,27 @@ describe('MedicalRecordsService', () => {
   it('rejects invalid record IDs before database access', async () => {
     await expect(service.accept(otherDoctor, '0')).rejects.toMatchObject({ status: 400, response: { code: '2003' } });
     expect(accept).not.toHaveBeenCalled();
+  });
+
+  it('uses the authenticated patient ID, ignoring patient_id in the body', async () => {
+    roleName.mockResolvedValue('patient');
+    create.mockResolvedValue(record);
+    await service.create({ ...doctor, userId: 2 }, { template_id: 'TPL_TEST', patient_id: 999 });
+    expect(create).toHaveBeenCalledWith(2, 2, 'TPL_TEST');
+  });
+
+  it('rejects inactive or missing templates before creating a record', async () => {
+    roleName.mockResolvedValue('patient');
+    activeTemplateExists.mockResolvedValue(false);
+    await expect(service.create({ ...doctor, userId: 2 }, { template_id: 'TPL_TEST' }))
+      .rejects.toMatchObject({ status: 404, response: { code: '4101' } });
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('prevents a patient reading another patient history', async () => {
+    roleName.mockResolvedValue('patient');
+    await expect(service.history({ ...doctor, userId: 2 }, '5'))
+      .rejects.toMatchObject({ status: 403, response: { code: '3106' } });
+    expect(history).not.toHaveBeenCalled();
   });
 });

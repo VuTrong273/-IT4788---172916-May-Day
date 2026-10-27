@@ -73,6 +73,39 @@ export class MedicalRecordsRepository implements OnModuleDestroy {
     return result.rows[0]?.full_name ?? null;
   }
 
+  async activeTemplateExists(code: string): Promise<boolean> {
+    const result = await this.pool.query('SELECT 1 FROM templates WHERE code_template = $1 AND is_active = 1', [code]);
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async patientExists(userId: number): Promise<boolean> {
+    const result = await this.pool.query('SELECT 1 FROM patients WHERE user_id = $1', [userId]);
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async create(patientId: number, creatorId: number, templateId: string): Promise<MedicalRecord> {
+    const result = await this.pool.query<MedicalRecord>(
+      `INSERT INTO medical_records (patient_id, created_by, template_id, status)
+       VALUES ($1, $2, $3, 'pending')
+       RETURNING medical_record_id, patient_id, assigned_doctor_id, created_by, template_id,
+                 status, instructions, completed_at, created_at, updated_at`,
+      [patientId, creatorId, templateId],
+    );
+    return result.rows[0];
+  }
+
+  async history(patientId: number, doctorId?: number) {
+    const values: unknown[] = [patientId];
+    const doctorFilter = doctorId === undefined ? '' : `AND (assigned_doctor_id = $2 OR status = 'pending' AND assigned_doctor_id IS NULL)`;
+    if (doctorId !== undefined) values.push(doctorId);
+    const result = await this.pool.query<Pick<MedicalRecord, 'medical_record_id' | 'status' | 'instructions' | 'created_at'>>(
+      `SELECT medical_record_id, status, instructions, created_at FROM medical_records
+       WHERE patient_id = $1 ${doctorFilter}
+       ORDER BY created_at DESC, medical_record_id DESC`, values,
+    );
+    return result.rows;
+  }
+
   async accept(id: number, doctorId: number): Promise<Pick<MedicalRecord, 'medical_record_id' | 'assigned_doctor_id' | 'status'> | null> {
     const result = await this.pool.query<Pick<MedicalRecord, 'medical_record_id' | 'assigned_doctor_id' | 'status'>>(
       `UPDATE medical_records SET status = 'in_progress', assigned_doctor_id = $2,

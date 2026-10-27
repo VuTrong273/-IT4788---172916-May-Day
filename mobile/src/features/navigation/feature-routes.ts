@@ -10,6 +10,12 @@ export type FeatureRoute = {
 // Điều hướng demo theo ba role trong seed RBAC. Backend vẫn kiểm tra quyền API.
 export const featureRoutes: FeatureRoute[] = [
   {
+    slug: 'manage-templates',
+    title: 'Mẫu phiếu',
+    description: 'Tạo và xem các mẫu phiếu khám.',
+    roles: ['admin'],
+  },
+  {
     slug: 'create-medical-record',
     title: 'Tạo bệnh án',
     description: 'Trả lời câu hỏi phân loại và điền phiếu khám.',
