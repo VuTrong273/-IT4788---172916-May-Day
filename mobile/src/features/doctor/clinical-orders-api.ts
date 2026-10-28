@@ -50,10 +50,10 @@ function requestError(error: unknown): Error {
     if (['3001', '3002', '3003'].includes(code ?? '')) {
       return new Error('Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.');
     }
-    if (code === '3105') return new Error('Bệnh án không được phân công cho bạn.');
-    if (code === '4001') return new Error('Không tìm thấy bệnh án.');
-    if (code === '8003') return new Error('Bệnh án này đã có đơn thuốc.');
-    if (code === '2008') return new Error('Bệnh án chưa có đơn thuốc.');
+    if (code === '3105') return new Error('Lần khám không được phân công cho bạn.');
+    if (code === '4001') return new Error('Không tìm thấy lần khám.');
+    if (code === '8003') return new Error('Lần khám này đã có đơn thuốc.');
+    if (code === '2008') return new Error('Lần khám chưa có đơn thuốc.');
     if (code === '8103') return new Error('Không tìm thấy phiếu xét nghiệm.');
     return new Error(error.response?.data?.message || 'Không kết nối được backend. Hãy thử lại.');
   }
@@ -95,7 +95,7 @@ export const clinicalOrdersApi = {
           headers: { Authorization: ['Bearer', session.token].join(' ') },
         },
       );
-      if (response.data.code !== '1000') throw new Error('Không tải được bệnh án.');
+      if (response.data.code !== '1000') throw new Error('Không tải được lần khám.');
       return response.data.data;
     } catch (error) {
       throw requestError(error);

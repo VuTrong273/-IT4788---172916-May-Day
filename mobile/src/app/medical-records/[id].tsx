@@ -1,5 +1,7 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { LesionTimeline } from "@/features/tracking/lesion-timeline";
+import { PatientUas7 } from "@/features/doctor/patient-uas7";
 import {
   ActivityIndicator,
   Pressable,
@@ -61,7 +63,7 @@ export default function MedicalRecordDetailScreen() {
     async (active: () => boolean) => {
       if (!session || !Number.isSafeInteger(id) || id < 1) {
         if (active()) {
-          setError("Mã bệnh án không hợp lệ.");
+          setError("Mã lần khám không hợp lệ.");
           setLoading(false);
         }
         return;
@@ -93,7 +95,7 @@ export default function MedicalRecordDetailScreen() {
           setError(
             caught instanceof Error
               ? caught.message
-              : "Không tải được bệnh án.",
+              : "Không tải được lần khám.",
           );
       } finally {
         if (active()) setLoading(false);
@@ -124,7 +126,7 @@ export default function MedicalRecordDetailScreen() {
       setError(
         caught instanceof Error
           ? caught.message
-          : "Không tiếp nhận được bệnh án.",
+          : "Không tiếp nhận được lần khám.",
       );
     } finally {
       setSaving(false);
@@ -135,11 +137,17 @@ export default function MedicalRecordDetailScreen() {
     if (!session || !record || saving) return;
     const editableQuestionIds = new Set(
       sections
-        .filter((section) => section.filled_by === role || section.filled_by === 'patdoc')
-        .flatMap((section) => section.questions.map((question) => question.question_id)),
+        .filter(
+          (section) =>
+            section.filled_by === role || section.filled_by === "patdoc",
+        )
+        .flatMap((section) =>
+          section.questions.map((question) => question.question_id),
+        ),
     );
     const filledAnswers = Object.values(answers).filter(
-      (answer) => editableQuestionIds.has(answer.question_id) && hasValue(answer),
+      (answer) =>
+        editableQuestionIds.has(answer.question_id) && hasValue(answer),
     );
     if (filledAnswers.length === 0) {
       setError("Hãy nhập ít nhất một câu trả lời trước khi lưu.");
@@ -179,13 +187,13 @@ export default function MedicalRecordDetailScreen() {
         instructions.trim(),
       );
       setConfirming(false);
-      setSuccess("Đã hoàn tất bệnh án.");
+      setSuccess("Đã hoàn tất lần khám.");
       await load(() => true);
     } catch (caught) {
       setError(
         caught instanceof Error
           ? caught.message
-          : "Không thể hoàn tất bệnh án.",
+          : "Không thể hoàn tất lần khám.",
       );
     } finally {
       setSaving(false);
@@ -214,7 +222,7 @@ export default function MedicalRecordDetailScreen() {
     <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.eyebrow}>BỆNH ÁN / CHI TIẾT</Text>
-        <Text style={styles.title}>Bệnh án #{rawId}</Text>
+        <Text style={styles.title}>Lần khám #{rawId}</Text>
         {loading ? (
           <ActivityIndicator color={appColors.primary} style={styles.loading} />
         ) : null}
@@ -265,17 +273,30 @@ export default function MedicalRecordDetailScreen() {
               ) : null}
             </View>
 
+            {isDoctor && record.assigned_doctor_id === session.user.user_id ? (
+              <>
+                <PatientUas7 session={session} patientId={record.patient_id} />
+                <LesionTimeline
+                  key={record.medical_record_id}
+                  session={session}
+                  patientId={record.patient_id}
+                  patient={false}
+                  editable={false}
+                />
+              </>
+            ) : null}
+
             {canAccept ? (
               <View style={styles.actionCard}>
-                <Text style={styles.actionTitle}>Tiếp nhận bệnh án</Text>
+                <Text style={styles.actionTitle}>Tiếp nhận lần khám</Text>
                 <Text style={styles.secondary}>
-                  Sau khi tiếp nhận, bệnh án được gán cho bạn và chuyển sang
+                  Sau khi tiếp nhận, lần khám được gán cho bạn và chuyển sang
                   trạng thái đang khám.
                 </Text>
                 {confirming ? (
                   <>
                     <Text style={styles.confirmText}>
-                      Xác nhận tiếp nhận bệnh án này?
+                      Xác nhận tiếp nhận lần khám này?
                     </Text>
                     <Pressable
                       disabled={saving}
@@ -307,7 +328,7 @@ export default function MedicalRecordDetailScreen() {
 
             {sections.length > 0 ? (
               <>
-                <Text style={styles.sectionTitle}>Nội dung bệnh án</Text>
+                <Text style={styles.sectionTitle}>Nội dung lần khám</Text>
                 <MedicalRecordQuestionnaire
                   sections={sections}
                   role={role === "doctor" ? "doctor" : "patient"}
@@ -336,7 +357,7 @@ export default function MedicalRecordDetailScreen() {
 
             {canComplete ? (
               <View style={styles.actionCard}>
-                <Text style={styles.actionTitle}>Hoàn tất bệnh án</Text>
+                <Text style={styles.actionTitle}>Hoàn tất lần khám</Text>
                 <Text style={styles.secondary}>
                   Ghi kết luận hoặc hướng dẫn dành cho bệnh nhân trước khi chốt
                   hồ sơ.
@@ -351,7 +372,7 @@ export default function MedicalRecordDetailScreen() {
                 {confirming ? (
                   <>
                     <Text style={styles.confirmText}>
-                      Sau khi hoàn tất, bệnh án và câu trả lời sẽ không thể
+                      Sau khi hoàn tất, lần khám và câu trả lời sẽ không thể
                       chỉnh sửa.
                     </Text>
                     <Pressable
@@ -376,7 +397,7 @@ export default function MedicalRecordDetailScreen() {
                     onPress={() => setConfirming(true)}
                     style={styles.primaryButton}
                   >
-                    <Text style={styles.primaryText}>Chốt bệnh án</Text>
+                    <Text style={styles.primaryText}>Chốt lần khám</Text>
                   </Pressable>
                 )}
               </View>

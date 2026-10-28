@@ -1,4 +1,7 @@
-import { PatientProfileRequiredError, UserRepository } from '../auth/user.repository.js';
+import {
+  PatientProfileRequiredError,
+  UserRepository,
+} from '../auth/user.repository.js';
 import { ProfileService } from './profile.service.js';
 
 describe('ProfileService.updateProfile', () => {
@@ -13,13 +16,18 @@ describe('ProfileService.updateProfile', () => {
 
   beforeEach(() => {
     updateProfile = vi.fn().mockResolvedValue(profile);
-    service = new ProfileService({ updateProfile } as unknown as UserRepository);
+    service = new ProfileService({
+      updateProfile,
+    } as unknown as UserRepository);
   });
 
   it('updates only the current user and trims the name', async () => {
-    await expect(service.updateProfile(7, { full_name: '  Nguyễn Văn A  ' }))
-      .resolves.toEqual({ code: '1000', message: 'OK', data: profile });
-    expect(updateProfile).toHaveBeenCalledWith(7, { full_name: 'Nguyễn Văn A' });
+    await expect(
+      service.updateProfile(7, { full_name: '  Nguyễn Văn A  ' }),
+    ).resolves.toEqual({ code: '1000', message: 'OK', data: profile });
+    expect(updateProfile).toHaveBeenCalledWith(7, {
+      full_name: 'Nguyễn Văn A',
+    });
   });
 
   it('accepts a partial patient profile, including clearing nullable fields', async () => {
@@ -40,7 +48,7 @@ describe('ProfileService.updateProfile', () => {
     [{}, '2001'],
     [{ full_name: 12 }, '2002'],
     [{ full_name: '  ' }, '2003'],
-    [{ phone: '0900000000' }, '2003'],
+    [{ phone: '123' }, '2003'],
     [{ role_id: 1 }, '2003'],
     [{ year_of_birth: '1995' }, '2002'],
     [{ year_of_birth: 1899 }, '2003'],
@@ -57,22 +65,40 @@ describe('ProfileService.updateProfile', () => {
 
   it('rejects patient-only fields for a non-patient account', async () => {
     updateProfile.mockRejectedValue(new PatientProfileRequiredError());
-    await expect(service.updateProfile(7, { career: 'Teacher' }))
-      .rejects.toMatchObject({ status: 400, response: { code: '2003' } });
+    await expect(
+      service.updateProfile(7, { career: 'Teacher' }),
+    ).rejects.toMatchObject({ status: 400, response: { code: '2003' } });
+  });
+
+  it('updates the login phone and allows clearing gender', async () => {
+    await service.updateProfile(7, { phone: ' 0900000000 ', gender: null });
+    expect(updateProfile).toHaveBeenCalledWith(7, {
+      phone: '0900000000',
+      gender: null,
+    });
+  });
+
+  it('reports a phone conflict without leaking database details', async () => {
+    updateProfile.mockRejectedValue({ code: '23505', detail: 'private' });
+    await expect(
+      service.updateProfile(7, { phone: '0900000000' }),
+    ).rejects.toMatchObject({ status: 409, response: { code: '3006' } });
   });
 
   it('returns 3007 when the user no longer exists', async () => {
     updateProfile.mockResolvedValue(null);
-    await expect(service.updateProfile(7, { full_name: 'Nguyễn Văn A' }))
-      .rejects.toMatchObject({ status: 404, response: { code: '3007' } });
+    await expect(
+      service.updateProfile(7, { full_name: 'Nguyễn Văn A' }),
+    ).rejects.toMatchObject({ status: 404, response: { code: '3007' } });
   });
 
   it('maps database errors without leaking details', async () => {
     updateProfile.mockRejectedValue(new Error('private database details'));
-    await expect(service.updateProfile(7, { full_name: 'Nguyễn Văn A' }))
-      .rejects.toMatchObject({
-        status: 503,
-        response: { code: '9902', message: 'Database error', data: {} },
-      });
+    await expect(
+      service.updateProfile(7, { full_name: 'Nguyễn Văn A' }),
+    ).rejects.toMatchObject({
+      status: 503,
+      response: { code: '9902', message: 'Database error', data: {} },
+    });
   });
 });

@@ -7,12 +7,12 @@ import { appColors } from '@/constants/app-theme';
 import { getFeatureRoute } from '@/features/navigation/feature-routes';
 
 const workflow = [
-  { step: '01', title: 'Tiếp nhận', detail: 'Xem bệnh án chờ và nhận hồ sơ phù hợp.' },
+  { step: '01', title: 'Tiếp nhận', detail: 'Xem lần khám chờ và nhận hồ sơ phù hợp.' },
   { step: '02', title: 'Thăm khám', detail: 'Xem câu trả lời, ảnh, điểm theo dõi và bổ sung phần bác sĩ.' },
   { step: '03', title: 'Hoàn tất', detail: 'Ghi chỉ dẫn, chỉ định xét nghiệm hoặc kê đơn trước khi chốt.' },
 ];
 
-const quickSlugs = ['in-progress-records', 'patients', 'lab-requests', 'prescriptions'];
+const quickSlugs = ['in-progress-records', 'completed-records', 'patients', 'lab-requests', 'prescriptions'];
 
 export function DoctorHome({ fullName }: { fullName: string }) {
   const firstName = fullName.trim().split(/\s+/).at(-1) || fullName;
@@ -42,15 +42,15 @@ export function DoctorHome({ fullName }: { fullName: string }) {
         <View style={styles.hero}>
           <View style={styles.heroAccent} />
           <Text style={styles.heroEyebrow}>BẮT ĐẦU CÔNG VIỆC</Text>
-          <Text style={styles.heroTitle}>Bệnh án đang chờ tiếp nhận</Text>
+          <Text style={styles.heroTitle}>Lần khám đang chờ tiếp nhận</Text>
           <Text style={styles.heroDescription}>
-            Xem thông tin bệnh nhân gửi lên, sau đó tiếp nhận và xử lý bệnh án.
+            Xem thông tin bệnh nhân gửi lên, sau đó tiếp nhận và xử lý lần khám.
           </Text>
           <Pressable
             accessibilityRole="button"
             onPress={() => router.push({ pathname: '/feature/[slug]', params: { slug: 'pending-records' } })}
             style={({ pressed }) => [styles.heroButton, pressed && styles.pressed]}>
-            <Text style={styles.heroButtonText}>Mở bệnh án chờ</Text>
+            <Text style={styles.heroButtonText}>Mở lần khám chờ</Text>
             <Text style={styles.heroButtonArrow}>›</Text>
           </Pressable>
         </View>

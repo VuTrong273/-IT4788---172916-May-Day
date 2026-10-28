@@ -24,7 +24,7 @@ export default function RootLayout() {
         <Stack.Screen name="(main)" options={{ headerShown: false }} />
         <Stack.Screen name="dashboard" options={{ headerShown: false }} />
         <Stack.Screen name="feature/[slug]" options={{ title: 'Chức năng' }} />
-        <Stack.Screen name="medical-records/[id]" options={{ title: 'Chi tiết bệnh án' }} />
+        <Stack.Screen name="medical-records/[id]" options={{ title: 'Chi tiết lần khám' }} />
         <Stack.Screen name="profile" options={{ title: 'Hồ sơ của tôi' }} />
         <Stack.Screen name="change-password" options={{ title: 'Đổi mật khẩu' }} />
         <Stack.Screen name="recovery-email" options={{ title: 'Email khôi phục' }} />

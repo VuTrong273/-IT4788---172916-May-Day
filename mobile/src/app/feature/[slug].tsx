@@ -7,6 +7,8 @@ import { useAuthenticatedSession } from "@/features/auth/use-authenticated-sessi
 import { ManageTemplates } from "@/features/admin/manage-templates";
 import { ClinicalWorkspace } from "@/features/doctor/clinical-workspace";
 import { MedicalRecordList } from "@/features/doctor/medical-record-list";
+import { PatientsScreen } from "@/features/doctor/patients-screen";
+import { LesionTrackingScreen } from "@/features/tracking/lesion-tracking-screen";
 import {
   getDemoRole,
   getFeatureRoute,
@@ -24,15 +26,28 @@ export default function FeatureScreen() {
   const isAllowed = !!feature && !!role && feature.roles.includes(role);
 
   if (!session) return <SafeAreaView style={styles.safeArea} />;
+  if (isAllowed && slug === "lesion-tracking")
+    return <LesionTrackingScreen session={session} />;
+
+  if (isAllowed && slug === "patients")
+    return <PatientsScreen session={session} />;
 
   if (
     isAllowed &&
-    (slug === "pending-records" || slug === "in-progress-records")
+    (slug === "pending-records" ||
+      slug === "in-progress-records" ||
+      slug === "completed-records")
   ) {
     return (
       <MedicalRecordList
         session={session}
-        status={slug === "pending-records" ? "pending" : "in_progress"}
+        status={
+          slug === "pending-records"
+            ? "pending"
+            : slug === "completed-records"
+              ? "completed"
+              : "in_progress"
+        }
       />
     );
   }
@@ -42,8 +57,7 @@ export default function FeatureScreen() {
     return <MyMedicalRecords session={session} />;
   if (isAllowed && slug === "my-results")
     return <MyResults session={session} />;
-  if (isAllowed && slug === "uas7")
-    return <Uas7Screen session={session} />;
+  if (isAllowed && slug === "uas7") return <Uas7Screen session={session} />;
   if (isAllowed && slug === "manage-templates")
     return <ManageTemplates session={session} />;
   if (isAllowed && (slug === "lab-requests" || slug === "prescriptions")) {

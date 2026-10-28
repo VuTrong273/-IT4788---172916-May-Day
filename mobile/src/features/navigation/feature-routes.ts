@@ -17,14 +17,14 @@ export const featureRoutes: FeatureRoute[] = [
   },
   {
     slug: 'create-medical-record',
-    title: 'Tạo bệnh án',
+    title: 'Tạo lần khám',
     description: 'Trả lời câu hỏi phân loại và điền phiếu khám.',
     roles: ['patient'],
   },
   {
     slug: 'my-medical-records',
-    title: 'Bệnh án của tôi',
-    description: 'Theo dõi bệnh án và lịch sử khám.',
+    title: 'Lần khám của tôi',
+    description: 'Theo dõi lần khám và lịch sử khám.',
     roles: ['patient'],
   },
   {
@@ -47,20 +47,26 @@ export const featureRoutes: FeatureRoute[] = [
   },
   {
     slug: 'pending-records',
-    title: 'Bệnh án chờ',
-    description: 'Xem và tiếp nhận bệnh án đang chờ xử lý.',
+    title: 'Lần khám chờ',
+    description: 'Xem và tiếp nhận lần khám đang chờ xử lý.',
     roles: ['doctor'],
   },
   {
     slug: 'in-progress-records',
     title: 'Đang khám',
-    description: 'Tiếp tục các bệnh án đã được tiếp nhận.',
+    description: 'Tiếp tục các lần khám đã được tiếp nhận.',
     roles: ['doctor'],
   },
   {
     slug: 'patients',
     title: 'Bệnh nhân',
-    description: 'Tìm kiếm và xem hồ sơ bệnh nhân.',
+    description: 'Tìm bệnh nhân, tạo hồ sơ mới và xem lịch sử lần khám.',
+    roles: ['doctor'],
+  },
+  {
+    slug: 'completed-records',
+    title: 'Đã hoàn tất',
+    description: 'Tra cứu các lần khám bạn đã khám và hoàn tất.',
     roles: ['doctor'],
   },
   {

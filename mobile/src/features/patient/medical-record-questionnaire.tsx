@@ -1,3 +1,4 @@
+import { DateField } from "@/components/forms/date-field";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { appColors } from "@/constants/app-theme";
@@ -44,17 +45,17 @@ export function isQuestionVisible(
     Array.isArray(question.show_if_answer)
   )
     return true;
-  const expected =   (question.show_if_answer as Record<string, unknown>)[
+  const expected = (question.show_if_answer as Record<string, unknown>)[
     question.parent_question_id
   ];
   if (!Array.isArray(expected)) return true;
   const answer = answers[question.parent_question_id];
   const parentQuestion = questionMap.get(question.parent_question_id);
   const selectedOption = parentQuestion?.options.find(
-  (option) => option.id === answer?.question_option_id,
+    (option) => option.id === answer?.question_option_id,
   );
   const actual =
-  answer?.answer_value ?? answer?.answer_text ?? selectedOption?.option_value;
+    answer?.answer_value ?? answer?.answer_text ?? selectedOption?.option_value;
   return Array.isArray(actual)
     ? actual.some((value) => expected.includes(value))
     : expected.includes(actual);
@@ -75,7 +76,9 @@ export function MedicalRecordQuestionnaire({
 }) {
   const questionMap = new Map(
     sections.flatMap((section) =>
-      section.questions.map((question) => [question.question_id, question] as const),
+      section.questions.map(
+        (question) => [question.question_id, question] as const,
+      ),
     ),
   );
   return (
@@ -167,7 +170,21 @@ export function MedicalRecordQuestionnaire({
                           </Pressable>
                         );
                       })
-                    ) : ["text", "textarea", "number", "date"].includes(
+                    ) : question.type_question === "date" ? (
+                      <DateField
+                        label={question.placeholder ?? "Chọn ngày"}
+                        value={answer.answer_text ?? ""}
+                        disabled={!editable}
+                        onChange={(text) =>
+                          onChange(question.question_id, {
+                            ...answer,
+                            question_option_id: null,
+                            answer_text: text,
+                            answer_value: null,
+                          })
+                        }
+                      />
+                    ) : ["text", "textarea", "number"].includes(
                         question.type_question,
                       ) ? (
                       <TextInput

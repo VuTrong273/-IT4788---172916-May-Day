@@ -125,7 +125,7 @@ export function CreateMedicalRecord({ session }: { session: Session }) {
       });
     } catch (caught) {
       setError(
-        caught instanceof Error ? caught.message : "Không tạo được bệnh án.",
+        caught instanceof Error ? caught.message : "Không tạo được lần khám.",
       );
       setSaving(false);
     }
@@ -158,9 +158,9 @@ export function CreateMedicalRecord({ session }: { session: Session }) {
     <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.eyebrow}>BỆNH ÁN / BỆNH NHÂN</Text>
-        <Text style={styles.title}>Tạo bệnh án</Text>
+        <Text style={styles.title}>Tạo lần khám</Text>
         <Text style={styles.subtitle}>
-          Chọn mẫu phiếu để bắt đầu. Bệnh án mới sẽ ở trạng thái chờ bác sĩ tiếp
+          Chọn mẫu phiếu để bắt đầu. Lần khám mới sẽ ở trạng thái chờ bác sĩ tiếp
           nhận.
         </Text>
         <Text style={styles.section}>Mẫu phiếu</Text>
@@ -180,7 +180,7 @@ export function CreateMedicalRecord({ session }: { session: Session }) {
             <Text style={styles.emptyTitle}>Chưa có mẫu phiếu</Text>
             <Text style={styles.muted}>
               Quản trị viên cần tạo và kích hoạt mẫu phiếu trước khi bệnh nhân
-              tạo bệnh án.
+              tạo lần khám.
             </Text>
           </View>
         ) : null}
@@ -249,7 +249,7 @@ export function CreateMedicalRecord({ session }: { session: Session }) {
             style={styles.button}
           >
             <Text style={styles.buttonText}>
-              {saving ? "Đang tạo..." : "Tạo và gửi bệnh án"}
+              {saving ? "Đang tạo..." : "Tạo và gửi lần khám"}
             </Text>
           </Pressable>
         ) : null}

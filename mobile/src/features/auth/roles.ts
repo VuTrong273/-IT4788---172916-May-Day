@@ -8,12 +8,12 @@ export const roleOptions: {
   {
     value: 'patient',
     label: 'Bệnh nhân',
-    description: 'Tạo bệnh án, gửi ảnh và theo dõi UAS7.',
+    description: 'Tạo lần khám, gửi ảnh và theo dõi UAS7.',
   },
   {
     value: 'doctor',
     label: 'Bác sĩ',
-    description: 'Tiếp nhận, chẩn đoán và hoàn tất bệnh án.',
+    description: 'Tiếp nhận, chẩn đoán và hoàn tất lần khám.',
   },
   {
     value: 'admin',

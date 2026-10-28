@@ -27,7 +27,7 @@ function apiError(error: unknown): Error {
       return new Error("Mẫu phiếu không còn tồn tại. Hãy tải lại danh sách.");
     if (code === "4105")
       return new Error(
-        "Mẫu đã có bệnh án nên không thể xóa. Bạn có thể tắt mẫu để ngừng sử dụng.",
+        "Mẫu đã có lần khám nên không thể xóa. Bạn có thể tắt mẫu để ngừng sử dụng.",
       );
     if (code === "4102")
       return new Error("Mã mẫu phiếu đã tồn tại. Hãy chọn mã khác.");

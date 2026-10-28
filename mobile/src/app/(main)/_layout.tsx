@@ -39,7 +39,7 @@ export default function MainLayout() {
       <Tabs.Screen
         name="records"
         options={{
-          title: role === 'doctor' ? 'Bệnh án chờ' : 'Bệnh án',
+          title: role === 'doctor' ? 'Lần khám chờ' : 'Lần khám',
           href: role === 'patient' || role === 'doctor' ? undefined : null,
           tabBarIcon: ({ color, size }) => (
             <SymbolView name={{ ios: 'doc.text', android: 'description', web: 'description' }} tintColor={color} size={size} />

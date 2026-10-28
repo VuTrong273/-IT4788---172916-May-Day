@@ -78,7 +78,7 @@ export const patientRecordsApi = {
         { headers: headers(session) },
       );
       if (response.data.code !== "1001")
-        throw new Error("Không tạo được bệnh án.");
+        throw new Error("Không tạo được lần khám.");
       return response.data.data;
     } catch (error) {
       throw requestError(error);
@@ -158,7 +158,7 @@ export const patientRecordsApi = {
         { headers: headers(session) },
       );
       if (response.data.code !== "1000")
-        throw new Error("Không thể hoàn tất bệnh án.");
+        throw new Error("Không thể hoàn tất lần khám.");
       return response.data.data;
     } catch (error) {
       throw requestError(error);
@@ -175,7 +175,7 @@ export const patientRecordsApi = {
         headers: headers(session),
       });
       if (response.data.code !== "1000")
-        throw new Error("Không tải được bệnh án.");
+        throw new Error("Không tải được lần khám.");
       return response.data.data;
     } catch (error) {
       throw requestError(error);

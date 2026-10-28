@@ -88,7 +88,7 @@ const PROFILE_SELECT = `SELECT u.user_id, u.full_name, u.phone, u.recovery_email
        LEFT JOIN staffs s ON s.user_id = u.user_id
        WHERE u.user_id = $1`;
 
-const USER_PROFILE_COLUMNS = new Set(['full_name', 'gender']);
+const USER_PROFILE_COLUMNS = new Set(['full_name', 'gender', 'phone']);
 const PATIENT_PROFILE_COLUMNS = new Set([
   'year_of_birth', 'career', 'ethnic', 'hamlet_address', 'commune_address',
   'city_address', 'work_place', 'health_insurance_number',

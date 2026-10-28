@@ -46,7 +46,7 @@ export function ManageTemplates({ session }: { session: Session }) {
         <Text style={styles.eyebrow}>QUẢN TRỊ / MẪU PHIẾU</Text>
         <Text style={styles.title}>Mẫu phiếu</Text>
         <Text style={styles.subtitle}>
-          Tạo thông tin mẫu phiếu trước khi xây các phần và câu hỏi.
+          Mẫu phiếu là bộ câu hỏi dùng cho từng lần khám. Phiếu đã điền thuộc lần khám; nhật ký ảnh và UAS7 được theo dõi riêng theo bệnh nhân.
         </Text>
 
         <View style={styles.form}>
@@ -104,7 +104,7 @@ export function ManageTemplates({ session }: { session: Session }) {
             <View style={styles.toggleCopy}>
               <Text style={styles.toggleTitle}>Kích hoạt mẫu</Text>
               <Text style={styles.muted}>
-                Mẫu hoạt động sẽ xuất hiện khi bệnh nhân tạo bệnh án.
+                Mẫu hoạt động sẽ xuất hiện khi bệnh nhân tạo lần khám.
               </Text>
             </View>
           </Pressable>

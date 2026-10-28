@@ -74,6 +74,53 @@ describe('MedicalRecordsService', () => {
     });
   });
 
+  it('creates a pending record for the selected patient with the doctor as creator', async () => {
+    create.mockResolvedValue({
+      ...record,
+      patient_id: 27,
+      created_by: doctor.userId,
+    });
+    await expect(
+      service.create(doctor, { patient_id: 27, template_id: 'TPL_TEST' }),
+    ).resolves.toMatchObject({
+      code: '1001',
+      data: { patient_id: 27, created_by: doctor.userId, status: 'pending' },
+    });
+    expect(create).toHaveBeenCalledWith(27, doctor.userId, 'TPL_TEST', []);
+    expect(accept).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [{ template_id: 'TPL_TEST' }, '2001'],
+    [{ template_id: 'TPL_TEST', patient_id: '27' }, '2002'],
+    [{ template_id: 'TPL_TEST', patient_id: 0 }, '2003'],
+  ])(
+    'rejects a doctor request with missing or invalid patient %#',
+    async (body, code) => {
+      await expect(service.create(doctor, body)).rejects.toMatchObject({
+        status: 400,
+        response: { code },
+      });
+      expect(create).not.toHaveBeenCalled();
+    },
+  );
+
+  it('rejects creation when the chosen template is no longer active', async () => {
+    activeTemplateExists.mockResolvedValue(false);
+    await expect(
+      service.create(doctor, { patient_id: 27, template_id: 'TPL_TEST' }),
+    ).rejects.toMatchObject({ status: 404, response: { code: '4101' } });
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('rejects creation for a patient that no longer exists', async () => {
+    patientExists.mockResolvedValue(false);
+    await expect(
+      service.create(doctor, { patient_id: 27, template_id: 'TPL_TEST' }),
+    ).rejects.toMatchObject({ status: 400, response: { code: '2003' } });
+    expect(create).not.toHaveBeenCalled();
+  });
+
   it('does not expose another doctor assigned record', async () => {
     findById.mockResolvedValue({
       ...record,

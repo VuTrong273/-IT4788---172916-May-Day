@@ -110,7 +110,53 @@ Invoke-RestMethod http://localhost:3000/
 
 Kết quả hiện tại là `Hello World!`. `start:dev` tự khởi động lại khi sửa code; nhấn `Ctrl+C` để dừng.
 
+## Bác sĩ tìm và tạo hồ sơ bệnh nhân
+
+Trên ứng dụng, đăng nhập bằng tài khoản bác sĩ rồi mở **Bệnh nhân**:
+
+- Tìm theo đầu số điện thoại, một phần họ tên hoặc kết hợp cả hai.
+- Chọn bệnh nhân để xem lịch sử bệnh án trong phạm vi truy cập của bác sĩ; chạm vào bệnh án để mở chi tiết.
+- Trong trang bệnh nhân, chọn **Tạo bệnh án cho bệnh nhân này**, chọn mẫu phiếu đang hoạt động rồi **Tạo và mở bệnh án**. Bệnh án mới có trạng thái chờ tiếp nhận; bác sĩ bấm **Tiếp nhận** trong trang chi tiết để bắt đầu khám và điền phiếu. Danh sách mẫu có phân trang và nút tải lại.
+- Chọn **Tạo hồ sơ bệnh nhân mới** cho người chưa có tài khoản. Họ tên, số điện thoại và mật khẩu là bắt buộc; các thông tin hành chính còn lại là tùy chọn. Bệnh nhân có thể đăng nhập bằng tài khoản vừa tạo.
+
+API mới: `GET /api/v1/doctor/patients/search` và `POST /api/v1/doctor/patients`. Quyền tương ứng đã có trong seed RBAC. Tài khoản và hồ sơ được tạo trong cùng transaction; số điện thoại trùng trả `409 / 3006`. Không trả mật khẩu hoặc hash trong response.
+
+Nếu chạy API bằng Docker, chạy `docker compose up -d --build api` trong thư mục backend để nhận mã mới. Phần này không thay đổi schema database.
+
 ## Kiểm tra trước khi commit
+
+### Nhật ký bệnh nhân và các lần khám
+
+- **Bác sĩ → Bệnh nhân → chọn bệnh nhân → Xem điểm UAS7**: chọn ngày bắt đầu, chuyển tuần, xem số ngày đã chấm và lịch sử. Chỉ bác sĩ đã được phân công bệnh án của bệnh nhân mới có quyền đọc.
+- **Trang chủ bác sĩ → Đã hoàn tất**: danh sách phân trang chỉ gồm bệnh án do bác sĩ đó phụ trách, mở lại hồ sơ để xem kết luận và dữ liệu theo dõi.
+- **Bệnh nhân → Theo dõi tổn thương → Thêm ảnh**: chọn hoặc tạo đợt tổn thương, chọn ảnh JPEG/PNG/WebP tối đa 5 MB, ghi vị trí, mốc diễn biến, thời điểm chụp và triệu chứng. Không cần tạo lần khám. Trang tổng quan hiển thị ảnh của mọi đợt, mới nhất trước.
+- **Bác sĩ → Bệnh nhân → chọn bệnh nhân → Nhật ký ảnh**: xem ảnh xuyên suốt các lần khám. Màn hình chi tiết lần khám cũng hiển thị nhật ký chung, không chỉ ảnh thuộc lần khám đó.
+- **UAS7**: ghi theo bệnh nhân và ngày, kể cả chưa có lần khám hoặc đã hoàn tất khám; mỗi ngày chỉ một bản ghi. Điểm và ảnh cũ được giữ lại.
+- `medical_records` biểu diễn từng lần khám; nhãn giao diện là “lần khám”. Hồ sơ bệnh nhân và nhật ký tồn tại lâu dài. `medical_record_id` trong đợt tổn thương/UAS7 là tham chiếu tùy chọn để tương thích dữ liệu cũ, không quyết định quyền ghi nhật ký. Xóa lần khám chỉ gỡ tham chiếu, không xóa nhật ký.
+- Mẫu phiếu là cấu trúc câu hỏi dùng cho lần khám; phiếu đã điền thuộc lần khám cụ thể. Nhật ký UAS7 và ảnh độc lập với mẫu phiếu.
+
+Kho MinIO giữ object riêng tư. Ứng dụng đọc ảnh bằng `GET /api/v1/image-attachments/:id/content` kèm JWT. Ảnh đã gắn nhật ký kiểm tra quyền theo bệnh nhân: chủ sở hữu, admin hoặc bác sĩ có ít nhất một lần khám được phân công (kể cả đã hoàn tất). Khi không còn phân công nào, bác sĩ không đọc được nhật ký. Ảnh mới tải nhưng chưa gắn nhật ký chỉ người tải/admin xem được; ảnh đính kèm lần khám ngoài nhật ký vẫn áp dụng quyền lần khám. Upload một ảnh dùng trường `file`; upload nhiều ảnh dùng `images`, tối đa 10 ảnh/lần. Backend kiểm tra MIME, chữ ký định dạng và dung lượng; metadata dùng transaction.
+
+Với database đã có từ trước, chạy migration bổ sung endpoint đọc ảnh (có thể chạy lại an toàn, không xóa dữ liệu), trong thư mục backend:
+
+```powershell
+Get-Content -Raw ..\Database\migrations\003_private_image_content.sql | docker compose exec -T db psql -v ON_ERROR_STOP=1 -U mayday -d mayday
+Get-Content -Raw ..\Database\migrations\004_patient_diaries.sql | docker compose exec -T db psql -v ON_ERROR_STOP=1 -U mayday -d mayday
+docker compose up -d --build api
+```
+
+Thay user/database trong lệnh nếu đã cấu hình khác. Database mới nhận quyền từ seed, không cần chạy migration riêng. Không cần mở cổng MinIO cho điện thoại vì ảnh đi qua API.
+
+Kiểm tra tích hợp với PostgreSQL và MinIO local thật (dùng biến cấu hình Compose trong `.env`):
+
+```powershell
+npm run build
+node test/tracking.integration.mjs --compose
+```
+
+Script tạo dữ liệu thử riêng, kiểm tra ghi nhật ký trước lần khám đầu tiên, tiếp tục sau hoàn tất, quyền xem ảnh, UAS7, giữ nhật ký khi xóa lần khám và thu hồi quyền bác sĩ khi hết phân công; sau đó xóa các fixture và object vừa tạo. Không chạy script này trên production.
+
+### Các lệnh kiểm tra
 
 Chạy trong thư mục `backend/`:
 

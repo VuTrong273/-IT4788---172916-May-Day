@@ -80,7 +80,7 @@ export function MyResults({ session }: { session: Session }) {
         <Text style={styles.eyebrow}>SỨC KHỎE / KẾT QUẢ</Text>
         <Text style={styles.title}>Kết quả và đơn thuốc</Text>
         <Text style={styles.subtitle}>
-          Xem chỉ định xét nghiệm, kết quả và đơn thuốc gắn với từng bệnh án.
+          Xem chỉ định xét nghiệm, kết quả và đơn thuốc gắn với từng lần khám.
         </Text>
         {loading ? (
           <ActivityIndicator color={appColors.primary} style={styles.loading} />
@@ -95,7 +95,7 @@ export function MyResults({ session }: { session: Session }) {
         ) : null}
         {!loading && !error && results.length === 0 ? (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Chưa có bệnh án</Text>
+            <Text style={styles.cardTitle}>Chưa có lần khám</Text>
             <Text style={styles.body}>
               Kết quả xét nghiệm và đơn thuốc sẽ xuất hiện tại đây sau khi bác
               sĩ tạo.
@@ -107,7 +107,7 @@ export function MyResults({ session }: { session: Session }) {
           return (
             <View key={record.medical_record_id} style={styles.recordCard}>
               <Text style={styles.recordTitle}>
-                Bệnh án #{record.medical_record_id}
+                Lần khám #{record.medical_record_id}
               </Text>
               <Text style={styles.meta}>
                 Ngày tạo: {dateLabel(record.created_at)} ·{" "}

@@ -166,7 +166,7 @@ info:
     5 mức độ: `0` Không hoạt động · `1-6` Nhẹ · `7-15` Vừa · `16-27` Nặng · `28-42` Rất nặng.
 
     ### Vòng đời bệnh án (Decision D4)
-    `pending` → (bác sĩ `accept`) → `in_progress` → (bác sĩ `PUT` + `status=completed`) → `completed`. Bệnh án `completed` **bị khoá**: không sửa câu trả lời, không thêm đợt tổn thương (lỗi 4003).
+    `pending` → (bác sĩ `accept`) → `in_progress` → (bác sĩ `PUT` + `status=completed`) → `completed`. Lần khám `completed` khóa nội dung phiếu khám. Nhật ký ảnh và UAS7 thuộc bệnh nhân, vẫn ghi tiếp được trước/sau lần khám, không yêu cầu lần khám đang hoạt động.
 
     ## 2. Xác thực & phân quyền động (RBAC)
     1. Mỗi request: kiểm tra JWT (chữ ký, `exp`, `jti` không có trong `token_blacklist`, `iat >= users.password_changed_at`, `users.is_active = 1`) → lỗi `3001/3002/3003`, tài khoản bị khoá `3010`.
@@ -190,7 +190,7 @@ info:
     ## 5. Quy tắc xoá (slide 3.6)
     - **RESTRICT** (lỗi `2003`): xoá chi nhánh/khoa/phòng khi còn nhân viên hoặc khoa trực thuộc; xoá template đang có bệnh án → `4105`; xoá bệnh nhân đã có bệnh án.
     - **SET NULL**: xoá khoa → `rooms.department_id = NULL`; xoá nhân viên → `medical_records.assigned_doctor_id/created_by = NULL`; xoá bệnh án → `media_attachments.medical_record_id = NULL`.
-    - **CASCADE**: template → sections → questions → options; user → token_blacklist; role/permission → role_permissions; bệnh án → answers, đợt tổn thương, UAS7, đơn thuốc, chỉ định xét nghiệm.
+    - **CASCADE**: template → sections → questions → options; user → token_blacklist; role/permission → role_permissions; lần khám → answers, đơn thuốc, chỉ định xét nghiệm. Đợt tổn thương và UAS7 được giữ lại khi xóa lần khám; tham chiếu `medical_record_id` chuyển thành NULL.
 
     ## 6. Phạm vi KHÔNG làm
     AI dự đoán ảnh (`/ai/predict-image`), thông báo/FCM, bảng gộp mã 9992... trong xlsx. Mã `9001-9003`, `9101-9102` không dùng. API xem ảnh dạng binary không cần token và API gắn/ghi hàng loạt ảnh vào câu trả lời của xlsx cũng được bỏ (dùng `file_url` và API đơn lẻ).
@@ -646,7 +646,7 @@ paths:
       description: |-
         **Quyền (RBAC):** `profile.update` - vai trò được cấp mặc định: admin, doctor, patient.
 
-        Gửi **ít nhất 1 trường** (cập nhật từng phần). Không cho đổi `phone`, `role_id`. Sai kiểu (vd `year_of_birth` là chữ) → `2002`.
+        Gửi **ít nhất 1 trường** (cập nhật từng phần). Cho đổi số điện thoại đăng nhập (10 số hợp lệ); trùng tài khoản trả HTTP 409 / `3006`. Không cho đổi `role_id`. Sai kiểu (vd `year_of_birth` là chữ) → `2002`. Form hiện tại chỉ thu thập họ tên, số điện thoại, giới tính, năm sinh và nghề nghiệp tùy chọn; các trường hồ sơ cũ giữ tương thích.
 
         **Mã trả về (HTTP: code nghiệp vụ):**
         - **200**: 1000
@@ -3847,6 +3847,31 @@ paths:
         '500': {$ref: '#/components/responses/E500_9901'}
         '502': {$ref: '#/components/responses/E502_6007'}
         '503': {$ref: '#/components/responses/E503_9902'}
+  /image-attachments/{id}/content:
+    get:
+      tags: [Image Attachments]
+      summary: Đọc nội dung ảnh riêng tư
+      operationId: getImageContent
+      description: |
+        Trả dữ liệu ảnh sau khi xác thực JWT và quyền trên bệnh án.
+        Bệnh nhân chỉ xem ảnh thuộc bệnh án của mình; bác sĩ chỉ xem bệnh án được phân công.
+        Ảnh chưa gắn bệnh án chỉ người upload hoặc admin được đọc.
+        file_url của luồng tải ảnh là đường dẫn tương đối với base API /api/v1.
+      x-permission: media.read
+      x-roles: [admin, doctor, patient]
+      parameters:
+      - {name: id, in: path, required: true, schema: {type: integer}}
+      responses:
+        '200':
+          description: Ảnh nhị phân, Cache-Control private no-store
+          content:
+            image/jpeg: {schema: {type: string, format: binary}}
+            image/png: {schema: {type: string, format: binary}}
+            image/webp: {schema: {type: string, format: binary}}
+        '401': {description: Chưa xác thực hoặc token không hợp lệ}
+        '403': {description: Không có quyền xem ảnh}
+        '404': {description: Không tìm thấy ảnh}
+        '502': {description: Kho ảnh không sẵn sàng}
   /image-attachments/user/{user_id}:
     get:
       tags: [Image Attachments]
@@ -4080,7 +4105,7 @@ paths:
       description: |-
         **Quyền (RBAC):** `lesion_episode.create` - vai trò được cấp mặc định: patient.
 
-        Bệnh án phải của chính bệnh nhân và đang `in_progress`/`pending`. Bệnh án đã `completed` bị khoá, không ghi/sửa/xoá (`4003`). `context_tags` là **chuỗi JSON**.
+        Diary data belongs to the patient. Completing a visit does not lock the diary; an optional visit reference is retained for historical context.
 
         **Mã trả về (HTTP: code nghiệp vụ):**
         - **201**: 1001
@@ -4185,6 +4210,30 @@ paths:
         '409': {$ref: '#/components/responses/E409_4002'}
         '500': {$ref: '#/components/responses/E500_9901'}
         '503': {$ref: '#/components/responses/E503_9902'}
+  /lesion-episodes/patient/{patient_id}:
+    get:
+      tags: [Lesion Episodes]
+      summary: Patient lesion diary across all visits
+      operationId: listPatientLesionEpisodes
+      description: Assigned doctors and admins can read all episodes for the patient. Completed visits still count as an assignment. Patient owners use /lesion-episodes/my.
+      x-permission: lesion_episode.read_record
+      x-roles: [doctor, admin]
+      parameters:
+      - name: patient_id
+        in: path
+        required: true
+        schema: {type: integer, minimum: 1}
+      responses:
+        '200':
+          description: Patient diary, including episodes without a visit
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListMyLesionEpisodesResponse'}
+        '401': {$ref: '#/components/responses/E401_3001_3002_3003'}
+        '403':
+          description: Doctor is not assigned to this patient
+        '404':
+          description: Patient not found
   /lesion-episodes/record/{medical_record_id}:
     get:
       tags: [Lesion Episodes]
@@ -4306,7 +4355,7 @@ paths:
       description: |-
         **Quyền (RBAC):** `lesion_episode.update` - vai trò được cấp mặc định: patient.
 
-        Cập nhật từng phần. Bệnh án đã `completed` bị khoá, không ghi/sửa/xoá (`4003`).
+        Diary data belongs to the patient. Completing a visit does not lock the diary; an optional visit reference is retained for historical context.
 
         **Mã trả về (HTTP: code nghiệp vụ):**
         - **200**: 1000
@@ -4368,7 +4417,7 @@ paths:
       description: |-
         **Quyền (RBAC):** `lesion_episode.delete` - vai trò được cấp mặc định: patient.
 
-        `lesion_locations` và `lesion_photos` xoá theo (CASCADE). Bệnh án đã `completed` bị khoá, không ghi/sửa/xoá (`4003`).
+        Diary data belongs to the patient. Completing a visit does not lock the diary; an optional visit reference is retained for historical context.
 
         **Mã trả về (HTTP: code nghiệp vụ):**
         - **200**: 1000
@@ -4407,7 +4456,7 @@ paths:
       description: |-
         **Quyền (RBAC):** `lesion_location.create` - vai trò được cấp mặc định: patient.
 
-        Bệnh án đã `completed` bị khoá, không ghi/sửa/xoá (`4003`).
+        Diary data belongs to the patient. Completing a visit does not lock the diary; an optional visit reference is retained for historical context.
 
         **Mã trả về (HTTP: code nghiệp vụ):**
         - **201**: 1001
@@ -4516,7 +4565,7 @@ paths:
       description: |-
         **Quyền (RBAC):** `lesion_location.update` - vai trò được cấp mặc định: patient.
 
-        Cập nhật từng phần. Bệnh án đã `completed` bị khoá, không ghi/sửa/xoá (`4003`).
+        Diary data belongs to the patient. Completing a visit does not lock the diary; an optional visit reference is retained for historical context.
 
         **Mã trả về (HTTP: code nghiệp vụ):**
         - **200**: 1000
@@ -4576,7 +4625,7 @@ paths:
       description: |-
         **Quyền (RBAC):** `lesion_location.delete` - vai trò được cấp mặc định: patient.
 
-        `lesion_photos` gắn vị trí này xoá theo (CASCADE). Bệnh án đã `completed` bị khoá, không ghi/sửa/xoá (`4003`).
+        Diary data belongs to the patient. Completing a visit does not lock the diary; an optional visit reference is retained for historical context.
 
         **Mã trả về (HTTP: code nghiệp vụ):**
         - **200**: 1000
@@ -4615,7 +4664,7 @@ paths:
       description: |-
         **Quyền (RBAC):** `lesion_photo.create` - vai trò được cấp mặc định: patient.
 
-        `attachment_id` lấy từ `/image-attachments/upload`. `location_id` có thể bỏ trống (ảnh gắn cả đợt). `milestone`: `start` / `peak` / `normal` (khác → `7006`). Bệnh án đã `completed` bị khoá, không ghi/sửa/xoá (`4003`).
+        Diary data belongs to the patient. Completing a visit does not lock the diary; an optional visit reference is retained for historical context.
 
         **Mã trả về (HTTP: code nghiệp vụ):**
         - **201**: 1001
@@ -4791,7 +4840,7 @@ paths:
       description: |-
         **Quyền (RBAC):** `lesion_photo.update` - vai trò được cấp mặc định: patient.
 
-        Cập nhật `milestone` và/hoặc các điểm. Bệnh án đã `completed` bị khoá, không ghi/sửa/xoá (`4003`).
+        Diary data belongs to the patient. Completing a visit does not lock the diary; an optional visit reference is retained for historical context.
 
         **Mã trả về (HTTP: code nghiệp vụ):**
         - **200**: 1000
@@ -4855,7 +4904,7 @@ paths:
       description: |-
         **Quyền (RBAC):** `lesion_photo.delete` - vai trò được cấp mặc định: patient.
 
-        Chỉ xoá bản ghi `lesion_photos`; file/attachment giữ nguyên. Bệnh án đã `completed` bị khoá, không ghi/sửa/xoá (`4003`).
+        Diary data belongs to the patient. Completing a visit does not lock the diary; an optional visit reference is retained for historical context.
 
         **Mã trả về (HTTP: code nghiệp vụ):**
         - **200**: 1000
@@ -4894,7 +4943,7 @@ paths:
       description: |-
         **Quyền (RBAC):** `uas7.eligibility` - vai trò được cấp mặc định: patient.
 
-        `eligible = "true"` khi bệnh nhân có bệnh án đang điều trị (`in_progress`) - lấy bệnh án mới nhất; khi đó trả thêm `medical_record_id`. Ngược lại `"false"`. Giá trị là **chuỗi**, không phải boolean.
+        Eligible when the authenticated user has a patient profile. No active visit is required. Returns a string boolean; no visit ID is returned.
 
         **Mã trả về (HTTP: code nghiệp vụ):**
         - **200**: 1000
@@ -4913,7 +4962,7 @@ paths:
               examples:
                 success_1000:
                   summary: 1000 - OK
-                  value: {code: '1000', message: OK, data: {eligible: 'true', medical_record_id: '101'}}
+                  value: {code: '1000', message: OK, data: {eligible: 'true'}}
                 not_eligible:
                   summary: Chưa đủ điều kiện
                   value: {code: '1000', message: OK, data: {eligible: 'false'}}
@@ -4929,7 +4978,7 @@ paths:
       description: |-
         **Quyền (RBAC):** `uas7.create` - vai trò được cấp mặc định: patient.
 
-        Mỗi ngày một bản ghi (`UNIQUE(patient_id, score_date)`). `iss7` = điểm NGỨA 0-3; `hss7` = điểm SỐ LƯỢNG MỀ ĐAY 0-3 (D5 - xem mô tả chung). `daily_score = iss7 + hss7`. Thứ tự kiểm tra: thiếu `score_date` (`5005`) → định dạng ngày (`2006`) → đủ điều kiện (`5001`) → khoảng điểm (`5003`/`5004`) → trùng ngày (`5002`).
+        Patient diary: one entry per patient per date. No visit is required; optional medical_record_id must belong to the patient, regardless of visit status. iss7 and hss7 are 0-3; daily_score is their sum. Duplicate dates return 5002.
 
         **Mã trả về (HTTP: code nghiệp vụ):**
         - **201**: 1001
@@ -5682,6 +5731,7 @@ components:
           pattern: ^\d+$
           example: '12'
         medical_record_id:
+          nullable: true
           type: string
           description: ID số nguyên **dạng chuỗi** (theo spec của thầy cho module này).
           pattern: ^\d+$
@@ -5811,6 +5861,7 @@ components:
           pattern: ^\d+$
           example: '15'
         medical_record_id:
+          nullable: true
           type: string
           description: ID số nguyên **dạng chuỗi** (theo spec của thầy cho module này).
           pattern: ^\d+$
@@ -6093,6 +6144,7 @@ components:
     UpdateProfileRequest:
       type: object
       properties:
+        phone: {type: string, pattern: '^(03|05|07|08|09)\d{8}$', example: '0912345678'}
         full_name: {type: string, example: Nguyễn Văn A}
         gender: {type: string, enum: [male, female, other], example: male}
         year_of_birth: {type: integer, nullable: true, example: 1995}
@@ -6857,6 +6909,7 @@ components:
       type: object
       properties:
         medical_record_id:
+          nullable: true
           type: string
           description: ID số nguyên **dạng chuỗi** (theo spec của thầy cho module này).
           pattern: ^\d+$
@@ -6886,7 +6939,7 @@ components:
           example: '2'
         medication_unit: {type: string, enum: [minute, hour, day], nullable: true, example: hour}
         description: {type: string, example: Nổi ở tay và bụng}
-      required: [medical_record_id, name]
+      required: [name]
     ListMyLesionEpisodesResponse:
       allOf:
       - {$ref: '#/components/schemas/BaseResponse'}
@@ -7054,11 +7107,6 @@ components:
             type: object
             properties:
               eligible: {type: string, enum: ['true', 'false'], example: 'true'}
-              medical_record_id:
-                type: string
-                description: Chỉ có khi `eligible = "true"`. ID số nguyên **dạng chuỗi** (theo spec của thầy cho module này).
-                pattern: ^\d+$
-                example: '101'
     CreateUas7ScoreResponse:
       allOf:
       - {$ref: '#/components/schemas/BaseResponse'}
@@ -7067,6 +7115,7 @@ components:
       type: object
       properties:
         medical_record_id:
+          nullable: true
           type: string
           description: ID số nguyên **dạng chuỗi** (theo spec của thầy cho module này).
           pattern: ^\d+$
@@ -7078,7 +7127,7 @@ components:
           description: Điểm số lượng mề đay 0-3 (chuỗi). Ngoài khoảng → `5004`.
           example: '1'
         note: {type: string, example: Ngứa nhiều về đêm}
-      required: [medical_record_id, score_date, iss7, hss7]
+      required: [score_date, iss7, hss7]
     ListUas7ByPatientResponse:
       allOf:
       - {$ref: '#/components/schemas/BaseResponse'}

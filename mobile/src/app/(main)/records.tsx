@@ -8,10 +8,10 @@ export default function RecordsScreen() {
 
   return (
     <FeatureMenuScreen
-      title={isDoctor ? 'Bệnh án cần xử lý' : 'Bệnh án'}
+      title={isDoctor ? 'Lần khám cần xử lý' : 'Lần khám'}
       subtitle={isDoctor
-        ? 'Tiếp nhận hồ sơ chờ, tiếp tục bệnh án đang khám và hoàn tất chỉ định.'
-        : 'Tạo và theo dõi bệnh án của bạn.'}
+        ? 'Tiếp nhận hồ sơ chờ, tiếp tục lần khám đang khám và hoàn tất chỉ định.'
+        : 'Tạo và theo dõi lần khám của bạn.'}
       slugs={['create-medical-record', 'my-medical-records', 'pending-records', 'in-progress-records', 'lab-requests', 'prescriptions']}
     />
   );

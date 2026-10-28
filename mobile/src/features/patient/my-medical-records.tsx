@@ -19,7 +19,7 @@ export function MyMedicalRecords({ session }: { session: Session }) {
       const result = await patientRecordsApi.history(session);
       if (active()) setRecords(result);
     } catch (caught) {
-      if (active()) setError(caught instanceof Error ? caught.message : 'Không tải được bệnh án.');
+      if (active()) setError(caught instanceof Error ? caught.message : 'Không tải được lần khám.');
     } finally { if (active()) setLoading(false); }
   }, [session]);
 
@@ -31,19 +31,19 @@ export function MyMedicalRecords({ session }: { session: Session }) {
 
   return <SafeAreaView style={styles.safeArea} edges={['bottom']}><ScrollView contentContainerStyle={styles.content}>
     <Text style={styles.eyebrow}>BỆNH ÁN / BỆNH NHÂN</Text>
-    <Text style={styles.title}>Bệnh án của tôi</Text>
+    <Text style={styles.title}>Lần khám của tôi</Text>
     <Text style={styles.subtitle}>Theo dõi trạng thái hồ sơ đã gửi.</Text>
     {loading ? <ActivityIndicator color={appColors.primary} style={styles.loading} /> : null}
     {error ? <View style={styles.message}><Text style={styles.error}>{error}</Text><Pressable onPress={() => void load(() => true)}><Text style={styles.retry}>Thử lại</Text></Pressable></View> : null}
     {!loading && !error && records.length === 0 ? <View style={styles.message}>
-      <Text style={styles.cardTitle}>Bạn chưa có bệnh án</Text>
-      <Text style={styles.subtitle}>Tạo bệnh án để gửi tới bác sĩ.</Text>
-      <Pressable onPress={() => router.push({ pathname: '/feature/[slug]', params: { slug: 'create-medical-record' } })}><Text style={styles.retry}>Tạo bệnh án</Text></Pressable>
+      <Text style={styles.cardTitle}>Bạn chưa có lần khám</Text>
+      <Text style={styles.subtitle}>Tạo lần khám để gửi tới bác sĩ.</Text>
+      <Pressable onPress={() => router.push({ pathname: '/feature/[slug]', params: { slug: 'create-medical-record' } })}><Text style={styles.retry}>Tạo lần khám</Text></Pressable>
     </View> : null}
     {!loading && !error ? records.map((record) => <Pressable key={record.medical_record_id}
       accessibilityRole="button" onPress={() => router.push({ pathname: '/medical-records/[id]', params: { id: String(record.medical_record_id) } })}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
-      <Text style={styles.cardTitle}>Bệnh án #{record.medical_record_id}</Text>
+      <Text style={styles.cardTitle}>Lần khám #{record.medical_record_id}</Text>
       <Text style={styles.status}>{record.status === 'pending' ? 'Chờ tiếp nhận' : record.status === 'in_progress' ? 'Đang khám' : 'Đã hoàn tất'}</Text>
       <Text style={styles.date}>{new Date(record.created_at).toLocaleString('vi-VN')}</Text>
     </Pressable>) : null}

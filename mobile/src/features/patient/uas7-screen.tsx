@@ -55,7 +55,7 @@ export function Uas7Screen({ session }: { session: Session }) {
     setSuccess(null);
     try {
       await uas7Api.create(session, {
-        medical_record_id: eligibility.medical_record_id, score_date: scoreDate,
+        score_date: scoreDate,
         iss7: String(itch), hss7: String(wheals), note: note.trim(),
       });
       setSuccess('Đã lưu điểm UAS7 hôm nay.');
@@ -69,7 +69,7 @@ export function Uas7Screen({ session }: { session: Session }) {
     <ScrollView contentContainerStyle={styles.content}>
       <Text style={styles.eyebrow}>THEO DÕI SỨC KHỎE</Text>
       <Text style={styles.title}>Chấm điểm UAS7</Text>
-      <Text style={styles.subtitle}>Ghi mức ngứa và số lượng mề đay mỗi ngày. Điểm ngày từ 0 đến 6.</Text>
+      <Text style={styles.subtitle}>Nhật ký theo ngày, không phụ thuộc lần khám. Ghi mức ngứa và số lượng mề đay; điểm ngày từ 0 đến 6.</Text>
       {loading ? <ActivityIndicator style={styles.loading} color={appColors.primary} /> : null}
       {error ? <View style={styles.card}><Text style={styles.error}>{error}</Text>
         <Pressable accessibilityRole="button" onPress={retry}><Text style={styles.link}>Thử lại</Text></Pressable>
@@ -77,7 +77,7 @@ export function Uas7Screen({ session }: { session: Session }) {
       {success ? <Text style={styles.success}>{success}</Text> : null}
       {!loading && eligibility?.eligible === 'false' ? <View style={styles.card}>
         <Text style={styles.cardTitle}>Chưa thể chấm điểm</Text>
-        <Text style={styles.body}>Bạn cần có bệnh án ở trạng thái đang khám. Điểm đã ghi trước đây vẫn hiển thị bên dưới.</Text>
+        <Text style={styles.body}>Hồ sơ bệnh nhân chưa sẵn sàng. Điểm đã ghi trước đây vẫn hiển thị bên dưới.</Text>
       </View> : null}
       {!loading && eligibility?.eligible === 'true' ? <View style={styles.card}>
         <Text style={styles.cardTitle}>Hôm nay · {scoreDate}</Text>

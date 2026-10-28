@@ -352,7 +352,7 @@ CREATE INDEX idx_answer_images_attachment ON answer_images(attachment_id);
 -- 4.1 lesion_episodes ----------------------------------------------------
 CREATE TABLE lesion_episodes (
     episode_id            INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    medical_record_id     INTEGER NOT NULL REFERENCES medical_records(medical_record_id) ON DELETE CASCADE,
+    medical_record_id     INTEGER REFERENCES medical_records(medical_record_id) ON DELETE SET NULL,
     patient_id            INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     name                  VARCHAR(255) NOT NULL,
     occurred_at           TIMESTAMPTZ,
@@ -410,7 +410,7 @@ CREATE INDEX idx_photos_attachment ON lesion_photos(attachment_id);
 CREATE TABLE uas7_scores (
     uas7_id            INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     patient_id         INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    medical_record_id  INTEGER NOT NULL REFERENCES medical_records(medical_record_id) ON DELETE CASCADE,
+    medical_record_id  INTEGER REFERENCES medical_records(medical_record_id) ON DELETE SET NULL,
     score_date         DATE NOT NULL,
     iss7               SMALLINT NOT NULL CHECK (iss7 BETWEEN 0 AND 3),
     hss7               SMALLINT NOT NULL CHECK (hss7 BETWEEN 0 AND 3),
