@@ -215,7 +215,6 @@ export function LoginPage() {
       {/* Hospital Footer */}
       <footer className="hospital-login-footer">
         <p>© {new Date().getFullYear()} BỆNH VIỆN DA LIỄU TRUNG ƯƠNG</p>
-        <p className="footer-sub">Hệ thống hỗ trợ Bác sĩ theo dõi, đánh giá và tư vấn điều trị người bệnh mày đay ngoại trú</p>
       </footer>
     </main>
   );

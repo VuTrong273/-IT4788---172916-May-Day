@@ -33,11 +33,9 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 18% 22%, rgba(2, 132, 199, 0.16), transparent 38%),
-    radial-gradient(circle at 82% 35%, rgba(0, 75, 135, 0.14), transparent 45%),
-    radial-gradient(circle at 50% 80%, rgba(13, 148, 136, 0.08), transparent 50%),
-    linear-gradient(135deg, #eef5fc 0%, #f6faff 50%, #edf4fa 100%);
-}
+    linear-gradient(rgba(207, 232, 245, 0.6)),
+    url('/images/background.jpg') center / cover no-repeat;
+  }
 
 /* Subtle tech grid */
 .medical-bg-grid {
