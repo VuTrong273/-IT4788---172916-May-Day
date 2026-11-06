@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { router, useLocalSearchParams } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useForm } from 'react-hook-form';
 import {
   ImageBackground,
@@ -93,6 +93,8 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      <Stack.Screen options={{ headerShown: false }} />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardView}
@@ -244,10 +246,20 @@ export default function LoginScreen() {
                   isSubmitting && styles.loginButtonDisabled,
                 ]}
               >
-                <Text style={styles.loginButtonIcon}>➜</Text>
                 <Text style={styles.loginButtonText}>
                   {isSubmitting ? 'ĐANG ĐĂNG NHẬP...' : 'ĐĂNG NHẬP'}
                 </Text>
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.back()}
+                style={({ pressed }) => [
+                  styles.backButton,
+                  pressed && styles.backButtonPressed,
+                ]}
+              >
+                <Text style={styles.backButtonText}>← Quay lại</Text>
               </Pressable>
 
               {/* Patient information */}
@@ -295,6 +307,7 @@ export default function LoginScreen() {
             </Text>
           </View>
         </ScrollView>
+
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

@@ -98,6 +98,7 @@ const styles = StyleSheet.create({
     color: '#344F63',
     fontSize: 14,
     fontWeight: '800',
+    fontFamily: 'Montserrat',
   },
 
   inputContainer: {
@@ -113,6 +114,7 @@ const styles = StyleSheet.create({
     color: '#193A50',
     fontSize: 15,
     paddingHorizontal: 15,
+    fontFamily: 'Montserrat',
   },
 
   inputWithAccessory: {
@@ -133,6 +135,7 @@ const styles = StyleSheet.create({
     color: '#07518A',
     fontSize: 13,
     fontWeight: '800',
+    fontFamily: 'Montserrat',
   },
 
   inputError: {

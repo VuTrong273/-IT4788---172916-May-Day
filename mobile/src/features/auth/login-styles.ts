@@ -313,6 +313,30 @@ export const styles = StyleSheet.create({
   },
 
   // Login button
+  backButton: {
+    width: '100%',
+    alignSelf: 'stretch',
+    marginTop: 0,
+    paddingVertical: 16,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#07518A',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  backButtonPressed: {
+    opacity: 0.7,
+  },
+
+  backButtonText: {
+    color: '#07518A',
+    fontFamily: 'Montserrat',
+    fontSize: 16,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
 
   loginButton: {
     minHeight: 54,
