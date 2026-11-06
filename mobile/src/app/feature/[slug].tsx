@@ -1,14 +1,21 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { appColors } from '@/constants/app-theme';
+import { AccessControlScreen } from '@/features/admin/access-control-screen';
+import { AdminUsersScreen } from '@/features/admin/admin-users-screen';
 import { useAuthenticatedSession } from '@/features/auth/use-authenticated-session';
+import { ClinicStructureScreen } from '@/features/clinic-structure/clinic-structure-screen';
 import { MedicalRecordList } from '@/features/doctor/medical-record-list';
+import { CreateMedicalRecord } from '@/features/records/create-medical-record';
 import { getDemoRole, getFeatureRoute } from '@/features/navigation/feature-routes';
+import { LesionEpisodeScreen } from '@/features/lesion-tracking/lesion-episode-screen';
+import { TemplateCatalogScreen } from '@/features/templates/template-catalog-screen';
+import { Uas7Screen } from '@/features/uas7/uas7-screen';
 
 export default function FeatureScreen() {
-  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { slug, medicalRecordId } = useLocalSearchParams<{ slug: string; medicalRecordId?: string }>();
   const session = useAuthenticatedSession();
   const feature = getFeatureRoute(slug);
   const role = session ? getDemoRole(session.user.role_id) : null;
@@ -18,6 +25,50 @@ export default function FeatureScreen() {
 
   if (isAllowed && (slug === 'pending-records' || slug === 'in-progress-records')) {
     return <MedicalRecordList session={session} status={slug === 'pending-records' ? 'pending' : 'in_progress'} />;
+  }
+  if (isAllowed && (slug === 'lab-requests' || slug === 'prescriptions') && role === 'doctor') {
+    return (
+      <MedicalRecordList
+        clinicalFocus={slug === 'lab-requests' ? 'lab' : 'prescription'}
+        session={session}
+        status="in_progress"
+      />
+    );
+  }
+  if (isAllowed && slug === 'my-results' && role === 'patient') {
+    return <Redirect href="/records" />;
+  }
+  if (isAllowed && slug === 'clinic-branches' && (role === 'admin' || role === 'doctor')) {
+    return <ClinicStructureScreen session={session} role={role} />;
+  }
+  if (isAllowed && slug === 'admin-medical-records') {
+    return <MedicalRecordList session={session} />;
+  }
+  if (isAllowed && slug === 'create-medical-record') {
+    return <CreateMedicalRecord session={session} />;
+  }
+  if (isAllowed && slug === 'my-medical-records') {
+    return <Redirect href="/records" />;
+  }
+  if (isAllowed && slug === 'templates') {
+    return <TemplateCatalogScreen />;
+  }
+  if (isAllowed && slug === 'access-control') {
+    return <AccessControlScreen session={session} />;
+  }
+  if (isAllowed && slug === 'admin-users' && role === 'admin') {
+    return <AdminUsersScreen session={session} />;
+  }
+  if (isAllowed && slug === 'uas7') {
+    return <Uas7Screen />;
+  }
+  if (isAllowed && slug === 'lesion-tracking') {
+    return (
+      <LesionEpisodeScreen
+        medicalRecordId={medicalRecordId}
+        recordLinkedReadOnly={role === 'doctor' || role === 'admin'}
+      />
+    );
   }
 
   return (

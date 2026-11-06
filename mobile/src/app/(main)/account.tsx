@@ -4,9 +4,8 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { appColors } from '@/constants/app-theme';
-import { authApi } from '@/features/auth/auth-api';
 import { roleLabels } from '@/features/auth/roles';
-import { clearSession } from '@/features/auth/session';
+import { clearAuthenticatedSession } from '@/features/auth/sign-out';
 import { useAuthenticatedSession } from '@/features/auth/use-authenticated-session';
 import { getDemoRole } from '@/features/navigation/feature-routes';
 
@@ -18,18 +17,11 @@ export default function AccountScreen() {
     if (!session || isLoggingOut) return;
     setIsLoggingOut(true);
 
-    let serverLogoutFailed = false;
     try {
-      await authApi.logout(session.token);
-    } catch {
-      serverLogoutFailed = true;
-    }
-
-    try {
-      await clearSession();
+      const serverConfirmed = await clearAuthenticatedSession(session);
       router.dismissTo('/');
-      if (serverLogoutFailed) {
-        Alert.alert('Đã đăng xuất trên điện thoại', 'Backend chưa xác nhận hủy token. Hãy kiểm tra kết nối mạng.');
+      if (!serverConfirmed) {
+        Alert.alert('Đã đăng xuất trên thiết bị', 'Máy chủ chưa xác nhận hủy phiên. Hãy kiểm tra kết nối mạng.');
       }
     } catch {
       Alert.alert('Lỗi', 'Không thể xóa phiên đăng nhập trên điện thoại.');
@@ -47,7 +39,7 @@ export default function AccountScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.eyebrow}>MAY DAY / TÀI KHOẢN</Text>
         <Text style={styles.title}>Tài khoản</Text>

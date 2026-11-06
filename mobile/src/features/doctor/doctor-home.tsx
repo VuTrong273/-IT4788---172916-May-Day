@@ -16,26 +16,11 @@ const quickSlugs = ['in-progress-records', 'patients', 'lab-requests', 'prescrip
 
 export function DoctorHome({ fullName }: { fullName: string }) {
   const firstName = fullName.trim().split(/\s+/).at(-1) || fullName;
-  const initial = fullName.trim().charAt(0).toUpperCase() || 'B';
   const quickFeatures = quickSlugs.map(getFeatureRoute).filter((item) => item !== undefined);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.topRow}>
-          <View>
-            <Text style={styles.brand}>MAY DAY</Text>
-            <Text style={styles.brandCaption}>Không gian bác sĩ</Text>
-          </View>
-          <Pressable
-            accessibilityLabel="Mở trang tài khoản"
-            accessibilityRole="button"
-            onPress={() => router.push('/account')}
-            style={styles.avatar}>
-            <Text style={styles.avatarText}>{initial}</Text>
-          </Pressable>
-        </View>
-
         <Text style={styles.greeting}>Chào bác sĩ {firstName}</Text>
         <Text style={styles.greetingSubtitle}>Các công việc khám bệnh được sắp theo đúng luồng xử lý.</Text>
 
@@ -82,18 +67,13 @@ export function DoctorHome({ fullName }: { fullName: string }) {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: appColors.canvas },
   content: { flexGrow: 1, width: '100%', maxWidth: 680, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 24, paddingBottom: 38 },
-  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  brand: { color: appColors.primaryDark, fontSize: 15, fontWeight: '900', letterSpacing: 1.2 },
-  brandCaption: { marginTop: 4, color: appColors.muted, fontSize: 12 },
-  avatar: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 16, backgroundColor: appColors.primarySoft },
-  avatarText: { color: appColors.primaryDark, fontSize: 19, fontWeight: '800' },
   greeting: { marginTop: 33, color: appColors.ink, fontSize: 29, fontWeight: '800' },
   greetingSubtitle: { marginTop: 8, color: appColors.muted, fontSize: 14, lineHeight: 21 },
   hero: { overflow: 'hidden', marginTop: 26, borderRadius: 24, backgroundColor: appColors.primaryDark, padding: 24 },
-  heroAccent: { position: 'absolute', right: -70, top: -62, width: 180, height: 180, borderWidth: 25, borderColor: '#247660', borderRadius: 100 },
-  heroEyebrow: { color: '#A9E2CB', fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  heroAccent: { position: 'absolute', right: -70, top: -62, width: 180, height: 180, borderWidth: 25, borderColor: '#0284C7', borderRadius: 100 },
+  heroEyebrow: { color: '#BAE3F8', fontSize: 10, fontWeight: '800', letterSpacing: 1 },
   heroTitle: { maxWidth: 280, marginTop: 17, color: appColors.surface, fontSize: 25, fontWeight: '800', lineHeight: 32 },
-  heroDescription: { maxWidth: 330, marginTop: 9, color: '#D5EDE3', fontSize: 13, lineHeight: 20 },
+  heroDescription: { maxWidth: 330, marginTop: 9, color: '#E6F2FC', fontSize: 13, lineHeight: 20 },
   heroButton: { minHeight: 46, marginTop: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 13, backgroundColor: appColors.surface, paddingHorizontal: 16 },
   heroButtonText: { color: appColors.primaryDark, fontSize: 14, fontWeight: '800' },
   heroButtonArrow: { color: appColors.primaryDark, fontSize: 24 },

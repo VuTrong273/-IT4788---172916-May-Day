@@ -1,5 +1,12 @@
 export type UserRole = 'patient' | 'doctor' | 'admin';
 
+export function getAuthenticatedRole(roleId: unknown): UserRole | null {
+  if (roleId === 1) return 'admin';
+  if (roleId === 2) return 'doctor';
+  if (roleId === 3) return 'patient';
+  return null;
+}
+
 export const roleOptions: {
   value: UserRole;
   label: string;
@@ -18,7 +25,7 @@ export const roleOptions: {
   {
     value: 'admin',
     label: 'Quản trị viên',
-    description: 'Quản trị hệ thống trên Web app.',
+    description: 'Quản lý người dùng, cơ sở khám và cấu hình hệ thống.',
   },
 ];
 

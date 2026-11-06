@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FormTextInput } from '@/features/auth/components/form-text-input';
-import { authApi } from '@/features/auth/auth-api';
+import { authApi, shouldClearAuthSecrets } from '@/features/auth/auth-api';
 import {
   loginSchema,
   type LoginFormValues,
@@ -23,19 +23,33 @@ import { getUserRole, roleLabels } from '@/features/auth/roles';
 import { saveSession } from '@/features/auth/session';
 
 export default function LoginScreen() {
-  const params = useLocalSearchParams<{ role?: string; registered?: string; password_reset?: string }>();
+  const params = useLocalSearchParams<{
+    role?: string;
+    registered?: string;
+    password_reset?: string;
+    session_expired?: string;
+    session_cleanup_failed?: string;
+  }>();
   const role = getUserRole(params.role);
-  const [submitMessage, setSubmitMessage] = useState(
-    params.password_reset === '1'
-      ? 'Đặt lại mật khẩu thành công. Hãy đăng nhập.'
-      : params.registered === '1' ? 'Đăng ký thành công. Hãy đăng nhập.' : '',
+  const initialMessage = params.session_expired === '1'
+    ? 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
+    : params.session_cleanup_failed === '1'
+      ? 'Mật khẩu đã được đổi trên máy chủ, nhưng phiên cũ chưa thể xóa khỏi thiết bị. Hãy đăng nhập bằng mật khẩu mới.'
+      : params.password_reset === '1'
+        ? 'Đặt lại mật khẩu thành công. Hãy đăng nhập.'
+        : params.registered === '1'
+          ? 'Đăng ký thành công. Hãy đăng nhập.'
+          : '';
+  const [submitMessage, setSubmitMessage] = useState(initialMessage);
+  const [submitError, setSubmitError] = useState(
+    params.session_expired === '1' || params.session_cleanup_failed === '1',
   );
-  const [submitError, setSubmitError] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const {
     control,
     handleSubmit,
+    setValue,
     formState: { isSubmitting },
   } = useForm<LoginFormValues>({
     defaultValues: { phone: '', password: '' },
@@ -54,6 +68,9 @@ export default function LoginScreen() {
       });
       router.replace('/home');
     } catch (error) {
+      if (shouldClearAuthSecrets(error)) {
+        setValue('password', '');
+      }
       setSubmitError(true);
       setSubmitMessage(
         error instanceof Error ? error.message : 'Đăng nhập thất bại.',

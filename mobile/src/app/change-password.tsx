@@ -13,7 +13,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { authApi } from '@/features/auth/auth-api';
+import { appColors } from '@/constants/app-theme';
+import { authApi, isExpiredAuthSession, shouldClearAuthSecrets } from '@/features/auth/auth-api';
 import { clearSession, getSession, type Session } from '@/features/auth/session';
 
 export default function ChangePasswordScreen() {
@@ -67,9 +68,31 @@ export default function ChangePasswordScreen() {
         new_password: newPassword,
         confirm_password: confirmPassword,
       });
-      await clearSession();
+      try {
+        await clearSession();
+      } catch {
+        router.dismissTo({
+          pathname: '/login',
+          params: { password_changed: '1', session_cleanup_failed: '1' },
+        });
+        return;
+      }
       router.dismissTo({ pathname: '/', params: { password_changed: '1' } });
     } catch (error) {
+      if (isExpiredAuthSession(error)) {
+        try {
+          await clearSession();
+        } catch {
+          // Remove the protected screen even if local storage cannot be cleared.
+        }
+        router.dismissTo({ pathname: '/login', params: { session_expired: '1' } });
+        return;
+      }
+      if (shouldClearAuthSecrets(error)) {
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      }
       setErrorMessage(error instanceof Error ? error.message : 'Đổi mật khẩu thất bại.');
     } finally {
       setIsSubmitting(false);
@@ -79,7 +102,7 @@ export default function ChangePasswordScreen() {
   if (!session) {
     return (
       <SafeAreaView style={styles.loading}>
-        <ActivityIndicator color="#15966C" />
+        <ActivityIndicator color={appColors.primary} />
       </SafeAreaView>
     );
   }
@@ -99,12 +122,13 @@ export default function ChangePasswordScreen() {
             <View style={styles.field}>
               <Text style={styles.label}>Mật khẩu hiện tại</Text>
               <TextInput
+                accessibilityLabel="Mật khẩu hiện tại"
                 autoCapitalize="none"
                 autoComplete="current-password"
                 autoCorrect={false}
                 onChangeText={setOldPassword}
                 placeholder="Nhập mật khẩu hiện tại"
-                placeholderTextColor="#91A19C"
+                placeholderTextColor={appColors.muted}
                 secureTextEntry
                 style={styles.input}
                 value={oldPassword}
@@ -113,12 +137,13 @@ export default function ChangePasswordScreen() {
             <View style={styles.field}>
               <Text style={styles.label}>Mật khẩu mới</Text>
               <TextInput
+                accessibilityLabel="Mật khẩu mới"
                 autoCapitalize="none"
                 autoComplete="new-password"
                 autoCorrect={false}
                 onChangeText={setNewPassword}
                 placeholder="Ít nhất 6 ký tự"
-                placeholderTextColor="#91A19C"
+                placeholderTextColor={appColors.muted}
                 secureTextEntry
                 style={styles.input}
                 value={newPassword}
@@ -127,12 +152,13 @@ export default function ChangePasswordScreen() {
             <View style={styles.field}>
               <Text style={styles.label}>Xác nhận mật khẩu mới</Text>
               <TextInput
+                accessibilityLabel="Xác nhận mật khẩu mới"
                 autoCapitalize="none"
                 autoComplete="new-password"
                 autoCorrect={false}
                 onChangeText={setConfirmPassword}
                 placeholder="Nhập lại mật khẩu mới"
-                placeholderTextColor="#91A19C"
+                placeholderTextColor={appColors.muted}
                 secureTextEntry
                 style={styles.input}
                 value={confirmPassword}
@@ -161,22 +187,22 @@ export default function ChangePasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, justifyContent: 'center', backgroundColor: '#F5FAF8' },
-  safeArea: { flex: 1, backgroundColor: '#F5FAF8' },
+  loading: { flex: 1, justifyContent: 'center', backgroundColor: appColors.canvas },
+  safeArea: { flex: 1, backgroundColor: appColors.canvas },
   keyboardView: { flex: 1 },
   container: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 28, paddingBottom: 40 },
-  title: { color: '#102A25', fontSize: 30, fontWeight: '800' },
-  subtitle: { marginTop: 10, color: '#63756F', fontSize: 15, lineHeight: 22 },
+  title: { color: appColors.ink, fontSize: 30, fontWeight: '800' },
+  subtitle: { marginTop: 10, color: appColors.muted, fontSize: 15, lineHeight: 22 },
   form: { marginTop: 28, gap: 18 },
   field: { gap: 8 },
-  label: { color: '#243B35', fontSize: 14, fontWeight: '700' },
+  label: { color: appColors.ink, fontSize: 14, fontWeight: '700' },
   input: {
     minHeight: 54,
     borderWidth: 1,
-    borderColor: '#CCDAD5',
+    borderColor: appColors.border,
     borderRadius: 15,
     backgroundColor: '#FFFFFF',
-    color: '#102A25',
+    color: appColors.ink,
     fontSize: 16,
     paddingHorizontal: 16,
   },
@@ -186,7 +212,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 15,
-    backgroundColor: '#15966C',
+    backgroundColor: appColors.primary,
   },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },

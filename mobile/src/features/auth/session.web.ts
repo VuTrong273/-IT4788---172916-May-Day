@@ -1,27 +1,62 @@
-import { parseSession, SESSION_KEY, type Session } from './session.shared';
+import {
+  InvalidSessionError,
+  parseSession,
+  SESSION_KEY,
+  SessionStorageError,
+  type Session,
+} from './session.shared';
 
 export type { Session } from './session.shared';
 
-function getWebStorage(): Storage | null {
-  return typeof window === 'undefined' ? null : window.sessionStorage;
+function getWebStorage(
+  operation: 'read' | 'write' | 'clear',
+): Storage | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.sessionStorage;
+  } catch {
+    throw new SessionStorageError(operation, 'web');
+  }
 }
 
 export async function saveSession(session: Session): Promise<void> {
-  const storage = getWebStorage();
-  if (!storage) throw new Error('Không thể lưu phiên đăng nhập trên trình duyệt.');
-  storage.setItem(SESSION_KEY, JSON.stringify(session));
+  if (!parseSession(JSON.stringify(session))) throw new InvalidSessionError();
+  const storage = getWebStorage('write');
+  if (!storage) throw new SessionStorageError('write', 'web');
+  try {
+    storage.setItem(SESSION_KEY, JSON.stringify(session));
+  } catch {
+    throw new SessionStorageError('write', 'web');
+  }
 }
 
 export async function getSession(): Promise<Session | null> {
-  const storage = getWebStorage();
+  const storage = getWebStorage('read');
   if (!storage) return null;
 
-  const stored = storage.getItem(SESSION_KEY);
+  let stored: string | null;
+  try {
+    stored = storage.getItem(SESSION_KEY);
+  } catch {
+    throw new SessionStorageError('read', 'web');
+  }
   const session = parseSession(stored);
-  if (stored && !session) storage.removeItem(SESSION_KEY);
+  if (stored && !session) {
+    try {
+      storage.removeItem(SESSION_KEY);
+    } catch {
+      throw new SessionStorageError('clear', 'web');
+    }
+  }
   return session;
 }
 
 export async function clearSession(): Promise<void> {
-  getWebStorage()?.removeItem(SESSION_KEY);
+  const storage = getWebStorage('clear');
+  if (!storage) return;
+  try {
+    storage.removeItem(SESSION_KEY);
+  } catch {
+    throw new SessionStorageError('clear', 'web');
+  }
 }

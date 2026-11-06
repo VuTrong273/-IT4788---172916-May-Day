@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { authApi } from '@/features/auth/auth-api';
+import { authApi, shouldClearAuthSecrets } from '@/features/auth/auth-api';
 import { otpStyles as styles } from '@/features/auth/otp-styles';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -59,6 +59,11 @@ export default function ForgotPasswordScreen() {
         router.replace({ pathname: '/login', params: { role: params.role ?? 'patient', password_reset: '1' } });
       }
     } catch (caught) {
+      if (step === 'reset' && shouldClearAuthSecrets(caught)) {
+        setOtp('');
+        setNewPassword('');
+        setConfirmPassword('');
+      }
       setError(caught instanceof Error ? caught.message : 'Không thể xử lý yêu cầu.');
     } finally {
       setIsSubmitting(false);
@@ -79,11 +84,13 @@ export default function ForgotPasswordScreen() {
             <View style={styles.field}>
               <Text style={styles.label}>Email khôi phục</Text>
               <TextInput
+                accessibilityLabel="Email khôi phục"
                 autoCapitalize="none"
                 autoComplete="email"
                 autoCorrect={false}
                 editable={step === 'email'}
                 keyboardType="email-address"
+                maxLength={254}
                 onChangeText={setEmail}
                 placeholder="Nhập email đã xác minh"
                 style={styles.input}
@@ -95,9 +102,10 @@ export default function ForgotPasswordScreen() {
                 <View style={styles.field}>
                   <Text style={styles.label}>Mã OTP</Text>
                   <TextInput
+                    accessibilityLabel="Mã OTP"
                     keyboardType="number-pad"
                     maxLength={6}
-                    onChangeText={setOtp}
+                    onChangeText={(value) => setOtp(value.replace(/\D/g, '').slice(0, 6))}
                     placeholder="6 chữ số"
                     style={styles.input}
                     value={otp}
@@ -106,6 +114,7 @@ export default function ForgotPasswordScreen() {
                 <View style={styles.field}>
                   <Text style={styles.label}>Mật khẩu mới</Text>
                   <TextInput
+                    accessibilityLabel="Mật khẩu mới"
                     autoCapitalize="none"
                     autoComplete="new-password"
                     onChangeText={setNewPassword}
@@ -117,6 +126,7 @@ export default function ForgotPasswordScreen() {
                 <View style={styles.field}>
                   <Text style={styles.label}>Xác nhận mật khẩu mới</Text>
                   <TextInput
+                    accessibilityLabel="Xác nhận mật khẩu mới"
                     autoCapitalize="none"
                     autoComplete="new-password"
                     onChangeText={setConfirmPassword}

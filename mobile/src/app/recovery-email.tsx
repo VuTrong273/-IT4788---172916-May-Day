@@ -12,9 +12,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { authApi } from '@/features/auth/auth-api';
+import { appColors } from '@/constants/app-theme';
+import { authApi, isExpiredAuthSession, shouldClearAuthSecrets } from '@/features/auth/auth-api';
 import { otpStyles as styles } from '@/features/auth/otp-styles';
-import { getSession, type Session } from '@/features/auth/session';
+import { clearSession, getSession, type Session } from '@/features/auth/session';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -45,6 +46,10 @@ export default function RecoveryEmailScreen() {
       setError('Nhập email hợp lệ và mật khẩu hiện tại.');
       return;
     }
+    if (step === 'email' && email.trim().length > 254) {
+      setError('Email không được dài quá 254 ký tự.');
+      return;
+    }
     if (step === 'verify' && !/^\d{6}$/.test(otp)) {
       setError('Mã OTP phải có 6 chữ số.');
       return;
@@ -61,6 +66,19 @@ export default function RecoveryEmailScreen() {
         router.replace('/profile');
       }
     } catch (caught) {
+      if (isExpiredAuthSession(caught)) {
+        try {
+          await clearSession();
+        } catch {
+          // Remove the protected screen even if local storage cannot be cleared.
+        }
+        router.dismissTo({ pathname: '/login', params: { session_expired: '1' } });
+        return;
+      }
+      if (shouldClearAuthSecrets(caught)) {
+        if (step === 'email') setPassword('');
+        else setOtp('');
+      }
       setError(caught instanceof Error ? caught.message : 'Không thể xử lý yêu cầu.');
     } finally {
       setIsSubmitting(false);
@@ -68,7 +86,7 @@ export default function RecoveryEmailScreen() {
   }
 
   if (!session) {
-    return <SafeAreaView style={styles.safeArea}><ActivityIndicator color="#15966C" /></SafeAreaView>;
+    return <SafeAreaView style={styles.safeArea}><ActivityIndicator color={appColors.primary} /></SafeAreaView>;
   }
 
   return (
@@ -87,10 +105,12 @@ export default function RecoveryEmailScreen() {
                 <View style={styles.field}>
                   <Text style={styles.label}>Email nhận OTP</Text>
                   <TextInput
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    autoCorrect={false}
-                    keyboardType="email-address"
+                      accessibilityLabel="Email nhận OTP"
+                      autoCapitalize="none"
+                      autoComplete="email"
+                      autoCorrect={false}
+                      keyboardType="email-address"
+                      maxLength={254}
                     onChangeText={setEmail}
                     placeholder="ten@example.com"
                     style={styles.input}
@@ -100,6 +120,7 @@ export default function RecoveryEmailScreen() {
                 <View style={styles.field}>
                   <Text style={styles.label}>Mật khẩu hiện tại</Text>
                   <TextInput
+                    accessibilityLabel="Mật khẩu hiện tại"
                     autoCapitalize="none"
                     autoComplete="current-password"
                     onChangeText={setPassword}
@@ -113,9 +134,10 @@ export default function RecoveryEmailScreen() {
               <View style={styles.field}>
                 <Text style={styles.label}>Mã OTP</Text>
                 <TextInput
+                  accessibilityLabel="Mã OTP"
                   keyboardType="number-pad"
                   maxLength={6}
-                  onChangeText={setOtp}
+                  onChangeText={(value) => setOtp(value.replace(/\D/g, '').slice(0, 6))}
                   placeholder="6 chữ số"
                   style={styles.input}
                   value={otp}

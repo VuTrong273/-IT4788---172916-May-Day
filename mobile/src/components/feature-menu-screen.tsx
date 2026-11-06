@@ -21,7 +21,7 @@ export function FeatureMenuScreen({ title, subtitle, slugs }: Props) {
     .filter((item): item is FeatureRoute => item !== undefined && role !== null && item.roles.includes(role));
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.eyebrow}>MAY DAY / CHỨC NĂNG</Text>
         <Text style={styles.title}>{title}</Text>

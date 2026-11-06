@@ -38,10 +38,17 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.19.0",
     "@types/react": "~19.2.2",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.2",
-    "typescript": "~6.0.3"
+    "jest": "^29.7.0",
+    "jest-expo": "~57.0.0",
+    "typescript": "~6.0.3",
+    "yaml": "^2.9.1"
   },
   "scripts": {
     "start": "expo start",
@@ -49,7 +56,12 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "build": "expo export --platform web",
+    "lint": "expo lint",
+    "test": "npm run test:unit && npm run test:contract",
+    "test:unit": "jest --runInBand",
+    "test:contract": "node ./scripts/check-openapi-coverage.cjs",
+    "test:e2e:web": "playwright test --config=playwright.config.ts"
   },
   "private": true
 }
