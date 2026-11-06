@@ -472,4 +472,80 @@ export const styles = StyleSheet.create({
     letterSpacing: 1,
     fontFamily: 'Montserrat',
   },
+
+  
+  // Form dùng cho quên mật khẩu
+  authForm: {
+    gap: 18,
+  },
+
+  authField: {
+    gap: 8,
+  },
+
+  authLabel: {
+    color: '#243B35',
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: 'Montserrat',
+  },
+
+  authInput: {
+    minHeight: 54,
+    borderWidth: 1,
+    borderColor: '#CCDAD5',
+    borderRadius: 13,
+    backgroundColor: '#FFFFFF',
+    color: '#102A25',
+    fontSize: 15,
+    paddingHorizontal: 16,
+    fontFamily: 'Montserrat',
+  },
+
+  authError: {
+    color: '#A62F3D',
+    fontSize: 13,
+    lineHeight: 20,
+    fontFamily: 'Montserrat',
+  },
+
+  authPrimaryButton: {
+    minHeight: 54,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: '#07518A',
+    paddingHorizontal: 20,
+    shadowColor: '#07518A',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+
+  authPrimaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+    fontFamily: 'Montserrat',
+  },
+
+  authSecondaryButton: {
+    minHeight: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  authSecondaryButtonText: {
+    color: '#07518A',
+    fontSize: 13,
+    fontWeight: '800',
+    fontFamily: 'Montserrat',
+  },
+
+  authRoot: {
+    flex: 1,
+  },
+
 });
