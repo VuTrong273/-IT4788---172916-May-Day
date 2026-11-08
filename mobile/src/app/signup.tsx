@@ -1,21 +1,24 @@
+
 import { useState } from 'react';
 import { router } from 'expo-router';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { appColors } from '@/constants/app-theme';
 import { authApi } from '@/features/auth/auth-api';
+import { styles } from '@/features/auth/login-styles';
 
 const phonePattern = /^(03|05|07|08|09)[0-9]{8}$/;
+
 const genderOptions = [
   { value: null, label: 'Không chọn' },
   { value: 'male' as const, label: 'Nam' },
@@ -26,221 +29,333 @@ const genderOptions = [
 export default function SignupScreen() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [gender, setGender] = useState<'male' | 'female' | 'other' | null>(null);
+  const [gender, setGender] = useState<
+    'male' | 'female' | 'other' | null
+  >(null);
   const [yearOfBirth, setYearOfBirth] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const { width } = useWindowDimensions();
+  const showHospitalInfo = width >= 850;
+
   async function handleSignup() {
     if (isSubmitting) return;
+
     const name = fullName.trim();
+
     if (!name) {
       setErrorMessage('Vui lòng nhập họ tên.');
       return;
     }
+
     if (!phonePattern.test(phone)) {
-      setErrorMessage('Số điện thoại phải có 10 chữ số và bắt đầu bằng 03, 05, 07, 08 hoặc 09.');
+      setErrorMessage(
+        'Số điện thoại phải có 10 chữ số và bắt đầu bằng 03, 05, 07, 08 hoặc 09.',
+      );
       return;
     }
+
     if (password.length < 6) {
       setErrorMessage('Mật khẩu cần có ít nhất 6 ký tự.');
       return;
     }
+
     if (password !== confirmPassword) {
       setErrorMessage('Hai mật khẩu không khớp.');
       return;
     }
-    if (yearOfBirth && (!/^\d{4}$/.test(yearOfBirth) || Number(yearOfBirth) < 1900 || Number(yearOfBirth) > 2100)) {
+
+    if (
+      yearOfBirth &&
+      (!/^\d{4}$/.test(yearOfBirth) ||
+        Number(yearOfBirth) < 1900 ||
+        Number(yearOfBirth) > 2100)
+    ) {
       setErrorMessage('Năm sinh phải từ 1900 đến 2100.');
       return;
     }
 
     setIsSubmitting(true);
     setErrorMessage('');
+
     try {
       await authApi.signup({
         full_name: name,
         phone,
         password,
         ...(gender ? { gender } : {}),
-        ...(yearOfBirth ? { year_of_birth: Number(yearOfBirth) } : {}),
+        ...(yearOfBirth
+          ? { year_of_birth: Number(yearOfBirth) }
+          : {}),
       });
+
       router.replace('/login?role=patient&registered=1');
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Đăng ký thất bại.');
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Đăng ký thất bại.',
+      );
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.keyboardView}>
-        <ScrollView
-          contentContainerStyle={styles.container}
-          keyboardShouldPersistTaps="handled">
-          <Text style={styles.title}>Tạo tài khoản bệnh nhân</Text>
-          <Text style={styles.subtitle}>
-            Dùng số điện thoại và mật khẩu này để đăng nhập sau khi đăng ký.
-          </Text>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      {/* Background giống màn hình đăng nhập */}
+      <View style={styles.authRoot}>
+        <Image
+          source={require('../../assets/images/login-background.jpg')}
+          style={styles.background}
+          resizeMode="cover"
+        />
 
-          <View style={styles.form}>
-            <View style={styles.field}>
-              <Text style={styles.label}>Họ và tên</Text>
-              <TextInput
-                autoCapitalize="words"
-                autoComplete="name"
-                onChangeText={setFullName}
-                placeholder="Nhập họ và tên"
-                placeholderTextColor="#91A19C"
-                style={styles.input}
-                value={fullName}
-              />
-            </View>
-            <View style={styles.field}>
-              <Text style={styles.label}>Số điện thoại</Text>
-              <TextInput
-                autoComplete="tel"
-                keyboardType="phone-pad"
-                maxLength={10}
-                onChangeText={setPhone}
-                placeholder="Nhập số điện thoại"
-                placeholderTextColor="#91A19C"
-                style={styles.input}
-                value={phone}
-              />
-            </View>
-            <View style={styles.field}>
-              <Text style={styles.label}>Giới tính (không bắt buộc)</Text>
-              <View accessibilityLabel="Chọn giới tính" style={styles.genderOptions}>
-                {genderOptions.map((option) => (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: gender === option.value }}
-                    key={option.value}
-                    onPress={() => setGender(option.value)}
-                    style={[
-                      styles.genderOption,
-                      gender === option.value && styles.genderOptionSelected,
-                    ]}>
-                    <Text style={[
-                      styles.genderOptionText,
-                      gender === option.value && styles.genderOptionTextSelected,
-                    ]}>
-                      {option.label}
+        <View style={styles.backgroundOverlay} />
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.keyboardView}
+        >
+          <ScrollView
+            contentContainerStyle={styles.container}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Header: Mobile chỉ hiển thị MAYDAY */}
+            <View style={styles.header}>
+              {/* Logo MAYDAY */}
+              <View style={styles.brandRow}>
+                <View style={styles.brandMark}>
+                  <Text style={styles.brandMarkText}>+</Text>
+                </View>
+
+                <View>
+                  <Text style={styles.brandName}>MAYDAY</Text>
+                  <Text style={styles.brandDescription}>
+                    Clinical AI Care
+                  </Text>
+                </View>
+              </View>
+
+              {/* Thông tin bệnh viện: chỉ hiện khi đủ chiều rộng */}
+              {showHospitalInfo && (
+                <View style={styles.hospitalHeader}>
+                  <View style={styles.hospitalNameRow}>
+                    <Text style={styles.hospitalPlus}>+</Text>
+                    <Text
+                      style={styles.hospitalName}
+                      numberOfLines={1}
+                    >
+                      BỆNH VIỆN DA LIỄU TRUNG ƯƠNG
                     </Text>
-                  </Pressable>
-                ))}
+                  </View>
+
+                  <Text
+                    style={styles.hospitalEnglish}
+                    numberOfLines={1}
+                  >
+                    NATIONAL HOSPITAL OF DERMATOLOGY AND VENEREOLOGY
+                  </Text>
+
+                  <Text
+                    style={styles.hospitalSubtitle}
+                    numberOfLines={1}
+                  >
+                    HỆ THỐNG QUẢN LÝ VÀ THEO DÕI ĐIỀU TRỊ BỆNH MÀY ĐAY (MAYDAY)
+                  </Text>
+                </View>
+              )}
+
+              {/* Badge */}
+              <View style={styles.roleBadge}>
+                <Text style={styles.roleBadgeText}>
+                  CỔNG BỆNH NHÂN
+                </Text>
               </View>
             </View>
-            <View style={styles.field}>
-              <Text style={styles.label}>Năm sinh (không bắt buộc)</Text>
-              <TextInput
-                accessibilityLabel="Năm sinh"
-                keyboardType="number-pad"
-                maxLength={4}
-                onChangeText={setYearOfBirth}
-                placeholder="YYYY"
-                placeholderTextColor={appColors.muted}
-                style={styles.input}
-                value={yearOfBirth}
-              />
-            </View>
-            <View style={styles.field}>
-              <Text style={styles.label}>Mật khẩu</Text>
-              <TextInput
-                autoCapitalize="none"
-                autoComplete="new-password"
-                onChangeText={setPassword}
-                placeholder="Ít nhất 6 ký tự"
-                placeholderTextColor="#91A19C"
-                secureTextEntry
-                style={styles.input}
-                value={password}
-              />
-            </View>
-            <View style={styles.field}>
-              <Text style={styles.label}>Nhập lại mật khẩu</Text>
-              <TextInput
-                autoCapitalize="none"
-                autoComplete="new-password"
-                onChangeText={setConfirmPassword}
-                placeholder="Nhập lại mật khẩu"
-                placeholderTextColor="#91A19C"
-                secureTextEntry
-                style={styles.input}
-                value={confirmPassword}
-              />
+
+            <View style={styles.headerDivider} />
+
+            {/* Signup card */}
+            <View style={styles.loginCard}>
+              <View style={styles.cardHeading}>
+                <Text style={styles.title}>ĐĂNG KÝ</Text>
+                <Text style={styles.subtitle}>
+                  Tạo tài khoản để sử dụng hệ thống MayDay
+                </Text>
+              </View>
+
+              <View style={styles.authForm}>
+                {/* Họ và tên */}
+                <View style={styles.authField}>
+                  <Text style={styles.authLabel}>Họ và tên</Text>
+                  <TextInput
+                    autoCapitalize="words"
+                    autoComplete="name"
+                    onChangeText={setFullName}
+                    placeholder="Nhập họ và tên"
+                    placeholderTextColor="#8299A9"
+                    style={styles.authInput}
+                    value={fullName}
+                  />
+                </View>
+
+                {/* Số điện thoại */}
+                <View style={styles.authField}>
+                  <Text style={styles.authLabel}>Số điện thoại</Text>
+                  <TextInput
+                    autoComplete="tel"
+                    keyboardType="phone-pad"
+                    maxLength={10}
+                    onChangeText={setPhone}
+                    placeholder="Nhập số điện thoại"
+                    placeholderTextColor="#8299A9"
+                    style={styles.authInput}
+                    value={phone}
+                  />
+                </View>
+
+                {/* Giới tính */}
+                <View style={styles.authField}>
+                  <Text style={styles.authLabel}>
+                    Giới tính (không bắt buộc)
+                  </Text>
+
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                    {genderOptions.map((option) => {
+                      const selected = gender === option.value;
+
+                      return (
+                        <Pressable
+                          key={option.label}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected }}
+                          onPress={() => setGender(option.value)}
+                          style={{
+                            minHeight: 42,
+                            paddingHorizontal: 15,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderWidth: 1,
+                            borderColor: selected ? '#168ACB' : '#D9EAF4',
+                            borderRadius: 10,
+                            backgroundColor: selected ? '#E7F3FA' : '#FFFFFF',
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: selected ? '#168ACB' : '#71899A',
+                              fontSize: 14,
+                              fontWeight: '700',
+                            }}
+                          >
+                            {option.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                {/* Năm sinh */}
+                <View style={styles.authField}>
+                  <Text style={styles.authLabel}>
+                    Năm sinh (không bắt buộc)
+                  </Text>
+                  <TextInput
+                    accessibilityLabel="Năm sinh"
+                    keyboardType="number-pad"
+                    maxLength={4}
+                    onChangeText={setYearOfBirth}
+                    placeholder="YYYY"
+                    placeholderTextColor="#8299A9"
+                    style={styles.authInput}
+                    value={yearOfBirth}
+                  />
+                </View>
+
+                {/* Mật khẩu */}
+                <View style={styles.authField}>
+                  <Text style={styles.authLabel}>Mật khẩu</Text>
+                  <TextInput
+                    autoCapitalize="none"
+                    autoComplete="new-password"
+                    onChangeText={setPassword}
+                    placeholder="Ít nhất 6 ký tự"
+                    placeholderTextColor="#8299A9"
+                    secureTextEntry
+                    style={styles.authInput}
+                    value={password}
+                  />
+                </View>
+
+                {/* Nhập lại mật khẩu */}
+                <View style={styles.authField}>
+                  <Text style={styles.authLabel}>
+                    Nhập lại mật khẩu
+                  </Text>
+                  <TextInput
+                    autoCapitalize="none"
+                    autoComplete="new-password"
+                    onChangeText={setConfirmPassword}
+                    placeholder="Nhập lại mật khẩu"
+                    placeholderTextColor="#8299A9"
+                    secureTextEntry
+                    style={styles.authInput}
+                    value={confirmPassword}
+                  />
+                </View>
+
+                {errorMessage ? (
+                  <View style={[styles.messageBox, styles.errorBox]}>
+                    <Text style={[styles.messageText, styles.errorMessage]}>
+                      {errorMessage}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {/* Nút đăng ký */}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: isSubmitting }}
+                  disabled={isSubmitting}
+                  onPress={() => void handleSignup()}
+                  style={[
+                    styles.authPrimaryButton,
+                    isSubmitting && { opacity: 0.6 },
+                  ]}
+                >
+                  <Text style={styles.authPrimaryButtonText}>
+                    {isSubmitting ? 'ĐANG ĐĂNG KÝ...' : 'ĐĂNG KÝ'}
+                  </Text>
+                </Pressable>
+
+                {/* Quay lại đăng nhập */}
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => router.replace('/login?role=patient')}
+                  style={styles.backButton}
+                >
+                  <Text style={styles.backButtonText}>
+                    ← Quay lại đăng nhập
+                  </Text>
+                </Pressable>
+              </View>
             </View>
 
-            {errorMessage ? (
-              <Text accessibilityRole="alert" style={styles.errorText}>
-                {errorMessage}
+            {/* Footer */}
+            <View style={styles.footer}>
+              <View style={styles.footerDivider} />
+              <Text style={styles.footerText}>© 2026 MAYDAY</Text>
+              <Text style={styles.footerSubtext}>
+                CLINICAL AI CARE
               </Text>
-            ) : null}
-
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: isSubmitting }}
-              disabled={isSubmitting}
-              onPress={() => void handleSignup()}
-              style={[styles.button, isSubmitting && styles.buttonDisabled]}>
-              <Text style={styles.buttonText}>
-                {isSubmitting ? 'Đang đăng ký...' : 'Đăng ký'}
-              </Text>
-            </Pressable>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: appColors.canvas },
-  keyboardView: { flex: 1 },
-  container: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 28, paddingBottom: 40 },
-  title: { color: appColors.ink, fontSize: 30, fontWeight: '800' },
-  subtitle: { marginTop: 10, color: appColors.muted, fontSize: 15, lineHeight: 22 },
-  form: { marginTop: 28, gap: 18 },
-  field: { gap: 8 },
-  label: { color: appColors.ink, fontSize: 14, fontWeight: '700' },
-  input: {
-    minHeight: 54,
-    borderWidth: 1,
-    borderColor: appColors.border,
-    borderRadius: 15,
-    backgroundColor: '#FFFFFF',
-    color: appColors.ink,
-    fontSize: 16,
-    paddingHorizontal: 16,
-  },
-  errorText: { color: '#A62F3D', fontSize: 14, lineHeight: 20 },
-  button: {
-    minHeight: 54,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 15,
-    backgroundColor: appColors.primary,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
-  genderOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  genderOption: {
-    minWidth: 68,
-    minHeight: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: appColors.border,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-  },
-  genderOptionSelected: { borderColor: appColors.primary, backgroundColor: appColors.primarySoft },
-  genderOptionText: { color: appColors.muted, fontSize: 14, fontWeight: '700' },
-  genderOptionTextSelected: { color: appColors.primary, fontSize: 14, fontWeight: '800' },
-});

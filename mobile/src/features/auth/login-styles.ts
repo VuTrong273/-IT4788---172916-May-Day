@@ -484,7 +484,7 @@ export const styles = StyleSheet.create({
   },
 
   authLabel: {
-    color: '#243B35',
+    color: '#174B6D',
     fontSize: 14,
     fontWeight: '700',
     fontFamily: 'Montserrat',
@@ -493,10 +493,10 @@ export const styles = StyleSheet.create({
   authInput: {
     minHeight: 54,
     borderWidth: 1,
-    borderColor: '#CCDAD5',
+    borderColor: '#D5E4EF',
     borderRadius: 13,
     backgroundColor: '#FFFFFF',
-    color: '#102A25',
+    color: '#174B6D',
     fontSize: 15,
     paddingHorizontal: 16,
     fontFamily: 'Montserrat',

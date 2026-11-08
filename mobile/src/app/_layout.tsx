@@ -16,11 +16,11 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: '#F5FAF8' },
           headerShadowVisible: false,
           headerStyle: { backgroundColor: '#F5FAF8' },
-          headerTintColor: '#087A55',
+          headerTintColor: '#1b81ed',
         }}>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ title: 'Đăng nhập' }} />
-        <Stack.Screen name="signup" options={{ title: 'Đăng ký bệnh nhân' }} />
+        <Stack.Screen name="signup" options={{ headerShown: false }} />
         <Stack.Screen name="(main)" options={{ headerShown: false }} />
         <Stack.Screen name="dashboard" options={{ headerShown: false }} />
         <Stack.Screen name="feature/[slug]" options={{ title: 'Chức năng' }} />

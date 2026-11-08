@@ -10,6 +10,7 @@ import {
   Pressable,
   ScrollView,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -61,6 +62,9 @@ export default function LoginScreen() {
     defaultValues: { phone: '', password: '' },
     resolver: zodResolver(loginSchema),
   });
+
+  const { width } = useWindowDimensions();
+  const showHospitalInfo = width >= 850;
 
   async function handleLogin(values: LoginFormValues) {
     setSubmitMessage('');
@@ -115,6 +119,7 @@ export default function LoginScreen() {
         >
           {/* Brand header */}
           <View style={styles.header}>
+            {/* Logo MAYDAY */}
             <View style={styles.brandRow}>
               <View style={styles.brandMark}>
                 <Text style={styles.brandMarkText}>+</Text>
@@ -128,27 +133,39 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            <View style={styles.hospitalHeader}>
-              <View style={styles.hospitalNameRow}>
-                <Text style={styles.hospitalPlus}>+</Text>
-                <Text style={styles.hospitalName}>
-                  BỆNH VIỆN DA LIỄU TRUNG ƯƠNG
+            {/* Thông tin bệnh viện: chỉ hiện khi đủ chiều rộng */}
+            {showHospitalInfo && (
+              <View style={styles.hospitalHeader}>
+                <View style={styles.hospitalNameRow}>
+                  <Text style={styles.hospitalPlus}>+</Text>
+                  <Text
+                    style={styles.hospitalName}
+                    numberOfLines={1}
+                  >
+                    BỆNH VIỆN DA LIỄU TRUNG ƯƠNG
+                  </Text>
+                </View>
+
+                <Text
+                  style={styles.hospitalEnglish}
+                  numberOfLines={1}
+                >
+                  NATIONAL HOSPITAL OF DERMATOLOGY AND VENEREOLOGY
+                </Text>
+
+                <Text
+                  style={styles.hospitalSubtitle}
+                  numberOfLines={1}
+                >
+                  HỆ THỐNG QUẢN LÝ VÀ THEO DÕI ĐIỀU TRỊ BỆNH MÀY ĐAY (MAYDAY)
                 </Text>
               </View>
+            )}
 
-              <Text style={styles.hospitalEnglish}>
-                NATIONAL HOSPITAL OF DERMATOLOGY AND VENEREOLOGY
-              </Text>
-
-              <Text style={styles.hospitalSubtitle}>
-                HỆ THỐNG QUẢN LÝ VÀ THEO DÕI ĐIỀU TRỊ BỆNH MÀY ĐAY
-                {' '}(MAYDAY)
-              </Text>
-            </View>
-
+            {/* Badge */}
             <View style={styles.roleBadge}>
               <Text style={styles.roleBadgeText}>
-                CỔNG {roleLabels[role].toUpperCase()}
+                CỔNG BỆNH NHÂN
               </Text>
             </View>
           </View>
