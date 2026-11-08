@@ -27,6 +27,8 @@ import {
   type WorkspaceNavigationItem,
 } from '@/features/navigation/workspace-navigation';
 
+import { typography } from '@/constants/typography';
+
 type Props = {
   session: Session;
   role: UserRole | null;
@@ -40,6 +42,7 @@ export function WorkspaceShell({ session, role, children }: Props) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
+  const isHome = pathname === '/home';
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [jumpQuery, setJumpQuery] = useState('');
@@ -288,10 +291,6 @@ function Sidebar(props: {
 }) {
   return (
     <View style={styles.sidebar}>
-      <View style={styles.brand}>
-        <View style={styles.brandMark}><Text style={styles.brandMarkText}>M</Text></View>
-        <Text style={styles.brandName}>MAY DAY</Text>
-      </View>
       <View style={styles.workspaceIdentity}>
         <View style={styles.workspaceAvatar}><Text style={styles.workspaceAvatarText}>M</Text></View>
         <View style={styles.workspaceCopy}>
@@ -351,10 +350,6 @@ function NavigationPanel(props: {
         ))}
       </ScrollView>
       <View style={styles.navFooter}>
-        <View style={styles.scopeCard}>
-          <Text style={styles.scopeTitle}>Phạm vi dữ liệu</Text>
-          <Text style={styles.scopeText}>Hồ sơ và thao tác tuân theo quyền được cấp cho tài khoản.</Text>
-        </View>
         <View style={styles.identityRow}>
           <Text style={styles.avatarSmall}>{props.fullName.trim().charAt(0).toUpperCase() || 'M'}</Text>
           <View style={styles.identityCopy}>

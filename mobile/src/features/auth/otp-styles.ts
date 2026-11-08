@@ -1,6 +1,8 @@
 
 import { StyleSheet } from 'react-native';
 
+import { typography } from '@/constants/typography';
+
 export const otpStyles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -66,7 +68,7 @@ export const otpStyles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '700',
     lineHeight: 36,
-    fontFamily: 'Montserrat',
+    fontFamily: typography.bold,
   },
 
   brandName: {
@@ -74,14 +76,14 @@ export const otpStyles = StyleSheet.create({
     fontSize: 19,
     fontWeight: '900',
     letterSpacing: 1.3,
-    fontFamily: 'Montserrat',
+    fontFamily: typography.extraBold,
   },
 
   brandDescription: {
     color: '#6C91A9',
     fontSize: 11,
     letterSpacing: 0.5,
-    fontFamily: 'Montserrat',
+    fontFamily: typography.regular,
   },
 
   hospitalHeader: {
@@ -109,7 +111,7 @@ export const otpStyles = StyleSheet.create({
     fontWeight: '900',
     textAlign: 'center',
     letterSpacing: 0.5,
-    fontFamily: 'Montserrat',
+    fontFamily: typography.extraBold,
   },
 
   hospitalEnglish: {
@@ -119,7 +121,7 @@ export const otpStyles = StyleSheet.create({
     letterSpacing: 0.7,
     textAlign: 'center',
     marginTop: 3,
-    fontFamily: 'Montserrat',
+    fontFamily: typography.bold,
   },
 
   hospitalSubtitle: {
@@ -129,7 +131,7 @@ export const otpStyles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 15,
-    fontFamily: 'Montserrat',
+    fontFamily: typography.semiBold,
   },
 
   roleBadge: {
@@ -145,7 +147,7 @@ export const otpStyles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     textAlign: 'center',
-    fontFamily: 'Montserrat',
+    fontFamily: typography.extraBold,
   },
 
   headerDivider: {
@@ -190,7 +192,7 @@ export const otpStyles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 1.2,
     textAlign: 'center',
-    fontFamily: 'Montserrat',
+    fontFamily: typography.extraBold,
   },
 
   subtitle: {
@@ -199,7 +201,7 @@ export const otpStyles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 20,
-    fontFamily: 'Montserrat',
+    fontFamily: typography.regular,
   },
 
   // Form fields
@@ -215,7 +217,7 @@ export const otpStyles = StyleSheet.create({
     color: '#193C50',
     fontSize: 14,
     fontWeight: '700',
-    fontFamily: 'Montserrat',
+    fontFamily: typography.bold,
   },
 
   input: {
@@ -227,7 +229,7 @@ export const otpStyles = StyleSheet.create({
     color: '#193C50',
     fontSize: 15,
     paddingHorizontal: 20,
-    fontFamily: 'Montserrat',
+    fontFamily: typography.regular,
   },
 
   // Resend OTP
@@ -242,7 +244,7 @@ export const otpStyles = StyleSheet.create({
     color: '#07518A',
     fontSize: 13,
     fontWeight: '800',
-    fontFamily: 'Montserrat',
+    fontFamily: typography.extraBold,
   },
 
   // Message
@@ -258,7 +260,7 @@ export const otpStyles = StyleSheet.create({
     color: '#175B83',
     fontSize: 13,
     lineHeight: 20,
-    fontFamily: 'Montserrat',
+    fontFamily: typography.regular,
   },
 
   errorBox: {
@@ -270,7 +272,7 @@ export const otpStyles = StyleSheet.create({
     color: '#A62F3D',
     fontSize: 13,
     lineHeight: 20,
-    fontFamily: 'Montserrat',
+    fontFamily: typography.regular,
   },
 
   // Buttons
@@ -308,7 +310,7 @@ export const otpStyles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '900',
     letterSpacing: 0.8,
-    fontFamily: 'Montserrat',
+    fontFamily: typography.extraBold,
   },
 
   backButton: {
@@ -327,7 +329,7 @@ export const otpStyles = StyleSheet.create({
     color: '#07518A',
     fontSize: 14,
     fontWeight: '700',
-    fontFamily: 'Montserrat',
+    fontFamily: typography.bold,
   },
 
   // Footer giống Login
@@ -348,13 +350,42 @@ export const otpStyles = StyleSheet.create({
     color: '#7591A5',
     fontSize: 11,
     textAlign: 'center',
-    fontFamily: 'Montserrat',
+    fontFamily: typography.regular,
   },
 
   footerSubtext: {
     color: '#A1B4C1',
     fontSize: 9,
     letterSpacing: 1,
-    fontFamily: 'Montserrat',
+    fontFamily: typography.regular,
+  },
+
+  // Additional styles for recovery-email
+  error: {
+    color: '#DC2626',
+    fontSize: 13,
+    marginTop: 8,
+    fontFamily: typography.regular,
+  },
+
+  button: {
+    minHeight: 48,
+    borderRadius: 12,
+    backgroundColor: '#168ACB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    marginTop: 16,
+  },
+
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+    fontFamily: typography.bold,
   },
 });

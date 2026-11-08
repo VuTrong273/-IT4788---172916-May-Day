@@ -6,10 +6,11 @@ import {
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FeatureCard } from '@/components/feature-card';
+import { fontSizes, palette, typography } from '@/constants/typography';
 import { roleLabels } from '@/features/auth/roles';
 import { useAuthenticatedSession } from '@/features/auth/use-authenticated-session';
 import { DoctorHome } from '@/features/doctor/doctor-home';
@@ -18,20 +19,9 @@ import {
   getFeatureRoute,
 } from '@/features/navigation/feature-routes';
 
-const colors = {
-  primary: '#168B78',
-  primaryDark: '#117565',
-  primaryLight: '#E5F3EF',
-  canvas: '#F3F8F6',
-  surface: '#FFFFFF',
-  ink: '#263D39',
-  muted: '#789089',
-  border: '#E2ECE7',
-  accent: '#DDF1EA',
-};
-
 export default function HomeScreen() {
   const session = useAuthenticatedSession();
+  const { width } = useWindowDimensions();
 
   const role = session
     ? getDemoRole(session.user.role_id)
@@ -49,7 +39,7 @@ export default function HomeScreen() {
     .filter((item) => item !== undefined);
 
   if (!session) {
-    return <SafeAreaView style={styles.safeArea} />;
+    return <View style={styles.empty} />;
   }
 
   if (role === 'doctor') {
@@ -61,286 +51,203 @@ export default function HomeScreen() {
     session.user.full_name;
 
   const isAdmin = role === 'admin';
+  const isWide = width >= 900;
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.brand}>
-            <View style={styles.brandIcon}>
-              <Text style={styles.brandIconText}>+</Text>
+    <ScrollView
+      style={styles.root}
+      contentContainerStyle={[
+        styles.content,
+        isWide && styles.contentWide,
+      ]}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.heading}>
+        <Text style={styles.eyebrow}>KHÔNG GIAN LÀM VIỆC</Text>
+
+        <Text style={styles.greeting}>
+          Xin chào, {firstName}!
+        </Text>
+
+        <Text style={styles.subtitle}>
+          {role ? roleLabels[role] : 'Tài khoản'} · Chúc bạn một ngày làm việc hiệu quả.
+        </Text>
+      </View>
+
+      <View style={styles.hero}>
+        <View style={styles.heroCircle} />
+        <View style={styles.heroCircleSmall} />
+
+        <View style={styles.heroTop}>
+          <Text style={styles.heroEyebrow}>MAY DAY HEALTHCARE</Text>
+
+          <View style={styles.heroIcon}>
+            <Text style={styles.heroIconText}>✚</Text>
+          </View>
+        </View>
+
+        <Text style={styles.heroTitle}>
+          {isAdmin
+            ? 'Chăm sóc tốt hơn,\nbắt đầu từ đây.'
+            : 'Theo dõi sức khỏe\ntừng ngày.'}
+        </Text>
+
+        <Text style={styles.heroDescription}>
+          {isAdmin
+            ? 'Quản lý hệ thống và theo dõi quy trình chăm sóc sức khỏe trong cùng một không gian.'
+            : 'Các chức năng giúp bạn theo dõi sức khỏe và quá trình điều trị một cách thuận tiện.'}
+        </Text>
+      </View>
+
+      {quickFeatures.length > 0 ? (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeadingCopy}>
+              <Text style={styles.sectionTitle}>
+                {isAdmin ? 'Quản lý nhanh' : 'Chức năng của bạn'}
+              </Text>
+
+              <Text style={styles.sectionSubtitle}>
+                {isAdmin
+                  ? 'Các khu vực quản lý được cấp quyền'
+                  : 'Truy cập nhanh các chức năng thường dùng'}
+              </Text>
             </View>
 
-            <View>
-              <Text style={styles.brandName}>MAYDAY</Text>
-              <Text style={styles.brandSubtitle}>
-                Healthcare System
-              </Text>
+            <View style={styles.sectionIcon}>
+              <Text style={styles.sectionIconText}>✦</Text>
             </View>
           </View>
 
-          <View style={styles.headerBadge}>
-            <Text style={styles.headerBadgeText}>
-              {isAdmin ? 'QUẢN TRỊ VIÊN' : 'BỆNH NHÂN'}
+          <View style={styles.featureList}>
+            {quickFeatures.map((feature, index) => (
+              <FeatureCard
+                feature={feature}
+                index={index}
+                key={feature.slug}
+                prominent={index === 0}
+              />
+            ))}
+          </View>
+        </View>
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/account')}
+          style={({ pressed }) => [
+            styles.accountCard,
+            pressed && styles.pressed,
+          ]}
+        >
+          <View style={styles.accountIcon}>
+            <Text style={styles.accountIconText}>♙</Text>
+          </View>
+
+          <View style={styles.accountContent}>
+            <Text style={styles.accountCardTitle}>
+              Thông tin tài khoản
+            </Text>
+
+            <Text style={styles.accountCardText}>
+              Xem hồ sơ, bảo mật và email khôi phục.
             </Text>
           </View>
-        </View>
 
-        {/* Greeting */}
-        <View style={styles.greetingSection}>
-          <Text style={styles.greetingEyebrow}>
-            KHÔNG GIAN LÀM VIỆC
-          </Text>
+          <Text style={styles.accountArrow}>›</Text>
+        </Pressable>
+      )}
 
-          <Text style={styles.greeting}>
-            Xin chào, {firstName}!
-          </Text>
+      <View style={styles.footer}>
+        <View style={styles.footerDivider} />
 
-          <Text style={styles.greetingSubtitle}>
-            {role ? roleLabels[role] : 'Tài khoản'} ·
-            {' '}Chúc bạn một ngày làm việc hiệu quả.
-          </Text>
-        </View>
+        <Text style={styles.footerText}>
+          MAY DAY HEALTHCARE SYSTEM
+        </Text>
 
-        {/* Hero */}
-        <View style={styles.hero}>
-          <View style={styles.heroDecoration} />
-
-          <View style={styles.heroTop}>
-            <Text style={styles.heroEyebrow}>
-              MAYDAY HEALTHCARE
-            </Text>
-
-            <View style={styles.heroIcon}>
-              <Text style={styles.heroIconText}>✚</Text>
-            </View>
-          </View>
-
-          <Text style={styles.heroTitle}>
-            {isAdmin
-              ? 'Chăm sóc tốt hơn,\nbắt đầu từ đây.'
-              : 'Theo dõi sức khỏe\ntừng ngày.'}
-          </Text>
-
-          <Text style={styles.heroDescription}>
-            {isAdmin
-              ? 'Quản lý hệ thống và theo dõi quy trình chăm sóc sức khỏe trong cùng một không gian.'
-              : 'Các chức năng giúp bạn theo dõi sức khỏe và quá trình điều trị một cách thuận tiện.'}
-          </Text>
-        </View>
-
-        {/* Quick features */}
-        {quickFeatures.length > 0 ? (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View>
-                <Text style={styles.sectionTitle}>
-                  {isAdmin ? 'Quản lý nhanh' : 'Chức năng của bạn'}
-                </Text>
-
-                <Text style={styles.sectionSubtitle}>
-                  {isAdmin
-                    ? 'Các khu vực quản lý được cấp quyền'
-                    : 'Truy cập nhanh các chức năng thường dùng'}
-                </Text>
-              </View>
-
-              <View style={styles.sectionIcon}>
-                <Text style={styles.sectionIconText}>✦</Text>
-              </View>
-            </View>
-
-            <View style={styles.featureList}>
-              {quickFeatures.map((feature, index) => (
-                <FeatureCard
-                  feature={feature}
-                  index={index}
-                  key={feature.slug}
-                  prominent={index === 0}
-                />
-              ))}
-            </View>
-          </View>
-        ) : (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push('/account')}
-            style={({ pressed }) => [
-              styles.accountCard,
-              pressed && styles.cardPressed,
-            ]}
-          >
-            <View style={styles.accountIcon}>
-              <Text style={styles.accountIconText}>♙</Text>
-            </View>
-
-            <View style={styles.accountContent}>
-              <Text style={styles.accountCardTitle}>
-                Thông tin tài khoản
-              </Text>
-
-              <Text style={styles.accountCardText}>
-                Xem hồ sơ, bảo mật và email khôi phục.
-              </Text>
-            </View>
-
-            <Text style={styles.accountArrow}>›</Text>
-          </Pressable>
-        )}
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <View style={styles.footerDivider} />
-
-          <Text style={styles.footerText}>
-            MAYDAY HEALTHCARE SYSTEM
-          </Text>
-
-          <Text style={styles.footerCopyright}>
-            © 2026 Bệnh viện Da Liễu Trung Ương
-          </Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        <Text style={styles.footerCopyright}>
+          © 2026 Bệnh viện Da Liễu Trung Ương
+        </Text>
+      </View>
+    </ScrollView>
   );
 }
 
-
-
 const styles = StyleSheet.create({
-  cardPressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.98 }],
-  },
-
-  safeArea: {
+  root: {
     flex: 1,
-    backgroundColor: '#F0F8FD',
+    backgroundColor: palette.canvas,
   },
-
+  empty: {
+    flex: 1,
+    backgroundColor: palette.canvas,
+  },
   content: {
     flexGrow: 1,
     width: '100%',
-    maxWidth: 900,
+    maxWidth: 820,
     alignSelf: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 22,
     paddingTop: 28,
-    paddingBottom: 40,
+    paddingBottom: 42,
   },
-
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E3EDF3',
+  contentWide: {
+    maxWidth: 1080,
+    paddingHorizontal: 32,
   },
-  brand: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  brandIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    backgroundColor: '#E5F4FC',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandIconText: {
-    color: '#168ACB',
-    fontSize: 19,
-    fontWeight: '800',
-  },
-  brandName: {
-    color: '#174B6D',
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  brandSubtitle: {
-    color: '#71899A',
-    fontSize: 10,
-    marginTop: 2,
-  },
-  headerBadge: {
-    backgroundColor: '#E8F5FC',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-  },
-  headerBadgeText: {
-    color: '#168ACB',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-
-  // Greeting
-  greetingSection: {
+  heading: {
     marginBottom: 4,
   },
-  greetingEyebrow: {
-    color: '#168ACB',
-    fontSize: 11,
-    fontWeight: '800',
+  eyebrow: {
+    color: palette.primary,
+    fontFamily: typography.bold,
+    fontSize: fontSizes.xs,
     letterSpacing: 1,
-    marginBottom: 8,
   },
   greeting: {
-    marginTop: 20,
-    color: '#174B6D',
-    fontSize: 29,
-    fontWeight: '800',
-    letterSpacing: -0.5,
+    marginTop: 10,
+    color: palette.ink,
+    fontFamily: typography.extraBold,
+    fontSize: fontSizes['3xl'],
   },
-  greetingSubtitle: {
+  subtitle: {
     marginTop: 8,
-    color: '#71899A',
-    fontSize: 14,
-    lineHeight: 22,
+    color: palette.muted,
+    fontFamily: typography.regular,
+    fontSize: fontSizes.base,
+    lineHeight: 23,
   },
-
-  // Hero
   hero: {
     overflow: 'hidden',
     position: 'relative',
-    marginTop: 28,
+    marginTop: 26,
     borderRadius: 22,
-    backgroundColor: '#168ACB',
-    paddingHorizontal: 26,
-    paddingVertical: 28,
-    shadowColor: '#168ACB',
+    backgroundColor: palette.primary,
+    paddingHorizontal: 25,
+    paddingVertical: 27,
+    shadowColor: palette.primary,
     shadowOffset: { width: 0, height: 7 },
-    shadowOpacity: 0.16,
+    shadowOpacity: 0.15,
     shadowRadius: 14,
     elevation: 4,
   },
-  heroDecoration: {
+  heroCircle: {
     position: 'absolute',
-    width: 170,
-    height: 170,
+    width: 190,
+    height: 190,
     right: -65,
-    top: -75,
-    borderWidth: 25,
-    borderColor: 'rgba(255,255,255,0.2)',
+    top: -90,
+    borderWidth: 24,
+    borderColor: 'rgba(255,255,255,0.16)',
     borderRadius: 100,
   },
-  heroAccent: {
+  heroCircleSmall: {
     position: 'absolute',
-    width: 170,
-    height: 170,
-    right: -65,
-    top: -75,
-    borderWidth: 25,
-    borderColor: 'rgba(255,255,255,0.2)',
+    width: 100,
+    height: 100,
+    right: 40,
+    bottom: -75,
+    borderWidth: 16,
+    borderColor: 'rgba(255,255,255,0.1)',
     borderRadius: 100,
   },
   heroTop: {
@@ -350,151 +257,150 @@ const styles = StyleSheet.create({
   },
   heroEyebrow: {
     color: '#E5F5FF',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.2,
+    fontFamily: typography.bold,
+    fontSize: fontSizes.xs,
+    letterSpacing: 1.1,
   },
   heroIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,255,255,0.18)',
   },
   heroIconText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
   },
   heroTitle: {
     marginTop: 18,
     color: '#FFFFFF',
+    fontFamily: typography.extraBold,
     fontSize: 26,
-    fontWeight: '800',
-    lineHeight: 35,
+    lineHeight: 36,
   },
   heroDescription: {
-    marginTop: 12,
     maxWidth: 560,
+    marginTop: 11,
     color: '#F0FAFF',
-    fontSize: 14,
+    fontFamily: typography.regular,
+    fontSize: fontSizes.sm,
     lineHeight: 22,
   },
-
-  // Quick features
   section: {
-    marginTop: 28,
+    marginTop: 32,
   },
   sectionHeader: {
-    marginTop: 32,
-    marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 8,
+    gap: 12,
+    marginBottom: 16,
+  },
+  sectionHeadingCopy: {
+    flex: 1,
   },
   sectionTitle: {
-    color: '#174B6D',
-    fontSize: 20,
-    fontWeight: '800',
+    color: palette.ink,
+    fontFamily: typography.bold,
+    fontSize: fontSizes.xl,
   },
   sectionSubtitle: {
-    color: '#7B96A9',
-    fontSize: 12,
+    marginTop: 5,
+    color: palette.muted,
+    fontFamily: typography.regular,
+    fontSize: fontSizes.xs,
   },
   sectionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
-    backgroundColor: '#E5F4FC',
+    width: 39,
+    height: 39,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: palette.primarySoft,
   },
   sectionIconText: {
-    color: '#168ACB',
-    fontSize: 17,
+    color: palette.primary,
+    fontSize: 18,
     fontWeight: '800',
-  },
-  sectionHint: {
-    color: '#7B96A9',
-    fontSize: 12,
   },
   featureList: {
-    gap: 13,
+    gap: 12,
   },
-
-  // Account
   accountCard: {
-    marginTop: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginTop: 30,
     borderWidth: 1,
-    borderColor: '#D9EAF4',
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
-    padding: 22,
-    shadowColor: '#5B8EAA',
+    borderColor: palette.border,
+    borderRadius: 17,
+    backgroundColor: palette.surface,
+    padding: 18,
+    shadowColor: '#477C9A',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 1,
   },
   accountIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    backgroundColor: '#E5F4FC',
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 13,
+    backgroundColor: palette.primarySoft,
   },
   accountIconText: {
-    color: '#168ACB',
-    fontSize: 19,
-    fontWeight: '800',
+    color: palette.primary,
+    fontSize: 20,
   },
   accountContent: {
     flex: 1,
+    minWidth: 0,
   },
   accountCardTitle: {
-    color: '#174B6D',
-    fontSize: 17,
-    fontWeight: '800',
+    color: palette.ink,
+    fontFamily: typography.bold,
+    fontSize: fontSizes.md,
   },
   accountCardText: {
-    marginTop: 7,
-    color: '#71899A',
-    fontSize: 14,
-    lineHeight: 22,
+    marginTop: 6,
+    color: palette.muted,
+    fontFamily: typography.regular,
+    fontSize: fontSizes.sm,
+    lineHeight: 20,
   },
   accountArrow: {
-    color: '#168ACB',
-    fontSize: 22,
-    fontWeight: '700',
+    color: palette.primary,
+    fontSize: 24,
   },
-
-  // Footer
   footer: {
-    marginTop: 32,
+    marginTop: 38,
     paddingTop: 18,
     alignItems: 'center',
   },
   footerDivider: {
     width: '100%',
     height: 1,
-    backgroundColor: '#D9EAF4',
     marginBottom: 16,
+    backgroundColor: palette.border,
   },
   footerText: {
-    color: '#71899A',
-    fontSize: 12,
-    textAlign: 'center',
+    color: palette.muted,
+    fontFamily: typography.medium,
+    fontSize: fontSizes.xs,
   },
   footerCopyright: {
-    color: '#9AAEBB',
-    fontSize: 11,
     marginTop: 6,
+    color: '#9AAEBB',
+    fontFamily: typography.regular,
+    fontSize: fontSizes.xs,
     textAlign: 'center',
   },
+  pressed: {
+    opacity: 0.78,
+  },
 });
-
-
