@@ -25,6 +25,7 @@ import {
   validateProfileDraft,
   type ProfileDraft,
 } from '@/features/profile/profile-form';
+import { typography } from '@/constants/typography';
 
 const genderOptions: { value: NonNullable<Profile['gender']>; label: string }[] = [
   { value: 'male', label: 'Nam' },
@@ -376,8 +377,8 @@ function ProfileRow({ label, value }: { label: string; value?: string | null }) 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: appColors.canvas },
   container: { flexGrow: 1, width: '100%', maxWidth: 760, alignSelf: 'center', padding: 24 },
-  eyebrow: { color: appColors.primary, fontSize: 11, fontWeight: '800', letterSpacing: 1.1 },
-  title: { marginTop: 12, color: appColors.ink, fontSize: 30, fontWeight: '800' },
+  eyebrow: { color: appColors.primary, fontSize: 11, fontWeight: '800', letterSpacing: 1.1, fontFamily: typography.medium },
+  title: { marginTop: 12, color: appColors.ink, fontSize: 30, fontWeight: '800', fontFamily: typography.semiBold },
   subtitle: { marginTop: 8, color: appColors.muted, fontSize: 15, lineHeight: 22 },
   loading: { marginTop: 40 },
   card: { gap: 8, marginTop: 24, borderRadius: 18, backgroundColor: appColors.surface, padding: 18 },
@@ -421,8 +422,8 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.primary,
     paddingHorizontal: 18,
   },
-  primaryButtonText: { color: appColors.surface, fontSize: 15, fontWeight: '800' },
+  primaryButtonText: { color: appColors.surface, fontSize: 15, fontWeight: '800', fontFamily: typography.medium },
   secondaryButton: { alignSelf: 'flex-start', minHeight: 42, justifyContent: 'center', marginTop: 10, paddingHorizontal: 4 },
-  secondaryButtonText: { color: appColors.primary, fontSize: 14, fontWeight: '700' },
+  secondaryButtonText: { color: appColors.primary, fontSize: 14, fontWeight: '700', fontFamily: typography.medium },
   disabledButton: { opacity: 0.6 },
 });

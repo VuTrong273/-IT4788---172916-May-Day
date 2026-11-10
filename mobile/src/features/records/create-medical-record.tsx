@@ -19,6 +19,7 @@ import {
   type ClassificationQuestion,
 } from '@/features/doctor/medical-records-api';
 import { getDemoRole } from '@/features/navigation/feature-routes';
+import { typography } from '@/constants/typography';
 
 export function CreateMedicalRecord({ session }: { session: Session }) {
   const isDoctor = getDemoRole(session.user.role_id) === 'doctor';
@@ -218,28 +219,28 @@ export function CreateMedicalRecord({ session }: { session: Session }) {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: appColors.canvas },
   content: { flexGrow: 1, width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 28, paddingBottom: 44 },
-  eyebrow: { color: appColors.primary, fontSize: 11, fontWeight: '800', letterSpacing: 1 },
-  title: { marginTop: 12, color: appColors.ink, fontSize: 29, fontWeight: '800' },
+  eyebrow: { color: appColors.primary, fontSize: 11, fontWeight: '800', letterSpacing: 1, fontFamily: typography.medium },
+  title: { marginTop: 12, color: appColors.ink, fontSize: 29, fontWeight: '800', fontFamily: typography.medium },
   subtitle: { marginTop: 8, color: appColors.muted, fontSize: 14, lineHeight: 21 },
   field: { marginTop: 22, gap: 8 },
-  label: { color: appColors.ink, fontSize: 15, fontWeight: '700', lineHeight: 22 },
+  label: { color: appColors.ink, fontSize: 15, fontWeight: '700', lineHeight: 22, fontFamily: typography.medium },
   input: { minHeight: 50, borderWidth: 1, borderColor: appColors.border, borderRadius: 13, backgroundColor: appColors.surface, color: appColors.ink, paddingHorizontal: 14, fontSize: 16 },
-  hint: { marginTop: 5, color: appColors.muted, fontSize: 13, lineHeight: 19 },
+  hint: { marginTop: 5, color: appColors.muted, fontSize: 13, lineHeight: 19, fontFamily: typography.medium },
   question: { marginTop: 22, gap: 9, padding: 18, borderRadius: 16, borderWidth: 1, borderColor: appColors.border, backgroundColor: appColors.surface },
   option: { minHeight: 46, justifyContent: 'center', paddingHorizontal: 13, borderRadius: 11, borderWidth: 1, borderColor: appColors.border },
   optionSelected: { borderColor: appColors.primary, backgroundColor: appColors.primarySoft },
-  optionText: { color: appColors.ink, fontSize: 14 },
-  optionTextSelected: { color: appColors.primaryDark, fontWeight: '700' },
+  optionText: { color: appColors.ink, fontSize: 14, fontFamily: typography.medium },
+  optionTextSelected: { color: appColors.primaryDark, fontWeight: '700', fontFamily: typography.medium },
   templateCard: { marginTop: 22, padding: 19, borderRadius: 16, backgroundColor: appColors.primarySoft },
   templateLabel: { color: appColors.primary, fontSize: 10, fontWeight: '800', letterSpacing: 0.8 },
-  templateName: { marginTop: 8, color: appColors.ink, fontSize: 18, fontWeight: '800' },
+  templateName: { marginTop: 8, color: appColors.ink, fontSize: 18, fontWeight: '800', fontFamily: typography.medium },
   notice: { marginTop: 20, padding: 18, borderRadius: 16, backgroundColor: appColors.surface },
-  noticeTitle: { color: appColors.ink, fontSize: 16, fontWeight: '800' },
+  noticeTitle: { color: appColors.ink, fontSize: 16, fontWeight: '800', fontFamily: typography.medium },
   errorCard: { marginTop: 18, padding: 17, borderRadius: 15, backgroundColor: appColors.surface, borderWidth: 1, borderColor: '#F3C7CC' },
-  errorText: { color: '#A62F3D', fontSize: 14, lineHeight: 20 },
-  link: { marginTop: 12, color: appColors.primary, fontSize: 14, fontWeight: '800' },
+  errorText: { color: '#A62F3D', fontSize: 14, lineHeight: 20, fontFamily: typography.medium },
+  link: { marginTop: 12, color: appColors.primary, fontSize: 14, fontWeight: '800', fontFamily: typography.medium },
   primaryButton: { minHeight: 52, justifyContent: 'center', alignItems: 'center', marginTop: 24, borderRadius: 14, backgroundColor: appColors.primary },
-  primaryText: { color: appColors.surface, fontSize: 15, fontWeight: '800' },
+  primaryText: { color: appColors.surface, fontSize: 15, fontWeight: '800', fontFamily: typography.medium },
   disabled: { opacity: 0.45 },
   loading: { marginTop: 25 },
 });

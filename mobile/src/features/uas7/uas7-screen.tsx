@@ -25,6 +25,7 @@ import {
   validateUas7ScoreDraft,
   type Uas7ValidationErrors,
 } from '@/features/uas7/uas7-validation';
+import { fontSizes, typography } from '@/constants/typography';
 
 const scoreOptions = ['0', '1', '2', '3'];
 
@@ -459,7 +460,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: appColors.canvas },
   content: { flexGrow: 1, width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 30, paddingBottom: 44 },
   eyebrow: { color: appColors.primary, fontSize: 11, fontWeight: '800', letterSpacing: 1 },
-  title: { marginTop: 12, color: appColors.ink, fontSize: 29, fontWeight: '800' },
+  title: { marginTop: 12, color: appColors.ink, fontFamily: typography.extraBold, fontSize: fontSizes['3xl'], lineHeight: 38 },
   bodyText: { marginTop: 8, color: appColors.muted, fontSize: 14, lineHeight: 21 },
   section: { marginTop: 24 },
   sectionHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },

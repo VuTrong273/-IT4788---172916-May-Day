@@ -24,6 +24,7 @@ import {
   type LesionEpisodeInput,
   type LesionEpisodeUpdate,
 } from '@/features/lesion-tracking/lesion-episodes-api';
+import { fontSizes, typography } from '@/constants/typography';
 
 const dangerColor = '#B42318';
 const successColor = '#147D64';
@@ -619,7 +620,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: appColors.canvas },
   content: { flexGrow: 1, width: '100%', maxWidth: 850, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 28, paddingBottom: 44 },
   eyebrow: { color: appColors.primary, fontSize: 11, fontWeight: '800', letterSpacing: 1.1 },
-  title: { marginTop: 12, color: appColors.ink, fontSize: 29, fontWeight: '800' },
+  title: { marginTop: 12, color: appColors.ink, fontFamily: typography.extraBold, fontSize: fontSizes['3xl'], lineHeight: 36, letterSpacing: -0.5 },
   sectionTitle: { color: appColors.ink, fontSize: 19, fontWeight: '800' },
   body: { marginTop: 8, color: appColors.muted, fontSize: 14, lineHeight: 22 },
   muted: { marginTop: 8, color: appColors.muted, fontSize: 13, lineHeight: 20 },

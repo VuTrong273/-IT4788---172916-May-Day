@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { roleOptions, type UserRole } from "@/features/auth/roles";
 import { getSession } from "@/features/auth/session";
+import { typography } from "@/constants/typography";
 
 export default function HomeScreen() {
   const params = useLocalSearchParams<{ password_changed?: string }>();

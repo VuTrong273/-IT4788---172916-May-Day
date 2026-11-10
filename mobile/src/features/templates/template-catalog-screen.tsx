@@ -24,6 +24,7 @@ import {
   validateTemplateDraft,
   type TemplateDraft,
 } from './template-form';
+import { fontSizes, typography } from '@/constants/typography';
 
 const PAGE_SIZE = 20;
 type ActiveFilter = 'all' | '1' | '0';
@@ -679,20 +680,20 @@ function FilterButton({
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: appColors.canvas },
   content: { flexGrow: 1, width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 28, paddingBottom: 44 },
-  eyebrow: { color: appColors.primary, fontSize: 11, fontWeight: '800', letterSpacing: 1.1 },
-  title: { marginTop: 12, color: appColors.ink, fontSize: 30, fontWeight: '800' },
+  eyebrow: { color: appColors.primary, fontSize: 11, fontWeight: '800', letterSpacing: 1.1, fontFamily: typography.medium },
+  title: { marginTop: 12, color: appColors.ink, fontFamily: typography.extraBold, fontSize: fontSizes['3xl'], lineHeight: 36 },
   subtitle: { marginTop: 9, color: appColors.muted, fontSize: 15, lineHeight: 23 },
   panel: { marginTop: 24, borderWidth: 1, borderColor: appColors.border, borderRadius: 20, backgroundColor: appColors.surface, padding: 20 },
   listHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 },
-  sectionTitle: { color: appColors.ink, fontSize: 22, fontWeight: '800' },
+  sectionTitle: { color: appColors.ink, fontSize: 22, fontWeight: '800', fontFamily: typography.medium },
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16, marginBottom: 6 },
   filterButton: { minHeight: 40, justifyContent: 'center', borderWidth: 1, borderColor: appColors.border, borderRadius: 999, paddingHorizontal: 13 },
   selectedFilter: { backgroundColor: appColors.primarySoft, borderColor: appColors.primary },
-  filterText: { color: appColors.muted, fontSize: 13, fontWeight: '700' },
-  selectedFilterText: { color: appColors.primary },
+  filterText: { color: appColors.muted, fontSize: 13, fontWeight: '700', fontFamily: typography.medium },
+  selectedFilterText: { color: appColors.primary, fontFamily: typography.medium },
   templateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderTopWidth: 1, borderTopColor: appColors.border, paddingVertical: 17 },
   templateCopy: { flex: 1, minWidth: 180, gap: 4 },
-  templateName: { color: appColors.ink, fontSize: 16, fontWeight: '800' },
+  templateName: { color: appColors.ink, fontSize: 16, fontWeight: '800', fontFamily: typography.medium },
   templateAside: { alignItems: 'flex-end', gap: 8 },
   status: { color: appColors.primary, fontSize: 12, fontWeight: '700' },
   inactiveStatus: { color: appColors.warmInk },

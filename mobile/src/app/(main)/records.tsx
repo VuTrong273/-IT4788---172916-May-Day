@@ -6,6 +6,7 @@ import { appColors } from '@/constants/app-theme';
 import { useAuthenticatedSession } from '@/features/auth/use-authenticated-session';
 import { MedicalRecordHistory } from '@/features/doctor/medical-record-list';
 import { getDemoRole } from '@/features/navigation/feature-routes';
+import { fontSizes, typography } from '@/constants/typography';
 
 export default function RecordsScreen() {
   const session = useAuthenticatedSession();
@@ -51,12 +52,12 @@ export default function RecordsScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: appColors.canvas },
   content: { flexGrow: 1, width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 28, paddingBottom: 42 },
-  eyebrow: { color: appColors.primary, fontSize: 11, fontWeight: '800', letterSpacing: 1 },
-  title: { marginTop: 12, color: appColors.ink, fontSize: 29, fontWeight: '800' },
-  subtitle: { marginTop: 8, color: appColors.muted, fontSize: 14, lineHeight: 21 },
+  eyebrow: { color: appColors.primary, fontSize: 11, fontWeight: '800', letterSpacing: 1, fontFamily: typography.medium },
+  title: { marginTop: 12, color: appColors.ink, fontFamily: typography.extraBold, fontSize: fontSizes['3xl'], lineHeight: 38 },
+  subtitle: { marginTop: 8, color: appColors.muted, fontSize: 14, lineHeight: 21, fontFamily: typography.medium },
   primaryButton: { minHeight: 50, alignItems: 'center', justifyContent: 'center', marginTop: 20, paddingHorizontal: 20, borderRadius: 14, backgroundColor: appColors.primary, alignSelf: 'flex-start' },
-  primaryText: { color: appColors.surface, fontSize: 14, fontWeight: '800' },
+  primaryText: { color: appColors.surface, fontSize: 14, fontWeight: '800', fontFamily: typography.medium },
   sectionHeader: { marginTop: 30, marginBottom: 12 },
-  sectionTitle: { color: appColors.ink, fontSize: 19, fontWeight: '800' },
+  sectionTitle: { color: appColors.ink, fontSize: 19, fontWeight: '800', fontFamily: typography.medium },
   pressed: { opacity: 0.75 },
 });

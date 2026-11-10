@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
 
   label: {
     color: '#344F63',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '800',
     fontFamily: 'Montserrat',
   },

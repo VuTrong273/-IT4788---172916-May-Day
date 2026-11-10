@@ -27,8 +27,6 @@ import {
   type WorkspaceNavigationItem,
 } from '@/features/navigation/workspace-navigation';
 
-import { typography } from '@/constants/typography';
-
 type Props = {
   session: Session;
   role: UserRole | null;
@@ -42,7 +40,6 @@ export function WorkspaceShell({ session, role, children }: Props) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
-  const isHome = pathname === '/home';
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [jumpQuery, setJumpQuery] = useState('');

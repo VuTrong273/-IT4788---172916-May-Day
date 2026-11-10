@@ -217,7 +217,7 @@ export const otpStyles = StyleSheet.create({
     color: '#193C50',
     fontSize: 14,
     fontWeight: '700',
-    fontFamily: typography.bold,
+    fontFamily: typography.regular,
   },
 
   input: {
