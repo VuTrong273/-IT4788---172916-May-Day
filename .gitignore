@@ -26,3 +26,5 @@ out/
 
 # Giữ lại file .env.example
 !.env.example
+
+.github

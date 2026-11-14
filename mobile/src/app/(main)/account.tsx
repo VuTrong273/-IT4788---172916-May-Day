@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { router } from 'expo-router';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { fontSizes, typography } from '@/constants/typography';
 import { appColors } from '@/constants/app-theme';
-import { authApi } from '@/features/auth/auth-api';
 import { roleLabels } from '@/features/auth/roles';
-import { clearSession } from '@/features/auth/session';
+import { clearAuthenticatedSession } from '@/features/auth/sign-out';
 import { useAuthenticatedSession } from '@/features/auth/use-authenticated-session';
 import { getDemoRole } from '@/features/navigation/feature-routes';
 
@@ -18,18 +17,11 @@ export default function AccountScreen() {
     if (!session || isLoggingOut) return;
     setIsLoggingOut(true);
 
-    let serverLogoutFailed = false;
     try {
-      await authApi.logout(session.token);
-    } catch {
-      serverLogoutFailed = true;
-    }
-
-    try {
-      await clearSession();
+      const serverConfirmed = await clearAuthenticatedSession(session);
       router.dismissTo('/');
-      if (serverLogoutFailed) {
-        Alert.alert('Đã đăng xuất trên điện thoại', 'Backend chưa xác nhận hủy token. Hãy kiểm tra kết nối mạng.');
+      if (!serverConfirmed) {
+        Alert.alert('Đã đăng xuất trên thiết bị', 'Máy chủ chưa xác nhận hủy phiên. Hãy kiểm tra kết nối mạng.');
       }
     } catch {
       Alert.alert('Lỗi', 'Không thể xóa phiên đăng nhập trên điện thoại.');
@@ -47,7 +39,7 @@ export default function AccountScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.eyebrow}>MAY DAY / TÀI KHOẢN</Text>
         <Text style={styles.title}>Tài khoản</Text>
@@ -94,22 +86,22 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: appColors.canvas },
   content: { flexGrow: 1, width: '100%', maxWidth: 680, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 32, paddingBottom: 40 },
-  eyebrow: { color: appColors.primary, fontSize: 11, fontWeight: '800', letterSpacing: 1.1 },
-  title: { marginTop: 12, color: appColors.ink, fontSize: 30, fontWeight: '800' },
+  eyebrow: { color: appColors.primary, fontSize: 11, fontWeight: '800', letterSpacing: 1.1, fontFamily: typography.medium },
+  title: { marginTop: 12, color: appColors.ink, fontSize: 30, fontWeight: '800', fontFamily: typography.extraBold, },
   identityCard: { marginTop: 25, flexDirection: 'row', alignItems: 'center', gap: 16, borderRadius: 20, backgroundColor: appColors.primaryDark, padding: 20 },
   avatar: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 16, backgroundColor: '#277A65' },
-  avatarText: { color: appColors.surface, fontSize: 22, fontWeight: '800' },
+  avatarText: { color: appColors.surface, fontSize: 22, fontWeight: '800', fontFamily: typography.extraBold },
   identityCopy: { flex: 1 },
-  fullName: { color: appColors.surface, fontSize: 19, fontWeight: '800' },
+  fullName: { color: appColors.surface, fontSize: 19, fontWeight: '800', fontFamily: typography.extraBold },
   role: { marginTop: 5, color: '#C9E7D9', fontSize: 13 },
-  sectionTitle: { marginTop: 30, marginBottom: 13, color: appColors.ink, fontSize: 18, fontWeight: '800' },
+  sectionTitle: { marginTop: 30, marginBottom: 13, color: appColors.ink, fontSize: 18, fontWeight: '800', fontFamily: typography.medium},
   links: { gap: 10 },
   linkCard: { minHeight: 74, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: appColors.border, borderRadius: 16, backgroundColor: appColors.surface, paddingHorizontal: 17, paddingVertical: 12 },
   linkCopy: { flex: 1 },
-  linkTitle: { color: appColors.ink, fontSize: 15, fontWeight: '800' },
+  linkTitle: { color: appColors.ink, fontFamily: typography.extraBold, fontSize: fontSizes['3xl'], lineHeight: 38 },
   linkDescription: { marginTop: 4, color: appColors.muted, fontSize: 12, lineHeight: 18 },
-  arrow: { color: appColors.primary, fontSize: 25 },
+  arrow: { color: appColors.primary, fontSize: 25, fontWeight: '800', fontFamily: typography.extraBold },
   logoutButton: { minHeight: 52, alignItems: 'center', justifyContent: 'center', marginTop: 30, borderWidth: 1, borderColor: appColors.border, borderRadius: 15, backgroundColor: appColors.surface },
-  logoutText: { color: '#A04440', fontSize: 15, fontWeight: '800' },
+  logoutText: { color: '#A04440', fontSize: 15, fontWeight: '800', fontFamily: typography.medium },
   pressed: { opacity: 0.75 },
 });

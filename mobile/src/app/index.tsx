@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { roleOptions, type UserRole } from "@/features/auth/roles";
 import { getSession } from "@/features/auth/session";
+import { typography } from "@/constants/typography";
 
 export default function HomeScreen() {
   const params = useLocalSearchParams<{ password_changed?: string }>();
@@ -38,8 +39,18 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.container}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ImageBackground
+        source={require('../../assets/images/login-background.jpg')}
+        resizeMode="cover"
+        style={styles.background}
+      >
+        <View style={styles.backgroundOverlay} />
+
+        <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.badge}>
           <Text style={styles.badgeText}>MAY DAY</Text>
         </View>
@@ -108,15 +119,17 @@ export default function HomeScreen() {
         >
           <Text style={styles.continueButtonText}>Tiếp tục</Text>
         </Pressable>
-      </ScrollView>
+        </ScrollView>
+      </ImageBackground>
     </SafeAreaView>
   );
 }
 
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F5FAF8",
+    backgroundColor: '#EAF5FA',
   },
   loading: {
     flex: 1,
@@ -124,125 +137,171 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     width: '100%',
-    maxWidth: 560,
+    maxWidth: 648,
     alignSelf: 'center',
     paddingHorizontal: 24,
-    paddingTop: 28,
+    paddingTop: 32,
     paddingBottom: 48,
   },
+
+  // Background
+  background: {
+    ...StyleSheet.absoluteFill,
+    width: '100%',
+    height: '100%',
+  },
+
+  backgroundOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+
+  // Brand badge
   badge: {
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
     borderRadius: 999,
-    backgroundColor: "#D9F3E8",
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    backgroundColor: '#D7EDF7',
+    borderWidth: 1,
+    borderColor: '#C4E4F4',
+    paddingHorizontal: 15,
+    paddingVertical: 9,
   },
   badgeText: {
-    color: "#087A55",
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.8,
+    color: '#07518A',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 1,
+    fontFamily: 'Montserrat',
   },
+
+  // Heading
   title: {
-    marginTop: 22,
-    color: "#102A25",
+    marginTop: 28,
+    color: '#07518A',
     fontSize: 36,
-    fontWeight: "800",
-    lineHeight: 43,
+    fontWeight: '900',
+    lineHeight: 46,
+    letterSpacing: -0.5,
+    fontFamily: 'Montserrat',
   },
   subtitle: {
     marginTop: 14,
-    color: "#52645F",
-    fontSize: 16,
+    color: '#66869D',
+    fontSize: 15,
     lineHeight: 24,
+    fontFamily: 'Montserrat',
   },
   successMessage: {
     marginTop: 16,
     borderRadius: 12,
-    backgroundColor: '#D9F3E8',
-    color: '#087A55',
-    fontSize: 15,
+    backgroundColor: '#E7F3FA',
+    borderWidth: 1,
+    borderColor: '#C9E3F1',
+    color: '#175B83',
+    fontSize: 13,
     fontWeight: '700',
     padding: 14,
+    fontFamily: 'Montserrat',
   },
+
+  // Role selection
   sectionTitle: {
-    marginTop: 34,
-    marginBottom: 14,
-    color: "#193A32",
-    fontSize: 17,
-    fontWeight: "700",
+    marginTop: 36,
+    marginBottom: 16,
+    color: '#07518A',
+    fontSize: 16,
+    fontWeight: '800',
+    fontFamily: 'Montserrat',
   },
   roleList: {
     gap: 12,
   },
   roleCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 14,
+    minHeight: 94,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 15,
     borderWidth: 1,
-    borderColor: "#D9E4E0",
-    borderRadius: 18,
-    backgroundColor: "#FFFFFF",
-    padding: 17,
+    borderColor: '#C9DDE9',
+    borderRadius: 17,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 19,
+    paddingVertical: 17,
   },
   roleCardSelected: {
-    borderColor: "#15966C",
-    backgroundColor: "#ECF9F4",
+    borderColor: '#0875B5',
+    backgroundColor: '#E7F3FA',
   },
   roleCardPressed: {
-    opacity: 0.72,
+    opacity: 0.75,
   },
   radio: {
-    width: 22,
-    height: 22,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 2,
-    borderColor: "#9AABA5",
-    borderRadius: 11,
-    marginTop: 1,
+    borderColor: '#9CB5C5',
+    borderRadius: 12,
   },
   radioSelected: {
-    borderColor: "#15966C",
+    borderColor: '#0875B5',
   },
   radioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#15966C",
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    backgroundColor: '#0875B5',
   },
   roleContent: {
     flex: 1,
   },
   roleLabel: {
-    color: "#243B35",
+    color: '#294B65',
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: '800',
+    fontFamily: 'Montserrat',
   },
   roleLabelSelected: {
-    color: "#087A55",
+    color: '#07518A',
   },
   roleDescription: {
-    marginTop: 5,
-    color: "#63756F",
-    fontSize: 14,
+    marginTop: 6,
+    color: '#8299A9',
+    fontSize: 13,
     lineHeight: 20,
+    fontFamily: 'Montserrat',
   },
+
+  // Continue button
   continueButton: {
-    minHeight: 52,
-    marginTop: 26,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 16,
-    backgroundColor: "#15966C",
+    minHeight: 54,
+    marginTop: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: '#07518A',
     paddingHorizontal: 20,
+
+    shadowColor: '#07518A',
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   continueButtonPressed: {
-    opacity: 0.75,
+    opacity: 0.8,
   },
   continueButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+    fontFamily: 'Montserrat',
   },
 });
+
+

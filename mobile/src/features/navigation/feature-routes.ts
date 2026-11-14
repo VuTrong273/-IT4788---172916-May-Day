@@ -1,4 +1,4 @@
-import type { UserRole } from '@/features/auth/roles';
+import { getAuthenticatedRole, type UserRole } from '@/features/auth/roles';
 
 export type FeatureRoute = {
   slug: string;
@@ -13,7 +13,7 @@ export const featureRoutes: FeatureRoute[] = [
     slug: 'create-medical-record',
     title: 'Tạo bệnh án',
     description: 'Trả lời câu hỏi phân loại và điền phiếu khám.',
-    roles: ['patient'],
+    roles: ['doctor', 'patient'],
   },
   {
     slug: 'my-medical-records',
@@ -25,13 +25,13 @@ export const featureRoutes: FeatureRoute[] = [
     slug: 'lesion-tracking',
     title: 'Theo dõi tổn thương',
     description: 'Ghi nhận đợt tổn thương và hình ảnh theo mốc.',
-    roles: ['patient'],
+    roles: ['patient', 'doctor', 'admin'],
   },
   {
     slug: 'uas7',
     title: 'Chấm điểm UAS7',
     description: 'Chấm điểm hằng ngày và xem tổng tuần.',
-    roles: ['patient'],
+    roles: ['patient', 'doctor', 'admin'],
   },
   {
     slug: 'my-results',
@@ -69,13 +69,40 @@ export const featureRoutes: FeatureRoute[] = [
     description: 'Kê đơn và ghi chỉ dẫn cho bệnh nhân.',
     roles: ['doctor'],
   },
+  {
+    slug: 'templates',
+    title: 'Mẫu phiếu',
+    description: 'Tra cứu mẫu phiếu khám được cấp quyền.',
+    roles: ['patient', 'doctor', 'admin'],
+  },
+  {
+    slug: 'admin-medical-records',
+    title: 'Quản lý bệnh án',
+    description: 'Tra cứu bệnh án theo trạng thái và mở hồ sơ theo quyền được cấp.',
+    roles: ['admin'],
+  },
+  {
+    slug: 'admin-users',
+    title: 'Người dùng',
+    description: 'Quản lý người dùng, nhân viên và phân công theo quyền được cấp.',
+    roles: ['admin'],
+  },
+  {
+    slug: 'clinic-branches',
+    title: 'Cơ sở khám',
+    description: 'Quản trị viên quản lý; bác sĩ tra cứu chi nhánh, khoa và phòng được API cho phép.',
+    roles: ['doctor', 'admin'],
+  },
+  {
+    slug: 'access-control',
+    title: 'Phân quyền',
+    description: 'Tra cứu vai trò, quyền và API trong hệ thống.',
+    roles: ['admin'],
+  },
 ];
 
 export function getDemoRole(roleId: number): UserRole | null {
-  if (roleId === 1) return 'admin';
-  if (roleId === 2) return 'doctor';
-  if (roleId === 3) return 'patient';
-  return null;
+  return getAuthenticatedRole(roleId);
 }
 
 export function getFeatureRoute(slug: string): FeatureRoute | undefined {

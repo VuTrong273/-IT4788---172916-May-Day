@@ -1,15 +1,31 @@
 import * as SecureStore from 'expo-secure-store';
 
-import { parseSession, SESSION_KEY, type Session } from './session.shared';
+import {
+  InvalidSessionError,
+  parseSession,
+  SESSION_KEY,
+  SessionStorageError,
+  type Session,
+} from './session.shared';
 
 export type { Session } from './session.shared';
 
 export async function saveSession(session: Session): Promise<void> {
-  await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(session));
+  if (!parseSession(JSON.stringify(session))) throw new InvalidSessionError();
+  try {
+    await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(session));
+  } catch {
+    throw new SessionStorageError('write', 'native');
+  }
 }
 
 export async function getSession(): Promise<Session | null> {
-  const stored = await SecureStore.getItemAsync(SESSION_KEY);
+  let stored: string | null;
+  try {
+    stored = await SecureStore.getItemAsync(SESSION_KEY);
+  } catch {
+    throw new SessionStorageError('read', 'native');
+  }
   const session = parseSession(stored);
   if (stored && !session) {
     await clearSession();
@@ -18,5 +34,9 @@ export async function getSession(): Promise<Session | null> {
 }
 
 export async function clearSession(): Promise<void> {
-  await SecureStore.deleteItemAsync(SESSION_KEY);
+  try {
+    await SecureStore.deleteItemAsync(SESSION_KEY);
+  } catch {
+    throw new SessionStorageError('clear', 'native');
+  }
 }

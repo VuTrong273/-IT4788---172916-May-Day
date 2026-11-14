@@ -1,8 +1,7 @@
-import { isAxiosError } from 'axios';
-
-import { apiClient, apiUrl } from '@/api/client';
+import { apiRequest, ApiRequestError, requireApiCode } from '@/api/client';
 
 import type { LoginFormValues } from './login-schema';
+import { getAuthenticatedRole } from './roles';
 
 type LoginResponse = {
   code: string;
@@ -22,6 +21,8 @@ type SignupRequest = {
   full_name: string;
   phone: string;
   password: string;
+  gender?: 'male' | 'female' | 'other';
+  year_of_birth?: number;
 };
 
 type SignupResponse = {
@@ -40,6 +41,73 @@ type ChangePasswordRequest = {
   new_password: string;
   confirm_password: string;
 };
+
+function translatedFailure(error: unknown): Error {
+  if (!(error instanceof ApiRequestError)) {
+    return error instanceof Error ? error : new Error('Yêu cầu thất bại.');
+  }
+
+  let message: string | undefined;
+  switch (error.apiCode) {
+    case '3004':
+      message = 'Mã OTP không đúng.';
+      break;
+    case '3005':
+      message = 'Mã OTP đã hết hạn. Hãy yêu cầu mã mới.';
+      break;
+    case '3006':
+      message = 'Số điện thoại này đã được đăng ký.';
+      break;
+    case '3009':
+      message = 'Mật khẩu hiện tại không đúng.';
+      break;
+    case '9903':
+      message = 'Không gửi được email. Hãy kiểm tra cấu hình gửi thư hoặc thử lại.';
+      break;
+    default:
+      if (error.status === 401) {
+        message = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+      }
+  }
+
+  return message
+    ? new ApiRequestError({
+        kind: error.kind,
+        status: error.status,
+        apiCode: error.apiCode,
+        operation: error.operation,
+        retryable: error.retryable,
+        message,
+      })
+    : error;
+}
+
+export function isExpiredAuthSession(error: unknown): boolean {
+  return error instanceof ApiRequestError &&
+    (error.status === 401 || ['3001', '3002', '3003'].includes(error.apiCode ?? ''));
+}
+
+export function shouldClearAuthSecrets(error: unknown): boolean {
+  return error instanceof ApiRequestError &&
+    (error.status === 401 ||
+      ['3004', '3005', '3008', '3009', '3010'].includes(error.apiCode ?? ''));
+}
+
+async function authRequest<T extends { code?: unknown; message?: unknown }>(
+  path: string,
+  body: object,
+  token?: string,
+): Promise<T> {
+  try {
+    const response = await apiRequest<T>(
+      { method: 'post', url: path, data: body },
+      token,
+    );
+    return requireApiCode(response, ['1000'], `POST ${path}`);
+  } catch (error) {
+    throw translatedFailure(error);
+  }
+}
 
 export const authApi = {
   async requestRecoveryEmail(token: string, email: string, password: string): Promise<void> {
@@ -60,116 +128,65 @@ export const authApi = {
     await authRequest('/auth/reset-password', values);
   },
   async signup(values: SignupRequest): Promise<SignupResponse> {
-    if (!apiUrl) throw new Error('Chưa cấu hình địa chỉ backend.');
-
     try {
-      const response = await apiClient.post<SignupResponse>('/auth/signup', values);
-      if (response.data.code !== '1001') {
-        throw new Error(response.data.message || 'Đăng ký thất bại.');
-      }
-      return response.data;
+      const response = await apiRequest<SignupResponse>({
+        method: 'post',
+        url: '/auth/signup',
+        data: values,
+      });
+      return requireApiCode(response, ['1001'], 'POST /auth/signup');
     } catch (error) {
-      if (isAxiosError<{ code?: string; message?: string }>(error)) {
-        if (error.response?.data?.code === '3006') {
-          throw new Error('Số điện thoại này đã được đăng ký.');
-        }
-        throw new Error(
-          error.response?.data?.message ??
-            'Không kết nối được backend. Hãy kiểm tra mạng và địa chỉ API.',
-        );
-      }
-      throw error;
+      throw translatedFailure(error);
     }
   },
   async login(values: LoginFormValues): Promise<LoginResponse> {
-    if (!apiUrl) throw new Error('Chưa cấu hình địa chỉ backend.');
-
     try {
-      const response = await apiClient.post<LoginResponse>('/auth/login', values);
+      const response = await apiRequest<LoginResponse>({
+        method: 'post',
+        url: '/auth/login',
+        data: values,
+      });
+      requireApiCode(response, ['1000'], 'POST /auth/login');
 
-      if (response.data.code !== '1000') {
-        throw new Error(response.data.message || 'Đăng nhập thất bại.');
+      const identity = response.data?.user_info;
+      if (
+        !response.data?.token ||
+        !Number.isInteger(identity?.user_id) ||
+        identity.user_id <= 0 ||
+        !getAuthenticatedRole(identity.role_id)
+      ) {
+        throw new ApiRequestError({
+          kind: 'api',
+          operation: 'POST /auth/login',
+          message: 'Tài khoản không có thông tin vai trò được hỗ trợ.',
+        });
       }
-
-      return response.data;
+      return response;
     } catch (error) {
-      if (isAxiosError<{ message?: string }>(error)) {
-        throw new Error(
-          error.response?.data?.message ??
-            'Không kết nối được backend. Hãy kiểm tra mạng và địa chỉ API.',
-        );
-      }
-      throw error;
+      throw translatedFailure(error);
     }
   },
   async logout(token: string): Promise<void> {
-    if (!apiUrl) throw new Error('Chưa cấu hình địa chỉ backend.');
-
     try {
-      await apiClient.post(
-        '/auth/logout',
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
+      const response = await apiRequest<{ code: string; message: string }>(
+        { method: 'post', url: '/auth/logout', data: {} },
+        token,
       );
+      requireApiCode(response, ['1000'], 'POST /auth/logout');
     } catch (error) {
-      if (isAxiosError(error)) {
-        throw new Error('Không thể xác nhận đăng xuất với backend.');
-      }
-      throw error;
+      throw translatedFailure(error);
     }
   },
   async changePassword(token: string, values: ChangePasswordRequest): Promise<void> {
-    if (!apiUrl) throw new Error('Chưa cấu hình địa chỉ backend.');
-
     try {
-      const response = await apiClient.put<{ code: string; message: string }>(
-        '/auth/change-password',
-        values,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      if (response.data.code !== '1000') {
-        throw new Error(response.data.message || 'Đổi mật khẩu thất bại.');
-      }
+      const response = await apiRequest<{ code: string; message: string }>({
+        method: 'put',
+        url: '/auth/change-password',
+        data: values,
+      }, token);
+      requireApiCode(response, ['1000'], 'PUT /auth/change-password');
     } catch (error) {
-      if (isAxiosError<{ code?: string; message?: string }>(error)) {
-        if (error.response?.data?.code === '3009') {
-          throw new Error('Mật khẩu hiện tại không đúng.');
-        }
-        if (error.response?.status === 401) {
-          throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-        }
-        throw new Error(
-          error.response?.data?.message ??
-            'Không kết nối được backend. Hãy kiểm tra mạng và địa chỉ API.',
-        );
-      }
-      throw error;
+      throw translatedFailure(error);
     }
   },
 };
-
-async function authRequest(path: string, body: object, token?: string): Promise<void> {
-  if (!apiUrl) throw new Error('Chưa cấu hình địa chỉ backend.');
-  try {
-    const response = await apiClient.post<{ code: string; message: string }>(
-      path,
-      body,
-      token ? { headers: { Authorization: `Bearer ${token}` } } : undefined,
-    );
-    if (response.data.code !== '1000') {
-      throw new Error(response.data.message || 'Yêu cầu thất bại.');
-    }
-  } catch (error) {
-    if (isAxiosError<{ code?: string; message?: string }>(error)) {
-      const code = error.response?.data?.code;
-      if (code === '3004') throw new Error('Mã OTP không đúng.');
-      if (code === '3005') throw new Error('Mã OTP đã hết hạn. Hãy yêu cầu mã mới.');
-      if (code === '3009') throw new Error('Mật khẩu hiện tại không đúng.');
-      if (code === '9903') throw new Error('Không gửi được email. Hãy kiểm tra cấu hình Gmail hoặc thử lại.');
-      throw new Error(error.response?.data?.message ?? 'Không kết nối được backend.');
-    }
-    throw error;
-  }
-}
