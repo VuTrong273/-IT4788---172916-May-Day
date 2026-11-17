@@ -6,6 +6,7 @@ import { App } from './app/App';
 import { AuthProvider } from './features/auth/auth-context';
 import './styles/tokens.css';
 import './styles/global.css';
+import './styles/operations.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element was not found.');

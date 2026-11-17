@@ -386,12 +386,19 @@ export class UserRepository implements OnModuleDestroy {
     path: string,
   ): Promise<EndpointAccess | null> {
     const result = await this.pool.query<EndpointAccess>(
-      `SELECT e.is_public,
+      `WITH RECURSIVE inherited_roles AS (
+         SELECT role_id, parent_role_id FROM roles WHERE role_id = $1
+         UNION
+         SELECT r.role_id, r.parent_role_id FROM roles r
+         JOIN inherited_roles child ON child.parent_role_id = r.role_id
+       )
+       SELECT e.is_public,
               EXISTS (
                 SELECT 1
                 FROM permissions_endpoints pe
                 JOIN role_permissions rp ON rp.permission_id = pe.permission_id
-                WHERE pe.endpoint_id = e.endpoint_id AND rp.role_id = $1
+                WHERE pe.endpoint_id = e.endpoint_id
+                  AND rp.role_id IN (SELECT role_id FROM inherited_roles)
               ) AS is_allowed
        FROM api_endpoints e
        WHERE e.method = $2 AND e.path = $3`,

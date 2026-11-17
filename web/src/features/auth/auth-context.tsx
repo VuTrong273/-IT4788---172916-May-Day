@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type PropsWithChildren } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import { authApi } from './auth-api';
 import { roleFromId, type Session } from './auth-types';
 
@@ -26,6 +26,11 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState(readSavedSession);
+  useEffect(() => {
+    function expire() { sessionStorage.removeItem(SESSION_KEY); setSession(null); }
+    window.addEventListener('mayday:session-expired', expire);
+    return () => window.removeEventListener('mayday:session-expired', expire);
+  }, []);
   const value = useMemo<AuthContextValue>(() => ({
     session,
     async signIn(phone, password) {

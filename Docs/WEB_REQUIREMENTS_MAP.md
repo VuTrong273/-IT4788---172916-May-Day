@@ -28,17 +28,17 @@ OpenAPI mô tả hợp đồng API dự kiến. Nó không chứng minh API đã
 | Hồ sơ cá nhân | Chỉ đọc/cập nhật hồ sơ tài khoản hiện tại | `GET/PUT /profile` | Đã có trang hồ sơ. |
 | Tổng quan | Bệnh án theo trạng thái, liên kết tới hàng đợi; không bịa số liệu | `GET /medical_records/all` | Đọc dữ liệu backend thật. |
 | Bệnh án | Vòng đời `pending → in_progress → completed`; bác sĩ nhận trước khi thao tác; hoàn tất thì khoá; admin có thể xoá theo ràng buộc | `GET /medical_records/all`, `GET /medical_records/{id}`, `GET /medical_records/{id}/summary`, `POST /medical_records/{id}/accept`, `PUT /medical_records/{id}`, `DELETE /medical_records/{id}` | Danh sách/chi tiết/nhận bệnh án có; cập nhật câu trả lời và hoàn tất cần được bổ sung theo hợp đồng sau khi xác nhận runtime. |
-| Bệnh nhân | Bác sĩ tìm kiếm hoặc tạo hồ sơ; chỉ hiện dữ liệu có quyền | `GET /doctor/patients/search`, `POST /doctor/patients` | Cần xây luồng theo API contract và xác nhận backend runtime. |
-| Tài khoản | Admin quản lý trạng thái/vai trò và gán nhân viên vào chi nhánh/khoa/phòng | `/admin/users`, `/admin/users/{id}`, `/admin/users/{id}/assign` | Cần xây sau khi xác nhận runtime. |
-| Cơ sở khám | Cấu trúc chi nhánh → khoa → phòng; ràng buộc xoá theo quan hệ | `/branches`, `/departments`, `/rooms` | Cần xây sau khi xác nhận runtime. |
-| Mẫu phiếu | Mẫu → section → question → option; mẫu đang được dùng không được xoá | `/templates`, `/templates/{id}`, `/templates/{template_id}/sections`, `/templates/sections/{id}`, `/templates/sections/{section_id}/questions`, `/templates/questions/{id}` | Cần xây sau khi xác nhận runtime. |
-| Phân quyền | Role → permission → API endpoint; RBAC dùng method + path | `/roles`, `/permissions`, `/role_permissions`, `/api_endpoints`, `/permission_endpoints` | Cần xây sau khi xác nhận runtime. |
-| Xét nghiệm | Bác sĩ chỉ định và nhập kết quả trong bệnh án | `POST /lab-requests`, `GET /lab-results/{record_id}`, `POST /lab-results` | Cần xây sau khi xác nhận runtime. |
-| Đơn thuốc | Bác sĩ kê đơn theo bệnh án; một bệnh án tối đa một đơn theo mã lỗi đặc tả | `POST /prescriptions`, `GET /prescriptions/{medical_record_id}` | Cần xây sau khi xác nhận runtime. |
+| Bệnh nhân | Bác sĩ tìm kiếm hoặc tạo hồ sơ; chỉ hiện dữ liệu có quyền | `GET /doctor/patients/search`, `POST /doctor/patients` | Đã có tìm kiếm, tạo và xem hồ sơ. |
+| Tài khoản | Admin quản lý trạng thái/vai trò và gán nhân viên vào chi nhánh/khoa/phòng | `/admin/users`, `/admin/users/{id}`, `/admin/users/{id}/assign` | Đã có danh sách/phân trang/lọc, tạo/sửa/xóa, tạo nhân viên và phân công. |
+| Cơ sở khám | Cấu trúc chi nhánh → khoa → phòng; ràng buộc xoá theo quan hệ | `/branches`, `/departments`, `/rooms` | Đã có quản lý cả ba cấp, lọc theo cấp cha và xác nhận xóa. |
+| Mẫu phiếu | Mẫu → section → question → option; mẫu đang được dùng không được xoá | `/templates`, `/templates/{id}`, `/templates/{template_id}/sections`, `/templates/sections/{id}`, `/templates/sections/{section_id}/questions`, `/templates/questions/{id}` | Đã có danh sách và trình thiết kế phần/câu hỏi/lựa chọn, điều kiện hiển thị theo câu trả lời cha. |
+| Phân quyền | Role → permission → API endpoint; RBAC dùng method + path | `/roles`, `/permissions`, `/role_permissions`, `/api_endpoints`, `/permission_endpoints` | Đã có CRUD danh mục và gán/thu hồi quyền trực tiếp bằng checkbox. |
+| Xét nghiệm | Bác sĩ chỉ định và nhập kết quả trong bệnh án | `POST /lab-requests`, `GET /lab-results/{record_id}`, `POST /lab-results` | Đã có chỉ định, nhập/cập nhật kết quả từng phần và xem trạng thái; admin chỉ đọc. |
+| Đơn thuốc | Bác sĩ kê đơn theo bệnh án; một bệnh án tối đa một đơn theo mã lỗi đặc tả | `POST /prescriptions`, `GET /prescriptions/{medical_record_id}` | Đã có kê/xem đơn trong phạm vi bệnh án; admin chỉ đọc. |
 
 ## Kiểm tra phạm vi backend hiện có
 
-Đối chiếu controller trong `backend/src/` cho thấy hiện có route runtime cho auth, profile, và một phần bệnh án: danh sách, chi tiết, tóm tắt, nhận bệnh án. Các module quản trị tài khoản/cơ sở/RBAC/mẫu phiếu/bệnh nhân/xét nghiệm/đơn thuốc chưa thấy controller tương ứng trong source hiện tại. Đây là khoảng trống triển khai backend so với hợp đồng và phải được phối hợp với thành viên backend; frontend không tự tạo endpoint thay họ.
+Backend hiện có auth, profile, danh sách/chi tiết/tóm tắt/nhận bệnh án và đã bổ sung 58 API cho tài khoản, cơ sở khám, RBAC, mẫu phiếu, bệnh nhân, xét nghiệm, đơn thuốc. Các API mới được kiểm thử qua HTTP với PostgreSQL thật, JWT và quyền từ seed; xem [danh mục và quy tắc API](../backend/OPERATIONS_API.md). Các trang web tương ứng đã tích hợp API, có kiểm thử Playwright và live smoke test chỉ đọc với backend thật. Phần tạo/phân loại/chốt bệnh án, trả lời phiếu và các nghiệp vụ ảnh/tổn thương/UAS7 vẫn chưa nằm trong thay đổi này.
 
 ## Quy tắc triển khai UI
 

@@ -9,6 +9,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { useAuth } from '@/features/auth/auth-context';
 import { roleFromId } from '@/features/auth/auth-types';
 import { acceptMedicalRecord, getMedicalRecord, type MedicalRecordDetail, type MedicalRecordSummary } from './medical-records-api';
+import { ClinicalRecord } from '@/features/operations/ClinicalPage';
 
 function formatDate(value: string | null) {
   if (!value) return 'Chưa cập nhật';
@@ -88,7 +89,7 @@ export function RecordDetailPage() {
             <Panel title="Lời dặn và ghi chú" className="detail-panel">
               {record.instructions ? <p className="record-instructions">{record.instructions}</p> : <p className="muted-copy">Chưa có lời dặn cho hồ sơ này.</p>}
             </Panel>
-            {record.status === 'in_progress' ? <Panel className="feature-notice"><div className="feature-notice__icon"><Icon name="activity" /></div><div><strong>Hồ sơ đang được xử lý</strong><p>Đặc tả OpenAPI có luồng trả lời phiếu khám, chỉ định xét nghiệm và kê đơn. Giao diện chưa tích hợp các luồng này; backend hiện tại cũng chưa có route tương ứng để bật thao tác.</p></div></Panel> : null}
+            <ClinicalRecord key={record.medical_record_id} record={record} />
           </div>
           <aside className="detail-side-column">
             <Panel title="Tình trạng hồ sơ" className="status-panel"><StatusBadge status={record.status} /><p>{record.status === 'pending' ? 'Hồ sơ đang chờ bác sĩ tiếp nhận.' : record.status === 'in_progress' ? 'Bệnh án đã được bác sĩ tiếp nhận.' : 'Quy trình của hồ sơ đã hoàn tất.'}</p><div className="status-panel__date"><Icon name="calendar" size={16} />Tạo ngày {formatDate(record.created_at)}</div></Panel>

@@ -37,13 +37,14 @@ export async function apiRequest<T>(
   }
 
   const envelope = payload as Partial<ApiEnvelope<T>>;
-  if (!response.ok || envelope.code !== '1000') {
+  if (!response.ok || !['1000', '1001'].includes(envelope.code ?? '')) {
     const code = typeof envelope.code === 'string' ? envelope.code : undefined;
     const message = typeof envelope.message === 'string' ? envelope.message : 'Không thể hoàn tất yêu cầu.';
-    if (response.status === 401 || ['3001', '3002', '3003'].includes(code ?? '')) {
+    if (token && (response.status === 401 || ['3001', '3002', '3003'].includes(code ?? ''))) {
+      window.dispatchEvent(new Event('mayday:session-expired'));
       throw new ApiError('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.', response.status, code);
     }
-    throw new ApiError(message, response.status, code);
+    throw new ApiError(code === '3008' ? 'Mật khẩu không chính xác.' : message, response.status, code);
   }
 
   return envelope as ApiEnvelope<T> as T;

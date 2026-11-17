@@ -66,7 +66,7 @@ export function DashboardPage() {
         <div className="dashboard-banner__art" aria-hidden="true"><div className="banner-orbit banner-orbit--outer" /><div className="banner-orbit banner-orbit--inner" /><div className="banner-cross"><span /><span /></div><div className="banner-caption"><Icon name="activity" size={16} /> Sức khỏe là ưu tiên</div></div>
       </div>
 
-      <div className="section-heading"><div><h2>Tình hình bệnh án</h2><p>Số liệu cập nhật trực tiếp từ hệ thống.</p></div><span className="live-label"><span />Đang kết nối</span></div>
+      <div className="section-heading"><div><h2>Tình hình bệnh án</h2><p>Số liệu cập nhật trực tiếp từ hệ thống.</p></div><span className="live-label"><span />{loading ? 'Đang tải' : error ? 'Lỗi kết nối' : 'Đã cập nhật'}</span></div>
       {error ? <div className="form-alert page-alert" role="alert"><Icon name="alert" size={18} />{error}</div> : null}
       <div className="stat-grid">
         {statCards.map((item) => <article className="stat-card" key={item.label}><div className={`stat-card__icon stat-card__icon--${item.tone}`}><Icon name={item.icon} size={19} /></div><span className="stat-card__label">{item.label}</span><strong className="stat-card__value">{loading ? <span className="value-skeleton" /> : item.value.toLocaleString('vi-VN')}</strong><span className="stat-card__note">{item.note}</span></article>)}

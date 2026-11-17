@@ -106,6 +106,8 @@ Kết quả hiện tại là `Hello World!`. `start:dev` tự khởi động l�
 
 ## Kiểm tra trước khi commit
 
+Backend đã bổ sung 58 API cho bệnh nhân, tài khoản nhân viên, cơ sở khám, RBAC, mẫu phiếu, xét nghiệm và đơn thuốc. Xem [danh mục API và quy tắc nghiệp vụ](./OPERATIONS_API.md).
+
 Chạy trong thư mục `backend/`:
 
 ```powershell
@@ -115,7 +117,7 @@ npm test
 npm run test:e2e
 ```
 
-`build` kiểm tra biên dịch; `lint` kiểm tra mã nguồn; `test` chạy unit test; `test:e2e` gọi thử ứng dụng qua HTTP. Các test API dùng repository giả; để xác nhận PostgreSQL thật, chạy request đăng nhập và xem hồ sơ ở trên sau khi dựng Compose.
+`build` kiểm tra biên dịch; `lint` kiểm tra mã nguồn; `test` chạy unit test; `test:e2e` kiểm tra HTTP với repository giả.
 
 ## Các file chính
 
