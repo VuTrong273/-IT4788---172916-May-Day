@@ -1,0 +1,72 @@
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+} from "react-native";
+import type { Session } from "@/features/auth/session";
+import { lesionsApi } from "./lesions-api";
+import { trackingStyles as styles } from "./tracking-styles";
+
+export function PrivateImage({
+  session,
+  attachmentId,
+}: {
+  session: Session;
+  attachmentId: string;
+}) {
+  const [uri, setUri] = useState<string | null>(null),
+    [error, setError] = useState<string | null>(null),
+    [expanded, setExpanded] = useState(false),
+    [reload, setReload] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    lesionsApi
+      .image(session, attachmentId, controller.signal)
+      .then((value) => {
+        if (!controller.signal.aborted) {
+          setUri(value);
+          setError(null);
+        }
+      })
+      .catch((caught: unknown) => {
+        if (!controller.signal.aborted)
+          setError(
+            caught instanceof Error ? caught.message : "Không đọc được ảnh.",
+          );
+      });
+    return () => controller.abort();
+  }, [session, attachmentId, reload]);
+  if (error)
+    return (
+      <Pressable onPress={() => setReload((n) => n + 1)}>
+        <Text style={styles.error}>{error} Bấm để thử lại.</Text>
+      </Pressable>
+    );
+  if (!uri) return <ActivityIndicator />;
+  return (
+    <>
+      <Pressable
+        accessibilityLabel="Phóng to ảnh tổn thương"
+        onPress={() => setExpanded(true)}
+      >
+        <Image source={{ uri }} style={styles.image} resizeMode="contain" />
+      </Pressable>
+      <Modal visible={expanded} onRequestClose={() => setExpanded(false)}>
+        <ScrollView contentContainerStyle={{ padding: 24, paddingTop: 60 }}>
+          <Pressable style={styles.action} onPress={() => setExpanded(false)}>
+            <Text style={styles.link}>Đóng ảnh</Text>
+          </Pressable>
+          <Image
+            source={{ uri }}
+            style={{ width: "100%", height: 600 }}
+            resizeMode="contain"
+          />
+        </ScrollView>
+      </Modal>
+    </>
+  );
+}

@@ -203,7 +203,7 @@ export default function LoginScreen() {
                 onAccessoryPress={() =>
                   setIsPasswordVisible((value) => !value)
                 }
-                onSubmitEditing={handleSubmit(handleLogin)}
+                onSubmitEditing={() => void handleSubmit(handleLogin)()}
                 onValueChange={clearMessage}
                 placeholder="Nhập mật khẩu..."
                 returnKeyType="done"
@@ -257,7 +257,7 @@ export default function LoginScreen() {
                 accessibilityRole="button"
                 accessibilityState={{ disabled: isSubmitting }}
                 disabled={isSubmitting}
-                onPress={handleSubmit(handleLogin)}
+                onPress={() => void handleSubmit(handleLogin)()}
                 style={({ pressed }) => [
                   styles.loginButton,
                   pressed && styles.loginButtonPressed,

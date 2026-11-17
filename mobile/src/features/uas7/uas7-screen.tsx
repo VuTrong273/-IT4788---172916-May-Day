@@ -25,6 +25,7 @@ import {
   validateUas7ScoreDraft,
   type Uas7ValidationErrors,
 } from '@/features/uas7/uas7-validation';
+import { Uas7Trend } from '@/features/uas7/uas7-trend';
 import { fontSizes, typography } from '@/constants/typography';
 
 const scoreOptions = ['0', '1', '2', '3'];
@@ -430,6 +431,8 @@ export function Uas7Screen() {
             ) : null}
           </View>
         </View>
+
+        {scores?.length ? <Uas7Trend entries={scores} /> : null}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{readOnly ? 'Lịch sử bệnh nhân' : 'Lịch sử điểm UAS7'}</Text>

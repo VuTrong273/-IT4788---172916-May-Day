@@ -1,0 +1,32 @@
+import type { LesionPhoto } from "./lesions-api";
+export type GalleryPhoto = LesionPhoto & { episodeName: string };
+export function photoDate(photo: LesionPhoto) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(photo.taken_at ?? photo.created_at));
+}
+export function filterPhotos(
+  photos: GalleryPhoto[],
+  part: string,
+  from: string,
+  to: string,
+) {
+  if (from && to && from > to) return [];
+  return photos
+    .filter((photo) => {
+      const day = photoDate(photo);
+      return (
+        (!part || (photo.body_part ?? "Toàn đợt") === part) &&
+        (!from || day >= from) &&
+        (!to || day <= to)
+      );
+    })
+    .sort(
+      (a, b) =>
+        Date.parse(b.taken_at ?? b.created_at) -
+        Date.parse(a.taken_at ?? a.created_at),
+    );
+}

@@ -1,0 +1,235 @@
+import { useState } from "react";
+import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ChoiceField } from "@/components/forms/choice-field";
+import { DateField } from "@/components/forms/date-field";
+import type { Session } from "@/features/auth/session";
+import { PrivateImage } from "./private-image";
+import { filterPhotos, type GalleryPhoto } from "./photo-gallery-data";
+import { trackingStyles as styles } from "./tracking-styles";
+
+export function PhotoGallery({
+  session,
+  photos,
+}: {
+  session: Session;
+  photos: GalleryPhoto[];
+}) {
+  const [part, setPart] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [selected, setSelected] = useState<string[]>([]);
+  const [comparing, setComparing] = useState(false);
+  const [limit, setLimit] = useState(12);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFilters = [part, from, to].filter(Boolean).length;
+  const invalidRange = Boolean(from && to && from > to);
+  const filtered = filterPhotos(photos, part, from, to);
+  const comparison = photos
+    .filter((photo) => selected.includes(photo.photo_id))
+    .sort(
+      (a, b) =>
+        Date.parse(a.taken_at ?? a.created_at) -
+        Date.parse(b.taken_at ?? b.created_at),
+    );
+  function filter(setter: (value: string) => void, value: string) {
+    setter(value);
+    setLimit(12);
+    setSelected([]);
+    setComparing(false);
+  }
+  return (
+    <View style={styles.stack}>
+      <View style={styles.card}>
+        <Text style={styles.title}>Tra cứu và so sánh ảnh</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ expanded: filtersOpen }}
+          style={[styles.button, { alignSelf: "flex-start" }]}
+          onPress={() => setFiltersOpen((open) => !open)}
+        >
+          <Text style={styles.buttonText}>
+            {filtersOpen ? "Thu gọn bộ lọc" : "Bộ lọc"}
+            {activeFilters ? ` (${activeFilters})` : ""}
+          </Text>
+        </Pressable>
+        {filtersOpen ? (
+          <View style={styles.stack}>
+            <ChoiceField
+              label="Lọc vị trí (bỏ chọn: tất cả)"
+              value={part}
+              onChange={(value) => filter(setPart, value)}
+              options={[
+                ...new Set(
+                  photos.map((photo) => photo.body_part ?? "Toàn đợt"),
+                ),
+              ]}
+            />
+            <DateField
+              label="Từ ngày"
+              value={from}
+              onChange={(value) => filter(setFrom, value)}
+            />
+            <DateField
+              label="Đến ngày"
+              value={to}
+              onChange={(value) => filter(setTo, value)}
+            />
+            <Text style={styles.body}>
+              Ngày chụp theo giờ Việt Nam. Nếu chưa ghi ngày chụp, dùng thời
+              điểm tải ảnh.
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              style={styles.action}
+              onPress={() => {
+                setPart("");
+                setFrom("");
+                setTo("");
+                setLimit(12);
+                setSelected([]);
+              }}
+            >
+              <Text style={styles.link}>Xóa bộ lọc</Text>
+            </Pressable>
+          </View>
+        ) : null}
+        {invalidRange ? (
+          <Text accessibilityRole="alert" style={styles.error}>
+            Ngày bắt đầu phải trước hoặc bằng ngày kết thúc. Mở bộ lọc để chỉnh
+            lại.
+          </Text>
+        ) : null}
+        <Text style={styles.body}>
+          {filtered.length}/{photos.length} ảnh · Chọn tối đa 2 ảnh để so sánh.
+        </Text>
+        <View style={styles.row}>
+          <Pressable
+            accessibilityRole="button"
+            disabled={comparison.length !== 2}
+            style={[styles.button, comparison.length !== 2 && { opacity: 0.5 }]}
+            onPress={() => setComparing(true)}
+          >
+            <Text style={styles.buttonText}>
+              So sánh ({comparison.length}/2)
+            </Text>
+          </Pressable>
+          {selected.length ? (
+            <Pressable
+              accessibilityRole="button"
+              style={styles.action}
+              onPress={() => setSelected([])}
+            >
+              <Text style={styles.link}>Bỏ chọn ảnh</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      </View>
+      {!invalidRange && !filtered.length ? (
+        <Text style={styles.body}>Không có ảnh phù hợp với bộ lọc.</Text>
+      ) : null}
+      {filtered.slice(0, limit).map((photo) => {
+        const checked = selected.includes(photo.photo_id);
+        const disabled = !checked && comparison.length === 2;
+        return (
+          <View
+            key={photo.photo_id}
+            style={[styles.card, checked && styles.selected]}
+          >
+            <PhotoDetails photo={photo} />
+            <PrivateImage
+              session={session}
+              attachmentId={photo.attachment_id}
+            />
+            <Pressable
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked, disabled }}
+              disabled={disabled}
+              onPress={() =>
+                setSelected((current) =>
+                  checked
+                    ? current.filter((id) => id !== photo.photo_id)
+                    : [...current, photo.photo_id],
+                )
+              }
+              style={[styles.button, disabled && { opacity: 0.5 }]}
+            >
+              <Text style={styles.buttonText}>
+                {checked ? "✓ Đã chọn — bấm để bỏ" : "Chọn để so sánh"}
+              </Text>
+            </Pressable>
+          </View>
+        );
+      })}
+      {limit < filtered.length ? (
+        <Pressable
+          accessibilityRole="button"
+          style={styles.button}
+          onPress={() => setLimit((current) => current + 12)}
+        >
+          <Text style={styles.buttonText}>
+            Xem thêm ảnh ({filtered.length - limit})
+          </Text>
+        </Pressable>
+      ) : null}
+      <Modal
+        visible={comparing && comparison.length === 2}
+        onRequestClose={() => setComparing(false)}
+      >
+        <SafeAreaView style={{ flex: 1 }}>
+          <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
+            <Pressable
+              accessibilityRole="button"
+              style={styles.button}
+              onPress={() => setComparing(false)}
+            >
+              <Text style={styles.buttonText}>Đóng so sánh</Text>
+            </Pressable>
+            <Text style={styles.title}>So sánh ảnh theo thời gian</Text>
+            <Text style={styles.body}>
+              Ảnh chụp sớm hơn ở bên trái. Chạm ảnh để phóng to.
+            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 12,
+                alignItems: "flex-start",
+              }}
+            >
+              {comparison.map((photo) => (
+                <View
+                  key={photo.photo_id}
+                  style={{ flex: 1, minWidth: 0, gap: 12 }}
+                >
+                  <PrivateImage
+                    session={session}
+                    attachmentId={photo.attachment_id}
+                  />
+                  <PhotoDetails photo={photo} />
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+    </View>
+  );
+}
+function PhotoDetails({ photo }: { photo: GalleryPhoto }) {
+  return (
+    <View style={styles.stack}>
+      <Text style={styles.title}>
+        {photo.episodeName} · {photo.body_part ?? "Toàn đợt"}
+      </Text>
+      <Text style={styles.body}>
+        {new Date(photo.taken_at ?? photo.created_at).toLocaleString("vi-VN", {
+          timeZone: "Asia/Ho_Chi_Minh",
+        })}
+      </Text>
+      <Text style={styles.body}>
+        Ngứa: {photo.itch_score ?? "—"} · Đau: {photo.pain_score ?? "—"} · Rát:{" "}
+        {photo.burn_score ?? "—"} · Số nốt: {photo.hives_count ?? "—"}
+      </Text>
+    </View>
+  );
+}
