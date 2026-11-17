@@ -10,11 +10,6 @@ type MockFunction = {
   mockResolvedValueOnce(value: unknown): MockFunction;
 };
 
-declare const jest: {
-  mock(moduleName: string, factory: () => unknown): void;
-  fn(implementation?: (...args: never[]) => unknown): MockFunction;
-  mocked<T>(value: T): T & MockFunction;
-};
 declare const describe: (title: string, run: () => void) => void;
 declare const beforeEach: (run: () => void) => void;
 declare const test: (title: string, run: () => void | Promise<void>) => void;

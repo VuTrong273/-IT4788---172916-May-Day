@@ -56,8 +56,8 @@ Cập nhật container local sau khi sửa source:
 docker compose up --build -d --no-deps api
 ```
 
-CORS development cho phép localhost/127.0.0.1 trên cổng 8081, 5173 và 4173. Origin khác và production khai báo bằng `CORS_ORIGINS`; web local có thể tiếp tục dùng Vite proxy.
+CORS development cho phép localhost/127.0.0.1 và IPv4 LAN riêng trên cổng 8081, 5173 và 4173. Origin khác và production khai báo bằng `CORS_ORIGINS`; web local có thể tiếp tục dùng Vite proxy.
 
 ## Phần chưa nằm trong thay đổi này
 
-Frontend web đã có form, danh sách và API client cho bảy nhóm nghiệp vụ trên; xem [hướng dẫn frontend](../web/README.md). Bộ API này không triển khai toàn bộ hợp đồng mobile như phân loại/tạo/chốt bệnh án, trả lời phiếu, upload ảnh, tổn thương hay UAS7. Danh sách/chi tiết/tóm tắt/tiếp nhận bệnh án đã có trước vẫn giữ nguyên.
+Frontend web đã có form, danh sách và API client cho bảy nhóm nghiệp vụ trên; xem [hướng dẫn frontend](../web/README.md). Các luồng mobile tạo/chốt bệnh án, trả lời phiếu, upload ảnh, đợt tổn thương và UAS7 đã được bổ sung trong `src/patient-care/`; xem [hướng dẫn mobile](../mobile/README.md). Mẫu phiếu được chọn trực tiếp từ các template đang hoạt động; chưa cấu hình quy tắc phân loại chẩn đoán tự động. API vị trí/ảnh tổn thương chi tiết chưa có giao diện mobile và chưa nằm trong lần bổ sung này. Danh sách/chi tiết/tóm tắt/tiếp nhận bệnh án đã có trước vẫn giữ nguyên.

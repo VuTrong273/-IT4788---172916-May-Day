@@ -21,12 +21,6 @@ type TestFunction = {
   each<T>(cases: T[]): (title: string, run: (value: T) => void | Promise<void>) => void;
 };
 
-declare const jest: {
-  clearAllMocks(): void;
-  fn(): unknown;
-  mock(moduleName: string, factory: () => unknown): void;
-  requireActual<T>(moduleName: string): T;
-};
 declare const describe: (title: string, run: () => void) => void;
 declare const beforeEach: (run: () => void) => void;
 declare const test: TestFunction;

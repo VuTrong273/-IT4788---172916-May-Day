@@ -94,7 +94,7 @@ Copy-Item .env.example .env
 npm run start:dev
 ```
 
-Trước khi chạy `start:dev`, điền các biến trong `.env` như phần Docker Compose. Nếu đã tạo `.env`, không cần `Copy-Item` lần nữa. Có thể chạy riêng PostgreSQL và kho ảnh bằng `docker compose up -d db minio minio-init`, rồi chạy API bằng npm để tự reload khi sửa code. Chức năng đăng nhập dùng PostgreSQL khi có request; MinIO chưa được gọi từ API.
+Trước khi chạy `start:dev`, điền các biến trong `.env` như phần Docker Compose. Nếu đã tạo `.env`, không cần `Copy-Item` lần nữa. Có thể chạy riêng PostgreSQL và kho ảnh bằng `docker compose up -d db minio minio-init`, rồi chạy API bằng npm để tự reload khi sửa code. Chức năng đăng nhập dùng PostgreSQL khi có request; API ảnh dùng MinIO để lưu file và cấp URL ảnh có chữ ký qua backend.
 
 Mặc định server nghe ở `http://localhost:3000`. Mở PowerShell khác và thử:
 

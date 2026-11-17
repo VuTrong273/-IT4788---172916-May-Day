@@ -37,6 +37,10 @@ export class DatabaseService implements OnModuleDestroy {
       const code = (error as { code?: string }).code;
       if (code === '23505') {
         const constraint = (error as { constraint?: string }).constraint;
+        if (constraint === 'uq_uas7_patient_date')
+          fail('5002', 'Score already exists for this date', 409);
+        if (constraint === 'uq_answer_attachment')
+          fail('6006', 'Image already linked', 409);
         if (constraint === 'uq_users_phone')
           fail('3006', 'User phone already exists', 409);
         if (constraint === 'templates_pkey')

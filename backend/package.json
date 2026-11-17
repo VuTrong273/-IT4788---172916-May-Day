@@ -28,6 +28,7 @@
     "@types/nodemailer": "^8.0.2",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.13",
+    "minio": "^8.0.7",
     "nodemailer": "^10.1.7",
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",

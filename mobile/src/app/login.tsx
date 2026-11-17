@@ -24,7 +24,6 @@ import { styles } from '@/features/auth/login-styles';
 import { getUserRole, roleLabels } from '@/features/auth/roles';
 import { saveSession } from '@/features/auth/session';
 
-import { AuthLayout } from '@/features/auth/components/auth-layout';
 
 export default function LoginScreen() {
   const params = useLocalSearchParams<{

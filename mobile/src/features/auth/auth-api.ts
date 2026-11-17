@@ -49,6 +49,10 @@ function translatedFailure(error: unknown): Error {
 
   let message: string | undefined;
   switch (error.apiCode) {
+    case '3007':
+    case '3008':
+      message = 'Số điện thoại hoặc mật khẩu không đúng.';
+      break;
     case '3004':
       message = 'Mã OTP không đúng.';
       break;

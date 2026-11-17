@@ -18,6 +18,7 @@
     "expo-image": "~58.0.18",
     "expo-image-picker": "~58.0.10",
     "expo-linking": "~58.0.17",
+    "expo-modules-core": "~58.1.0",
     "expo-router": "~58.0.31",
     "expo-secure-store": "~58.0.3",
     "expo-splash-screen": "~58.0.14",
@@ -40,7 +41,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
-    "@testing-library/react-native": "^13.3.3",
+    "@react-native/jest-preset": "^0.88.1",
+    "@testing-library/react-native": "^14.1.0",
     "@types/jest": "30.0.0",
     "@types/node": "^22.19.0",
     "@types/react": "~19.3.0",
@@ -53,10 +55,11 @@
     "yaml": "^2.9.1"
   },
   "scripts": {
-    "start": "expo start",
+    "start": "node ./scripts/start-connected.cjs",
+    "start:expo": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "node ./scripts/start-connected.cjs --android",
+    "ios": "node ./scripts/start-connected.cjs --ios",
     "web": "expo start --web",
     "build": "expo export --platform web",
     "lint": "expo lint",

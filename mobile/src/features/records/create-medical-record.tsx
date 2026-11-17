@@ -131,7 +131,7 @@ export function CreateMedicalRecord({ session }: { session: Session }) {
         <Text style={styles.eyebrow}>BỆNH ÁN / TẠO MỚI</Text>
         <Text style={styles.title}>Tạo bệnh án</Text>
         <Text style={styles.subtitle}>
-          Trả lời câu hỏi phân loại để máy chủ chọn mẫu phiếu phù hợp. Bệnh án chỉ được tạo sau khi API xác nhận.
+          Chọn mẫu phiếu khám theo hướng dẫn của cơ sở y tế, sau đó xác nhận để tạo bệnh án.
         </Text>
 
         {isDoctor ? (
@@ -208,7 +208,7 @@ export function CreateMedicalRecord({ session }: { session: Session }) {
             disabled={loading || classifying || questions.length === 0}
             onPress={() => void classify()}
             style={[styles.primaryButton, (loading || classifying || questions.length === 0) && styles.disabled]}>
-            <Text style={styles.primaryText}>{classifying ? 'Đang phân loại...' : 'Phân loại bệnh án'}</Text>
+            <Text style={styles.primaryText}>{classifying ? 'Đang xác nhận...' : 'Xác nhận mẫu phiếu'}</Text>
           </Pressable>
         )}
       </ScrollView>

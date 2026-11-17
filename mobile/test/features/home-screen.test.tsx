@@ -23,14 +23,14 @@ describe('signed-out role selection', () => {
   });
 
   test('renders role choices and routes the selected role to sign-in', async () => {
-    render(<HomeScreen />);
+    await render(<HomeScreen />);
 
     await waitFor(() => {
       expect(screen.getByText('MAY DAY')).toBeTruthy();
     });
 
-    fireEvent.press(screen.getByRole('button', { name: 'Bác sĩ' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Tiếp tục' }));
+    await fireEvent.press(screen.getByRole('button', { name: /^Bác sĩ/ }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Tiếp tục' }));
 
     expect(router.push).toHaveBeenCalledWith({
       pathname: '/login',

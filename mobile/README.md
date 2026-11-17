@@ -1,56 +1,44 @@
-# Welcome to your Expo app 👋
+﻿# May Day Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Ứng dụng Expo SDK 58 / React Native dùng chung backend với web, không có dữ liệu giả khi API không hoạt động.
 
-## Get started
+## Chạy trên điện thoại
 
-1. Install dependencies
+1. Khởi động backend từ thư mục `backend`: `docker compose up -d`. Khi dùng điện thoại, đặt `API_BIND_HOST=0.0.0.0` trong `backend/.env`, sau đó chạy `docker compose up -d api` để áp dụng.
+2. Điện thoại và máy tính kết nối cùng Wi-Fi.
+3. Trong thư mục `mobile`, chạy `npm ci` rồi `npm start`, quét QR bằng Expo Go phù hợp SDK 58 hoặc development build.
 
-   ```bash
-   npm install
-   ```
+`npm start` tự chọn IPv4 LAN của máy tính, kiểm tra backend rồi khởi động Expo với cache mới. Nếu địa chỉ trong `.env.local` vẫn thuộc máy, địa chỉ đó được giữ lại; địa chỉ HTTPS được giữ để dùng backend từ xa. URL được truyền trực tiếp vào tiến trình Expo, không ghi đè file môi trường.
 
-2. Start the app
+Nếu có nhiều card mạng hoặc backend ở máy khác, đặt URL rõ ràng trước khi chạy:
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```powershell
+$env:EXPO_PUBLIC_API_URL = 'http://192.168.1.10:3000/api/v1'
+npm start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Thay IP trên bằng IP máy chạy backend. Mở `http://<IP>:3000/` trên trình duyệt điện thoại phải thấy `Hello World!`; nếu không, kiểm tra cùng mạng và quyền truy cập cổng 3000 trong Windows Firewall. `localhost` trên điện thoại trỏ về chính điện thoại.
 
-### Other setup steps
+`npm run start:expo` dùng cấu hình Expo trực tiếp; `npm run web` chạy giao diện trên trình duyệt. Với hai lệnh này, cấu hình `EXPO_PUBLIC_API_URL` trong `.env.local` theo [.env.example](./.env.example). Khởi động lại Expo khi đổi URL.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Các luồng đã nối backend
 
-## Learn more
+- Đăng ký, đăng nhập, hồ sơ, đổi mật khẩu và email khôi phục.
+- Chọn mẫu phiếu đang hoạt động, tạo bệnh án, lịch sử khám, lưu câu trả lời, bác sĩ tiếp nhận và hoàn tất.
+- Nhật ký đợt tổn thương: tạo, xem, sửa, xóa.
+- Chấm UAS7 theo ngày, lịch sử và tổng tuần khi có bệnh án đang khám.
+- Tải ảnh đơn/nhiều ảnh, thư viện ảnh, gắn/gỡ ảnh câu trả lời. Backend lưu MinIO và trả URL có chữ ký, hiệu lực một giờ; tải lại danh sách để lấy URL mới.
+- Xét nghiệm, đơn thuốc, quản trị người dùng, cơ sở, mẫu phiếu và phân quyền dùng cùng API với web.
 
-To learn more about developing your project with Expo, look at the following resources:
+Mẫu phiếu được người dùng chọn theo hướng dẫn cơ sở y tế. Hiện chưa có bộ quy tắc chẩn đoán/phân loại tự động được cấu hình. Backend kiểm tra vai trò, quyền sở hữu bệnh án và chặn sửa dữ liệu khi bệnh án đã hoàn tất.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Kiểm tra
 
-## Join the community
+```powershell
+npm run lint
+npx tsc --noEmit
+npm test
+npx expo export --platform android --platform web
+```
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Export kiểm tra đóng gói JavaScript và tài nguyên; không tạo APK hoặc thay thế kiểm thử trên điện thoại thật. Bộ kiểm thử giao diện web sẵn có chạy bằng `npm run test:e2e:web` khi đã cài trình duyệt Playwright.

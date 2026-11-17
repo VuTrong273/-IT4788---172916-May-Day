@@ -12,7 +12,7 @@ export const featureRoutes: FeatureRoute[] = [
   {
     slug: 'create-medical-record',
     title: 'Tạo bệnh án',
-    description: 'Trả lời câu hỏi phân loại và điền phiếu khám.',
+    description: 'Chọn mẫu phiếu theo hướng dẫn và điền phiếu khám.',
     roles: ['doctor', 'patient'],
   },
   {
