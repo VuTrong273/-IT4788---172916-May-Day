@@ -11,7 +11,7 @@
   display: none;
 }
 .users-page .page-header p {
-  font-size: 12px;
+  font-size: 14px;
 }
 .users-page > .ops-toolbar {
   gap: 12px;
@@ -24,7 +24,7 @@
 .users-page .ops-toolbar .ops-filter {
   min-width: 180px;
   gap: 6px;
-  font-size: 11px;
+  font-size: 13px;
 }
 .users-page .ops-toolbar .ops-filter:nth-child(2) {
   flex: 1;
@@ -35,7 +35,7 @@
   min-height: 36px;
   height: 36px;
   padding: 7px 10px;
-  font-size: 12px;
+  font-size: 14px;
   border-color: #dce6ef;
   border-radius: 8px;
 }
@@ -48,16 +48,16 @@
   margin-bottom: 12px;
 }
 .users-page .ops-resource .panel__header h2 {
-  font-size: 15px;
+  font-size: 17px;
 }
 .users-page .ops-resource .data-table th {
   padding: 10px 12px;
-  font-size: 10px;
+  font-size: 12px;
 }
 .users-page .ops-resource .data-table td {
   padding: 7px 12px;
   height: 46px;
-  font-size: 12px;
+  font-size: 14px;
 }
 .users-page .ops-resource .data-table .ops-actions {
   flex-wrap: nowrap;
@@ -66,16 +66,16 @@
 .users-page .ops-resource .button {
   min-height: 30px;
   padding: 6px 10px;
-  font-size: 11px;
+  font-size: 13px;
 }
 .users-page .ops-resource .ops-pill {
-  font-size: 10px;
+  font-size: 12px;
   padding: 4px 8px;
 }
 .users-page .ops-resource .table-footer {
   margin-top: 8px;
   padding-top: 10px;
-  font-size: 11px;
+  font-size: 13px;
 }
 .users-page .ops-resource .pagination {
   gap: 8px;
@@ -168,12 +168,12 @@
 }
 .facility-tab__copy strong {
   color: #21445f;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
 }
 .facility-tab__copy small {
   color: #8b9dab;
-  font-size: 11px;
+  font-size: 13px;
 }
 .facility-tab__arrow {
   margin-left: auto;
@@ -190,10 +190,10 @@
   margin-bottom: 18px;
 }
 .facilities-page .panel__header h2 {
-  font-size: 16px;
+  font-size: 18px;
 }
 .facilities-page .ops-resource .data-table th {
-  font-size: 10px;
+  font-size: 12px;
   padding: 12px 15px;
   background: #f6f9fc;
   color: #8097aa;
@@ -201,7 +201,7 @@
 }
 .facilities-page .ops-resource .data-table td {
   padding: 17px 15px;
-  font-size: 12px;
+  font-size: 14px;
   border-color: #edf2f7;
 }
 .facilities-page .ops-resource .data-table tr:hover td {
@@ -236,19 +236,19 @@
 }
 .facility-name strong {
   color: #284b66;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 650;
 }
 .facility-name small {
   color: #91a3b1;
-  font-size: 10px;
+  font-size: 12px;
 }
 .facility-contact {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   color: #70899e;
-  font-size: 12px;
+  font-size: 14px;
 }
 .facility-contact .anticon {
   color: #9bb0bf;
@@ -269,14 +269,14 @@
   background: #f7fafc;
   color: #6b8599;
   padding: 5px 8px;
-  font-size: 11px;
+  font-size: 13px;
 }
 .facilities-page .ops-actions {
   flex-wrap: nowrap;
   gap: 7px;
 }
 .facilities-page .ops-resource .button--small {
-  font-size: 11px;
+  font-size: 13px;
   min-height: 32px;
   padding: 7px 11px;
 }
@@ -286,14 +286,14 @@
   align-items: center;
   width: fit-content;
   gap: 12px;
-  font-size: 12px;
+  font-size: 14px;
   margin: -2px 0 16px;
 }
 .facility-parent-filter select {
   width: 240px;
   min-height: 36px;
   padding: 7px 10px;
-  font-size: 12px;
+  font-size: 14px;
   border-color: #dce6ef;
 }
 @media (max-width: 1000px) {
@@ -306,7 +306,7 @@
     height: 38px;
   }
   .facility-tab__copy small {
-    font-size: 10px;
+    font-size: 12px;
   }
   .facility-tab__arrow {
     display: none;
@@ -323,7 +323,7 @@
     text-align: center;
   }
   .facility-tab__copy strong {
-    font-size: 12px;
+    font-size: 14px;
   }
   .facility-tab__copy small {
     display: none;
@@ -355,7 +355,7 @@
 }
 .access-page > .ops-tabs .ops-tab {
   padding: 9px 15px;
-  font-size: 12px;
+  font-size: 14px;
   color: #6d859a;
 }
 .access-page > .ops-tabs .ops-tab--active {
@@ -381,7 +381,7 @@
   gap: 8px;
   padding: 8px 10px 16px;
   color: #45637b;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
 }
 .access-role-list > button {
@@ -429,13 +429,13 @@
   min-width: 0;
 }
 .access-role-list strong {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 650;
   color: #345770;
   overflow-wrap: anywhere;
 }
 .access-role-list small {
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.5;
   color: #91a4b4;
 }
@@ -446,7 +446,7 @@
   margin: 14px 10px 4px;
   padding-top: 15px;
   border-top: 1px solid #edf2f7;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.8;
   color: #8b9eae;
 }
@@ -467,7 +467,7 @@
   border-bottom: 1px solid #edf2f7;
 }
 .access-permission-header > div > span {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 650;
   letter-spacing: 1px;
   color: #8b9faf;
@@ -500,7 +500,7 @@
   border: 0;
   background: transparent;
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   color: #345770;
 }
 .access-permission-body {
@@ -520,7 +520,7 @@
   display: block;
   width: 100%;
   padding: 0 0 11px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 750;
   color: #345770;
 }
@@ -556,7 +556,7 @@
   cursor: pointer;
 }
 .access-permission-item > span {
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.6;
   color: #567289;
 }
@@ -568,7 +568,7 @@
 }
 .access-permission-item small {
   margin-left: auto;
-  font-size: 9px;
+  font-size: 11px;
   color: #94a6b4;
   white-space: nowrap;
 }
@@ -576,7 +576,7 @@
   display: flex;
   align-items: flex-start;
   gap: 7px;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.7;
   color: #6f8ca3;
   padding: 10px 12px;
@@ -596,14 +596,14 @@
   padding: 15px 24px;
 }
 .access-permission-footer > span {
-  font-size: 11px;
+  font-size: 13px;
   color: #8299ab;
 }
 .access-permission-footer strong {
   color: #326c97;
 }
 .access-permission-footer .button {
-  font-size: 12px;
+  font-size: 14px;
   min-height: 36px;
 }
 .access-advanced-note {
@@ -616,7 +616,7 @@
   color: #93814e;
   border-radius: 9px;
   padding: 12px 15px;
-  font-size: 11px;
+  font-size: 13px;
 }
 @media (max-width: 1050px) {
   .role-permissions {
@@ -693,7 +693,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   max-width: 100%;
   margin-bottom: 16px;
@@ -749,7 +749,7 @@
   cursor: pointer;
   white-space: nowrap;
   font: inherit;
-  font-size: 13px;
+  font-size: 15px;
   color: #63776d;
 }
 .ops-tab--active {
@@ -806,7 +806,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   min-width: 0;
   margin-bottom: 16px;
@@ -823,7 +823,7 @@
 .ops-field small,
 .ops-help {
   color: #6c8177;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 400;
   line-height: 1.7;
 }
@@ -846,7 +846,7 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  font-size: 13px;
+  font-size: 15px;
   overflow-wrap: anywhere;
 }
 .ops-alert svg {
@@ -863,7 +863,7 @@
 .ops-state {
   padding: 36px 24px;
   color: #6b8075;
-  font-size: 14px;
+  font-size: 16px;
   text-align: center;
   line-height: 1.8;
 }
@@ -881,11 +881,11 @@
 }
 .ops-details dt {
   color: #718378;
-  font-size: 12px;
+  font-size: 14px;
 }
 .ops-details dd {
   margin: 6px 0 0;
-  font-size: 14px;
+  font-size: 16px;
   overflow-wrap: anywhere;
 }
 .ops-pill {
@@ -894,7 +894,7 @@
   border-radius: 6px;
   background: #f0f3f1;
   color: #64796e;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
 }
 .ops-pill--green {
@@ -913,7 +913,7 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  font-size: 13px;
+  font-size: 15px;
   padding: 12px;
   border: 1px solid #e5ece7;
   border-radius: 9px;
@@ -934,7 +934,7 @@
   display: block;
   color: #75877d;
   margin-top: 5px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 400;
 }
 .ops-section-heading {
@@ -947,7 +947,7 @@
 }
 .ops-section-heading h3,
 .ops-subform h3 {
-  font-size: 15px;
+  font-size: 17px;
   margin: 0;
 }
 .ops-subform {
@@ -985,13 +985,13 @@
   padding: 20px 24px;
 }
 .ops-questions strong {
-  font-size: 14px;
+  font-size: 16px;
 }
 .ops-questions small {
   display: block;
   color: #7a8c80;
   margin-top: 6px;
-  font-size: 12px;
+  font-size: 14px;
 }
 .ops-tags {
   display: flex;
@@ -1017,7 +1017,7 @@
   background: #edf7f0;
   border-radius: 12px;
   margin: 0 0 24px;
-  font-size: 13px;
+  font-size: 15px;
 }
 .ops-context a {
   color: #1d8054;
@@ -1030,7 +1030,7 @@
 .ops-prescription li {
   padding: 14px 0;
   border-bottom: 1px solid #e7eee9;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.7;
 }
 .ops-prescription p {
@@ -1043,7 +1043,7 @@
   border-left: 3px solid #70b691;
   padding: 10px 16px;
   background: #f4f8f5;
-  font-size: 13px;
+  font-size: 15px;
   white-space: pre-wrap;
 }
 .ops-lab {
@@ -1183,6 +1183,44 @@
   margin: 8px 0;
   max-width: 100%;
 }
+
+.record-monitoring__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.record-monitoring__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border-radius: 20px;
+  background: #eaf7f1;
+  color: #22734e;
+  font-size: 14px;
+  font-weight: 650;
+}
+.record-monitoring__status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.record-monitoring__status.is-inactive { color: #64748b; background: #f0f3f6; }
+.record-monitoring__toolbar .form-alert,
+.record-monitoring__toolbar .confirm-box { flex-basis: 100%; }
+.record-monitoring__section { padding-top: 16px; border-top: 1px solid var(--border, #e2e8f0); }
+.record-monitoring__section + .record-monitoring__section { margin-top: 18px; }
+.record-monitoring__section h3 { margin: 0; font-size: 17px; line-height: 1.5; }
+.record-monitoring__section-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.record-monitoring__date { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: #64748b; font-size: 14px; }
+.record-monitoring__date input { min-width: 0; max-width: 100%; padding: 7px 10px; border: 1px solid #d6e1eb; border-radius: 8px; background: #fff; color: #163b58; font: inherit; }
+.record-monitoring__summary { margin: 12px 0; padding: 10px 12px; background: #f3f8fc; border-radius: 8px; color: #526e86; font-size: 15px; line-height: 1.6; }
+.record-monitoring__empty { margin: 12px 0 0; padding: 14px; border: 1px dashed #dce5ed; border-radius: 8px; text-align: center; color: #708399; font-size: 15px; }
 .record-images img {
   width: 240px;
   max-width: 100%;
@@ -1222,11 +1260,11 @@
 }
 .clinical-lookup__intro strong {
   color: #244862;
-  font-size: 14px;
+  font-size: 16px;
 }
 .clinical-lookup__intro p {
   margin: 5px 0 0;
-  font-size: 12px;
+  font-size: 14px;
   color: #8195a7;
   line-height: 1.5;
 }
@@ -1255,7 +1293,7 @@
   background: transparent;
   color: #244862;
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
 }
 .clinical-lookup__input input::placeholder {
   color: #8ca0b0;
@@ -1268,10 +1306,10 @@
   margin-bottom: 17px;
 }
 .clinical-page .panel__header h2 {
-  font-size: 16px;
+  font-size: 18px;
 }
 .clinical-page .ops-resource .data-table th {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.5px;
   padding: 12px 14px;
   color: #7f97aa;
@@ -1279,7 +1317,7 @@
 }
 .clinical-page .ops-resource .data-table td {
   padding: 14px;
-  font-size: 12px;
+  font-size: 14px;
   border-color: #edf2f7;
 }
 .clinical-page .ops-resource .data-table tbody tr:hover {
@@ -1317,17 +1355,17 @@
   border-radius: 6px;
   background: #f8fafc;
   color: #6a8297;
-  font-size: 10px;
+  font-size: 12px;
 }
 .clinical-page .ops-actions {
   flex-wrap: nowrap;
 }
 .clinical-page .button--small {
-  font-size: 11px;
+  font-size: 13px;
 }
 .clinical-page .table-footer {
   padding-top: 14px;
-  font-size: 11px;
+  font-size: 13px;
 }
 .clinical-page .ops-context {
   display: flex;
@@ -1338,7 +1376,7 @@
   border: 1px solid #dfe8f1;
   background: #fff;
   margin-bottom: 18px;
-  font-size: 12px;
+  font-size: 14px;
 }
 .clinical-page .ops-context > a {
   display: inline-flex;
@@ -1361,7 +1399,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 14px;
+  font-size: 16px;
   color: #31546c;
 }
 .clinical-results .ops-section-heading h3 > .anticon {
@@ -1379,7 +1417,7 @@
 .clinical-result-pending {
   color: #94a6b3;
   font-style: italic;
-  font-size: 12px;
+  font-size: 14px;
 }
 .clinical-empty {
   display: flex;
@@ -1400,13 +1438,13 @@
   margin-bottom: 3px;
 }
 .clinical-empty strong {
-  font-size: 15px;
+  font-size: 17px;
   color: #385c74;
 }
 .clinical-empty p {
   max-width: 410px;
   margin: 0;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.7;
   color: #8a9eae;
 }
@@ -1479,7 +1517,7 @@
   border-radius: 7px;
   background: #f2f7fb;
   color: #7390a5;
-  font-size: 10px;
+  font-size: 12px;
   white-space: nowrap;
 }
 .patient-search-form {
@@ -1514,7 +1552,7 @@
   min-width: 0;
   height: 46px;
   font: inherit;
-  font-size: 13px;
+  font-size: 15px;
   color: #294d66;
 }
 .patient-search-input input::placeholder {
@@ -1538,7 +1576,7 @@
   align-items: center;
   gap: 7px;
   color: #8198aa;
-  font-size: 11px;
+  font-size: 13px;
   margin-top: 13px;
   line-height: 1.6;
 }
@@ -1553,16 +1591,16 @@
   margin-bottom: 16px;
 }
 .patients-page .ops-resource .panel__header h2 {
-  font-size: 16px;
+  font-size: 18px;
 }
 .patients-page .ops-resource .data-table th {
-  font-size: 10px;
+  font-size: 12px;
   padding: 12px;
   background: #f6f9fc;
   color: #8299aa;
 }
 .patients-page .ops-resource .data-table td {
-  font-size: 12px;
+  font-size: 14px;
   padding: 12px;
   border-color: #edf2f7;
 }
@@ -1590,11 +1628,11 @@
 }
 .patient-identity strong {
   color: #2c536d;
-  font-size: 12px;
+  font-size: 14px;
 }
 .patient-identity small {
   color: #96a7b5;
-  font-size: 10px;
+  font-size: 12px;
 }
 .patient-phone {
   display: inline-flex;
@@ -1606,12 +1644,12 @@
 .patient-address {
   display: block;
   max-width: 200px;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.6;
   color: #8196a5;
 }
 .patients-page .ops-resource .table-footer {
-  font-size: 11px;
+  font-size: 13px;
   padding-top: 14px;
 }
 .patients-page .ops-actions {
@@ -1619,7 +1657,7 @@
 }
 .patients-page .ops-actions .button {
   white-space: nowrap;
-  font-size: 11px;
+  font-size: 13px;
 }
 .patient-no-results {
   display: flex;
@@ -1632,13 +1670,13 @@
 }
 .patient-no-results strong {
   color: #476b82;
-  font-size: 14px;
+  font-size: 16px;
 }
 .patient-no-results p {
   max-width: 460px;
   margin: 0;
   color: #8a9eae;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.7;
 }
 @media (max-width: 600px) {
@@ -1657,4 +1695,130 @@
   .patients-page .ops-resource.panel {
     padding: 16px 12px;
   }
+}
+
+/* Compact, independently expandable examination sections */
+.record-form-panel .record-form-accordion { margin: 10px 0; padding: 0; overflow: hidden; }
+.record-form-panel .record-form-accordion summary { padding: 14px 16px; color: #163b58; line-height: 1.4; }
+.record-form-intro { margin: -6px 0 18px; color: #73899b; font-size: 14px; line-height: 1.6; }
+.record-form-panel .record-form-accordion summary { display: flex; align-items: center; gap: 10px; list-style: none; font-size: 15px; }
+.record-form-panel .record-form-accordion summary::-webkit-details-marker { display: none; }
+.record-form-panel .record-form-accordion summary:hover { background: #f7fafc; }
+.record-form-panel .record-form-accordion summary:focus-visible { outline: 2px solid #087db8; outline-offset: -3px; }
+.record-form-section__number { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; flex-shrink: 0; border-radius: 8px; background: #edf4f9; color: #547b97; font-size: 13px; }
+.record-form-section__title { flex: 1; }
+.record-form-section__role { padding: 4px 8px; border-radius: 5px; background: #f1f5f8; color: #71899b; font-size: 12px; font-weight: 500; }
+.record-form-accordion[open] .record-form-section__chevron { transform: rotate(90deg); }
+.record-form-panel .record-form-accordion[open] summary { background: #f5f9fc; border-bottom: 1px solid #e2ebf1; }
+.record-form-panel .record-form-section__fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 16px; }
+.record-form-panel .record-form-field { min-width: 0; margin: 0; }
+.record-form-panel .record-form-field:has(textarea),
+.record-form-panel .record-form-field:has(.record-images) { grid-column: 1 / -1; }
+.record-form-panel .record-form-field textarea,
+.record-form-panel .record-form-actions textarea { min-height: 72px; resize: vertical; }
+.record-form-panel .record-form-actions { grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px 16px; margin-top: 18px; }
+.record-form-panel .record-form-actions__buttons { grid-column: 1 / -1; }
+.record-form-panel .record-form-actions__instructions { display: grid; gap: 8px; min-width: 0; }
+.record-form-panel .record-form-actions__complete { align-self: end; }
+.record-form-panel .record-form-actions:has(.confirm-box) .record-form-actions__complete { grid-column: 1 / -1; }
+@media (max-width: 600px) {
+  .record-form-panel .record-form-section__fields,
+  .record-form-panel .record-form-actions { grid-template-columns: minmax(0, 1fr); }
+  .record-form-panel .record-form-field:has(textarea),
+  .record-form-panel .record-form-field:has(.record-images),
+  .record-form-panel .record-form-actions__buttons { grid-column: auto; }
+}
+
+/* Compact administration workspaces */
+.access-page .page-header,
+.templates-page .page-header { margin-bottom: 14px; align-items: center; }
+.access-page .page-header .eyebrow,
+.templates-page .page-header .eyebrow { display: none; }
+.access-page .page-header h1,
+.templates-page .page-header h1 { font-size: 23px; }
+.access-page .page-header__copy p,
+.templates-page .page-header__copy p { font-size: 14px; margin-top: 4px; }
+.access-page > .ops-tabs { margin-bottom: 14px; }
+.access-page .role-permissions { grid-template-columns: 210px minmax(0, 1fr); gap: 16px; }
+.access-page .access-role-list { padding: 10px; }
+.access-page .access-role-list__title { padding: 6px 8px 10px; }
+.access-page .access-role-list > button { padding: 9px 8px; gap: 9px; }
+.access-page .access-role-list small,
+.access-page .access-role-list__help { display: none; }
+.access-page .access-role-icon { width: 30px; height: 32px; }
+.access-page .access-permission-header { padding: 14px 18px; }
+.access-page .access-permission-header > div > span { display: none; }
+.access-page .access-permission-header h2 { margin: 0; font-size: 18px; }
+.access-page .access-search { margin: 12px 18px; height: 36px; }
+.access-group-picker { display: flex; align-items: center; gap: 12px; padding: 0 18px 12px; }
+.access-group-picker label { font-size: 13px; color: #70899c; white-space: nowrap; }
+.access-group-picker select,
+.template-status-filter select,
+.template-section-picker select { min-width: 0; border: 1px solid #dce6ef; border-radius: 7px; padding: 8px 10px; background: #fff; color: #345770; font: inherit; font-size: 14px; }
+.access-group-picker select { flex: 1; width: 100%; }
+.access-page .access-permission-body { max-height: none; overflow: visible; padding: 0 18px 12px; }
+.access-page .access-permission-group { margin: 0; }
+.access-page .access-permission-group legend { font-size: 13px; padding-bottom: 10px; color: #70899c; }
+.access-page .access-permission-group > div { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.access-page .access-permission-item { padding: 9px 10px; min-height: 38px; align-items: center; }
+.access-page .access-permission-footer { padding: 10px 18px; gap: 10px; }
+.access-group-pagination,
+.template-question-pagination { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 6px 18px; font-size: 13px; color: #70899c; }
+.templates-page .ops-resource { margin-bottom: 0; padding: 18px 20px; border-radius: 14px; }
+.templates-page .panel__header { margin-bottom: 14px; flex-wrap: wrap; }
+.templates-page .panel__header h2 { font-size: 17px; }
+.template-status-filter { display: inline-flex; align-items: center; gap: 8px; margin-right: 8px; font-size: 13px; color: #70899c; }
+.templates-page .data-table th { padding: 10px 12px; font-size: 12px; }
+.templates-page .data-table td { padding: 11px 12px; font-size: 14px; }
+.templates-page .table-footer { margin: 12px 0 0; padding-top: 10px; font-size: 13px; }
+.template-status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 20px; background: #f0f3f6; color: #718395; font-size: 12px; white-space: nowrap; }
+.template-status.is-active { color: #25816c; background: #e9f6f0; }
+.template-status::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.template-section-picker { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; font-size: 14px; color: #70899c; }
+.template-section-picker select { flex: 1; max-width: 600px; }
+.template-builder .ops-questions > li { padding: 10px 0; gap: 12px; }
+.template-builder .ops-questions strong { font-size: 14px; }
+.template-builder .ops-questions small { font-size: 12px; }
+.template-builder .ops-tags { gap: 4px; margin-top: 5px; }
+.template-builder .ops-pill { padding: 3px 6px; font-size: 12px; }
+@media (max-width: 760px) {
+  .access-page .role-permissions { grid-template-columns: minmax(0, 1fr); }
+  .access-page .access-role-list { display: flex; flex-wrap: wrap; gap: 4px; }
+  .access-page .access-role-list__title { display: none; }
+  .access-page .access-role-list > button { flex: 1; min-width: 110px; margin: 0; }
+  .access-page .access-role-list > button > .anticon { display: none; }
+  .templates-page .panel__header > .ops-actions { flex-wrap: wrap; }
+  .template-status-filter { flex-wrap: wrap; }
+}
+@media (max-width: 480px) {
+  .access-page .access-permission-group > div { grid-template-columns: minmax(0, 1fr); }
+  .access-group-picker { align-items: stretch; flex-direction: column; gap: 6px; }
+  .template-section-picker { align-items: stretch; flex-direction: column; gap: 6px; }
+}
+
+/* Keep role permissions compact at laptop viewport heights. */
+.workspace--access .page-content { padding: 18px 24px; }
+.workspace--access .workspace-footer { padding: 8px 24px; font-size: 12px; }
+.access-page .page-header { margin-bottom: 10px; }
+.access-page .page-header__copy p { margin-bottom: 0; }
+.access-page > .ops-tabs { margin-bottom: 12px; }
+.access-permission-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(190px, .8fr); align-items: center; gap: 12px; padding: 12px 18px; }
+.access-page .access-permission-toolbar .access-search { margin: 0; height: 36px; }
+.access-page .access-permission-toolbar .access-group-picker { padding: 0; }
+.access-permission-toolbar .access-group-picker label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.access-page .access-permission-header { padding: 10px 18px; }
+.access-page .access-permission-body { padding-bottom: 14px; }
+.access-page .access-permission-footer { flex-wrap: wrap; padding: 10px 18px; }
+.access-page .access-permission-footer > span { flex: 1; }
+.access-page .access-permission-footer .access-group-pagination { padding: 0; gap: 6px; }
+@media (max-width: 650px) {
+  .workspace--access .page-content { padding: 14px; }
+  .access-permission-toolbar { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .access-page .access-permission-toolbar .access-group-picker { display: block; }
+}
+@media (min-width: 993px) and (max-height: 700px) {
+  .workspace--access .page-content { padding-block: 12px; }
+  .access-page .page-header__copy p { display: none; }
+  .access-page .access-permission-item { padding-block: 7px; min-height: 34px; }
+  .access-page .access-role-list > button { padding-block: 6px; }
 }

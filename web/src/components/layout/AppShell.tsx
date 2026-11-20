@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 
 import { useAuth } from "@/features/auth/auth-context";
 import { roleFromId, roleLabel } from "@/features/auth/auth-types";
@@ -107,7 +107,7 @@ export function AppShell() {
 
   return (
     <div
-      className={`workspace${location.pathname.startsWith("/app/profile") ? " workspace--profile" : ""}${location.pathname === "/app/users" ? " workspace--users" : ""}`}
+      className={`workspace${location.pathname.startsWith("/app/profile") ? " workspace--profile" : ""}${location.pathname === "/app/users" ? " workspace--users" : ""}${location.pathname === "/app/access" ? " workspace--access" : ""}`}
     >
       {compactScreen && mobileOpen ? (
         <button
@@ -120,6 +120,19 @@ export function AppShell() {
         id="workspace-sidebar"
         className={`sidebar${mobileOpen ? " sidebar--open" : ""}${sidebarCollapsed && !compactScreen ? " sidebar--collapsed" : ""}`}
       >
+        <Link
+          to="/app"
+          className="sidebar__brand"
+          aria-label="May Day - Tổng quan"
+        >
+          <span className="sidebar__brand-mark">
+            <Icon name="mark" size={23} />
+          </span>
+          <span className="sidebar__brand-copy">
+            <strong>May Day</strong>
+            <small>Cổng quản lý y tế</small>
+          </span>
+        </Link>
         <div className="sidebar__label">MENU CHÍNH</div>
         <nav className="sidebar__nav" aria-label="Điều hướng chính">
           {items.map((item) => (
@@ -144,10 +157,10 @@ export function AppShell() {
             <span className="sidebar__support-icon">
               <Icon name="shield" size={18} />
             </span>
-            <strong>Phạm vi dữ liệu</strong>
-            <p>
-              Danh sách và hồ sơ hiển thị theo quyền được cấp cho tài khoản.
-            </p>
+            <div>
+              <strong>Truy cập theo phân quyền</strong>
+              <p>Chỉ hiển thị dữ liệu được cấp phép.</p>
+            </div>
           </div>
         </div>
       </aside>
@@ -223,10 +236,6 @@ export function AppShell() {
               </button>
               {accountOpen ? (
                 <div id="account-menu" className="account-menu">
-                  <div className="account-menu__identity">
-                    <strong>{session?.user.full_name}</strong>
-                    <span>{session?.user.phone}</span>
-                  </div>
                   {can("GET", "/profile") ? (
                     <button
                       onClick={() => {

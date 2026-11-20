@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { useAuth } from "@/features/auth/auth-context";
 import { useApi, message } from "@/features/operations/api";
 import { apiRequest, type ApiEnvelope } from "@/lib/api/client";
@@ -175,16 +176,21 @@ export function RecordForm({
         </p>
       ) : null}
       {!template && !error ? <p>Đang tải phiếu khám…</p> : null}
-      {template?.sections.map((section) => (
-        <fieldset key={section.section_id} className="record-form-section">
-          <legend>
-            {section.title} ·{" "}
+      {template ? <p className="record-form-intro">Chọn từng mục để xem thông tin và cập nhật phiếu khám.</p> : null}
+      {template?.sections.map((section, index) => (
+        <details key={section.section_id} className="record-form-section record-form-accordion">
+          <summary>
+            <span className="record-form-section__number">{String(index + 1).padStart(2, "0")}</span>
+            <span className="record-form-section__title">{section.title}</span>
+            <span className="record-form-section__role">
             {section.filled_by === "patient"
               ? "Bệnh nhân khai"
               : section.filled_by === "doctor"
                 ? "Bác sĩ khám"
-                : "Thông tin chung"}
-          </legend>
+                : "Thông tin chung"}</span>
+            <Icon name="chevron" size={12} className="record-form-section__chevron" />
+          </summary>
+          <div className="record-form-section__fields">
           {section.questions
             .filter((question) => visible(question))
             .map((question) => {
@@ -310,10 +316,12 @@ export function RecordForm({
                 </div>
               );
             })}
-        </fieldset>
+          </div>
+        </details>
       ))}
       {canWrite || canComplete ? (
         <div className="record-form-actions">
+          <div className="record-form-actions__buttons">
           {canWrite ? <Button
             disabled={busy || dirty.size === 0}
             onClick={() =>
@@ -325,7 +333,8 @@ export function RecordForm({
           >
             Lưu phiếu khám
           </Button> : null}
-          {canComplete ? <label className="field">
+          </div>
+          {canComplete ? <label className="field record-form-actions__instructions">
             <span>Lời dặn khi hoàn tất</span>
             <textarea
               value={instructions}
@@ -333,6 +342,7 @@ export function RecordForm({
               disabled={busy}
             />
           </label> : null}
+          <div className="record-form-actions__complete">
           {canComplete && (confirm ? (
             <div className="confirm-box">
               <p>
@@ -369,6 +379,7 @@ export function RecordForm({
               Hoàn tất khám
             </Button>
           ))}
+          </div>
         </div>
       ) : (
         <p className="muted-copy">

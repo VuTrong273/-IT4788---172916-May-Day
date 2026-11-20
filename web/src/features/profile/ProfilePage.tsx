@@ -1,5 +1,4 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link } from "react-router";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -8,6 +7,7 @@ import { Panel } from "@/components/ui/panel";
 import { useAuth } from "@/features/auth/auth-context";
 import { getProfile, updateProfile } from "@/features/auth/auth-api";
 import { roleFromId, roleLabel } from "@/features/auth/auth-types";
+import { ChangePasswordDialog } from "@/features/auth/ChangePasswordForm";
 
 type Profile = {
   user_id: number;
@@ -30,6 +30,7 @@ export function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -85,15 +86,18 @@ export function ProfilePage() {
   }
 
   const role = profile ? roleFromId(profile) : null;
-  const initials = profile?.full_name.trim().split(/\s+/).map(part => part[0]).slice(-2).join('').toUpperCase() || 'MD';
+  const initials =
+    profile?.full_name
+      .trim()
+      .split(/\s+/)
+      .map((part) => part[0])
+      .slice(-2)
+      .join("")
+      .toUpperCase() || "MD";
 
   return (
     <>
-      <PageHeader
-        eyebrow="TÀI KHOẢN"
-        title="Thông tin cá nhân"
-        description="Xem thông tin cá nhân và quản lý bảo mật tài khoản của bạn."
-      />
+      <PageHeader title="Tài khoản của tôi" />
       {error ? (
         <div className="form-alert page-alert" role="alert">
           <Icon name="alert" size={18} />
@@ -116,22 +120,29 @@ export function ProfilePage() {
       ) : profile ? (
         <div className="profile-grid">
           <aside className="profile-summary">
-            <div className="profile-summary__avatar" aria-hidden="true">{initials}</div>
+            <div className="profile-summary__avatar" aria-hidden="true">
+              {initials}
+            </div>
             <div className="profile-summary__body">
-              <span className="profile-summary__eyebrow">TÀI KHOẢN CỦA BẠN</span>
               <h2>{profile.full_name}</h2>
-              <span className="profile-role"><Icon name="shield" size={14} />{role ? roleLabel(role) : 'Nhân viên'}</span>
-              <div className="profile-summary__contact"><Icon name="user" size={17} /><span>Mã tài khoản <strong>#{profile.user_id}</strong></span></div>
-              <div className="profile-summary__contact"><Icon name="login" size={17} /><span>{profile.phone}</span></div>
+              <span className="profile-role">
+                <Icon name="shield" size={14} />
+                {role ? roleLabel(role) : "Nhân viên"}
+              </span>
             </div>
           </aside>
           <Panel
             className="profile-information"
             title="Chi tiết cá nhân"
             action={
-              editing ? <span className="profile-edit-badge"><span />Đang chỉnh sửa</span> : (
+              editing ? (
+                <span className="profile-edit-badge">
+                  <span />
+                  Đang chỉnh sửa
+                </span>
+              ) : (
                 <Button
-                  permission={['PUT', '/profile']}
+                  permission={["PUT", "/profile"]}
                   size="small"
                   variant="primary"
                   onClick={() => {
@@ -144,14 +155,20 @@ export function ProfilePage() {
               )
             }
           >
-            <p className="profile-section-description">{editing ? 'Cập nhật họ tên và giới tính để thông tin của bạn luôn chính xác.' : 'Thông tin nhận diện và liên hệ của tài khoản.'}</p>
-            {editing && can('PUT', '/profile') ? (
+            <p className="profile-section-description">
+              {editing
+                ? "Cập nhật họ tên và giới tính để thông tin của bạn luôn chính xác."
+                : "Thông tin nhận diện và liên hệ của tài khoản."}
+            </p>
+            {editing && can("PUT", "/profile") ? (
               <form
                 className="profile-form"
                 onSubmit={(event) => void save(event)}
               >
                 <label className="profile-input-field">
-                  <span className="profile-input-label">Họ và tên <span>*</span></span>
+                  <span className="profile-input-label">
+                    Họ và tên <span>*</span>
+                  </span>
                   <span className="profile-input-control">
                     <Icon name="user" size={18} />
                     <input
@@ -168,48 +185,81 @@ export function ProfilePage() {
                 <label className="profile-input-field">
                   <span className="profile-input-label">Giới tính</span>
                   <span className="profile-input-control profile-input-control--select">
-                  <Icon name="users" size={18} />
-                  <select
-                    disabled={saving}
-                    value={gender}
-                    onChange={(event) => setGender(event.target.value)}
-                  >
-                    <option value="" disabled>
-                      Chưa cập nhật
-                    </option>
-                    <option value="male">Nam</option>
-                    <option value="female">Nữ</option>
-                    <option value="other">Khác</option>
-                  </select>
-                  <Icon name="chevron" size={16} className="profile-select-arrow" />
+                    <Icon name="users" size={18} />
+                    <select
+                      disabled={saving}
+                      value={gender}
+                      onChange={(event) => setGender(event.target.value)}
+                    >
+                      <option value="" disabled>
+                        Chưa cập nhật
+                      </option>
+                      <option value="male">Nam</option>
+                      <option value="female">Nữ</option>
+                      <option value="other">Khác</option>
+                    </select>
+                    <Icon
+                      name="chevron"
+                      size={16}
+                      className="profile-select-arrow"
+                    />
                   </span>
                 </label>
                 <label className="profile-input-field">
-                  <span className="profile-input-label">Số điện thoại <span className="profile-input-locked"><Icon name="lock" size={12} />Chỉ xem</span></span>
-                  <span className="profile-input-control profile-input-control--readonly"><Icon name="login" size={18} /><input value={profile.phone} readOnly /></span>
+                  <span className="profile-input-label">
+                    Số điện thoại{" "}
+                    <span className="profile-input-locked">
+                      <Icon name="lock" size={12} />
+                      Chỉ xem
+                    </span>
+                  </span>
+                  <span className="profile-input-control profile-input-control--readonly">
+                    <Icon name="login" size={18} />
+                    <input value={profile.phone} readOnly />
+                  </span>
                 </label>
                 <label className="profile-input-field">
-                  <span className="profile-input-label">Vai trò <span className="profile-input-locked"><Icon name="lock" size={12} />Chỉ xem</span></span>
-                  <span className="profile-input-control profile-input-control--readonly"><Icon name="shield" size={18} /><input value={role ? roleLabel(role) : 'Nhân viên'} readOnly /></span>
+                  <span className="profile-input-label">
+                    Vai trò{" "}
+                    <span className="profile-input-locked">
+                      <Icon name="lock" size={12} />
+                      Chỉ xem
+                    </span>
+                  </span>
+                  <span className="profile-input-control profile-input-control--readonly">
+                    <Icon name="shield" size={18} />
+                    <input
+                      value={role ? roleLabel(role) : "Nhân viên"}
+                      readOnly
+                    />
+                  </span>
                 </label>
                 <div className="profile-form__actions">
-                  <p><Icon name="shield" size={15} />Thông tin được lưu vào tài khoản của bạn.</p>
+                  <p>
+                    <Icon name="shield" size={15} />
+                    Thông tin được lưu vào tài khoản của bạn.
+                  </p>
                   <div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={saving}
-                    onClick={() => {
-                      setName(profile.full_name);
-                      setGender(profile.gender ?? "");
-                      setEditing(false);
-                    }}
-                  >
-                    Hủy
-                  </Button>
-                  <Button permission={['PUT', '/profile']} type="submit" icon={<Icon name="check" size={16} />} disabled={saving || !name.trim()}>
-                    {saving ? "Đang lưu…" : "Lưu thay đổi"}
-                  </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={saving}
+                      onClick={() => {
+                        setName(profile.full_name);
+                        setGender(profile.gender ?? "");
+                        setEditing(false);
+                      }}
+                    >
+                      Hủy
+                    </Button>
+                    <Button
+                      permission={["PUT", "/profile"]}
+                      type="submit"
+                      icon={<Icon name="check" size={16} />}
+                      disabled={saving || !name.trim()}
+                    >
+                      {saving ? "Đang lưu…" : "Lưu thay đổi"}
+                    </Button>
                   </div>
                 </div>
               </form>
@@ -258,17 +308,26 @@ export function ProfilePage() {
             <div>
               <h2>Bảo mật tài khoản</h2>
               <p>Bảo vệ tài khoản bằng mật khẩu và email khôi phục.</p>
-              <div className={`profile-email-status${profile.recovery_email ? ' profile-email-status--ready' : ''}`}><Icon name="mail" size={15} /><span>{profile.recovery_email ? 'Đã thiết lập email khôi phục' : 'Chưa thiết lập email khôi phục'}</span></div>
+              <div
+                className={`profile-email-status${profile.recovery_email ? " profile-email-status--ready" : ""}`}
+              >
+                <Icon name="mail" size={15} />
+                <span>
+                  {profile.recovery_email
+                    ? "Đã thiết lập email khôi phục"
+                    : "Chưa thiết lập email khôi phục"}
+                </span>
+              </div>
             </div>
-            {can('PUT', '/auth/change-password') ? <Link
-              className="button button--secondary"
-              to="/app/profile/password"
-            >
-              Đổi mật khẩu
-            </Link> : null}
+            {can("PUT", "/auth/change-password") ? (
+                <Button variant="secondary" icon={<Icon name="lock" size={16} />} onClick={() => setChangingPassword(true)}>
+                Đổi mật khẩu
+              </Button>
+            ) : null}
           </Panel>
         </div>
       ) : null}
+      {changingPassword ? <ChangePasswordDialog onClose={() => setChangingPassword(false)} /> : null}
     </>
   );
 }

@@ -68,15 +68,13 @@ export function RecordMonitoring({
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState(false);
   return (
-    <Panel title="Theo dõi tại nhà">
-      <p>
-        Trạng thái:{" "}
-        <strong>
+    <Panel title="Theo dõi tại nhà" className="record-monitoring">
+      <div className="record-monitoring__toolbar">
+        <span className={`record-monitoring__status${record.followup_active === false ? " is-inactive" : ""}`}>
           {record.followup_active === false
             ? "Đã ngừng theo dõi"
             : "Đang theo dõi"}
-        </strong>
-      </p>
+        </span>
       {[error, episodes.error, scores.error, week.error]
         .filter(Boolean)
         .map((text, index) => (
@@ -115,19 +113,21 @@ export function RecordMonitoring({
             </Button>
           </div>
         ) : (
-          <Button onClick={() => setConfirm(true)}>
+          <Button variant="quiet" onClick={() => setConfirm(true)}>
             {record.followup_active === false
               ? "Mở lại theo dõi"
               : "Ngừng theo dõi"}
           </Button>
         )
       ) : null}
+      </div>
       {can("GET", `/uas7-scores/patient/${record.patient_id}`) ||
       can("GET", `/uas7-scores/week/${record.patient_id}`) ? (
-        <>
+        <section className="record-monitoring__section">
+          <div className="record-monitoring__section-header">
           <h3>UAS7 theo bệnh nhân</h3>
-          <label>
-            Ngày bắt đầu 7 ngày
+          <label className="record-monitoring__date">
+            <span>Ngày bắt đầu 7 ngày</span>
             <input
               aria-label="Ngày bắt đầu tuần UAS7"
               type="date"
@@ -135,8 +135,9 @@ export function RecordMonitoring({
               onChange={(event) => setStart(event.target.value)}
             />
           </label>
+          </div>
           {week.data ? (
-            <p>
+            <p className="record-monitoring__summary">
               Đã ghi {week.data.completed_days}/7 ngày · Tổng{" "}
               {week.data.week_score}
               /42 · {week.data.severity_label}
@@ -172,12 +173,12 @@ export function RecordMonitoring({
               </table>
             </div>
           ) : (
-            <p>Chưa có điểm theo dõi.</p>
+            <p className="record-monitoring__empty">Chưa có điểm theo dõi.</p>
           )}
-        </>
+        </section>
       ) : null}
       {can("GET", `/lesion-episodes/record/${record.medical_record_id}`) ? (
-        <>
+        <section className="record-monitoring__section">
           <h3>Đợt tổn thương của bệnh án</h3>
           {episodes.loading ? (
             <p>Đang tải nhật ký…</p>
@@ -186,9 +187,9 @@ export function RecordMonitoring({
               <EpisodeDetails key={episode.episode_id} episode={episode} />
             ))
           ) : (
-            <p>Chưa có đợt tổn thương.</p>
+            <p className="record-monitoring__empty">Chưa có đợt tổn thương.</p>
           )}
-        </>
+        </section>
       ) : null}
     </Panel>
   );

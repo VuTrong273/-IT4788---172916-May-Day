@@ -410,6 +410,8 @@ function TemplateBuilder({
     name: string;
   } | null>(null);
   const [notice, setNotice] = useState('');
+  const [selectedSection, setSelectedSection] = useState<number | null>(null);
+  const [questionPage, setQuestionPage] = useState(1);
   const saved = () => {
     template.reload();
     setNotice('Đã lưu thay đổi vào mẫu phiếu.');
@@ -417,8 +419,11 @@ function TemplateBuilder({
   const questions = template.data.sections.flatMap(
     (section) => section.questions,
   );
+  const currentSection = template.data.sections.find((section) => section.section_id === selectedSection) ?? template.data.sections[0];
+  const questionPages = Math.max(1, Math.ceil((currentSection?.questions.length ?? 0) / 4));
+  const currentQuestionPage = Math.min(questionPage, questionPages);
   return (
-    <>
+    <div className="templates-page template-builder">
       <Button variant="quiet" onClick={onBack}>
         ← Danh sách mẫu phiếu
       </Button>
@@ -437,6 +442,11 @@ function TemplateBuilder({
       />
       <Alert>{template.error}</Alert>
       <Alert success>{notice}</Alert>
+      {template.data.sections.length ? <label className="template-section-picker">Phần của mẫu phiếu
+        <select value={currentSection?.section_id ?? ''} onChange={(event) => { setSelectedSection(Number(event.target.value)); setQuestionPage(1); }}>
+          {template.data.sections.map((section) => <option key={section.section_id} value={section.section_id}>{String(section.order)}. {section.title} ({section.questions.length} câu hỏi)</option>)}
+        </select>
+      </label> : null}
       {template.error ? (
         <Button variant="secondary" onClick={template.reload}>
           Thử lại
@@ -446,7 +456,7 @@ function TemplateBuilder({
           Đang tải mẫu phiếu…
         </div>
       ) : template.data.sections.length ? (
-        template.data.sections.map((section) => (
+        (currentSection ? [currentSection] : []).map((section) => (
           <Panel
             key={section.section_id}
             className="ops-resource"
@@ -494,7 +504,7 @@ function TemplateBuilder({
             </p>
             {section.questions.length ? (
               <ol className="ops-questions">
-                {section.questions.map((question) => (
+                {section.questions.slice((currentQuestionPage - 1) * 4, currentQuestionPage * 4).map((question) => (
                   <li key={question.question_id}>
                     <div>
                       <strong>{question.question_text}</strong>
@@ -549,6 +559,11 @@ function TemplateBuilder({
             ) : (
               <div className="ops-state">Phần này chưa có câu hỏi.</div>
             )}
+            {questionPages > 1 ? <div className="template-question-pagination">
+              <Button size="small" variant="quiet" disabled={currentQuestionPage === 1} onClick={() => setQuestionPage(currentQuestionPage - 1)}>Trước</Button>
+              <span>Trang {currentQuestionPage} / {questionPages}</span>
+              <Button size="small" variant="quiet" disabled={currentQuestionPage === questionPages} onClick={() => setQuestionPage(currentQuestionPage + 1)}>Sau</Button>
+            </div> : null}
           </Panel>
         ))
       ) : (
@@ -593,7 +608,7 @@ function TemplateBuilder({
           }}
         />
       ) : null}
-    </>
+    </div>
   );
 }
 
@@ -603,20 +618,12 @@ export function TemplatesPage() {
   return selected ? (
     <TemplateBuilder templateId={selected} onBack={() => setSelected('')} />
   ) : (
-    <>
+    <div className="templates-page">
       <PageHeader
         eyebrow="BIỂU MẪU KHÁM BỆNH"
         title="Mẫu phiếu"
         description="Tạo mẫu khám và thiết kế các phần, câu hỏi, lựa chọn theo nhu cầu chuyên môn."
       />
-      <label className="ops-filter">
-        Trạng thái
-        <select value={active} onChange={(e) => setActive(e.target.value)}>
-          <option value="">Tất cả</option>
-          <option value="1">Hoạt động</option>
-          <option value="0">Ngừng sử dụng</option>
-        </select>
-      </label>
       <ResourcePanel
         key={active}
         title="Danh sách mẫu phiếu"
@@ -624,6 +631,12 @@ export function TemplatesPage() {
         listPath={`/templates/all${active ? `?is_active=${active}` : ''}`}
         fields={templateFields}
         paginated
+        pageSize={4}
+        toolbar={<label className="template-status-filter"><span>Trạng thái</span>
+          <select value={active} onChange={(event) => setActive(event.target.value)}>
+            <option value="">Tất cả</option><option value="1">Hoạt động</option><option value="0">Ngừng sử dụng</option>
+          </select>
+        </label>}
         columns={[
           { key: 'code_template', label: 'MÃ MẪU' },
           { key: 'name', label: 'TÊN MẪU' },
@@ -632,7 +645,7 @@ export function TemplatesPage() {
             key: 'is_active',
             label: 'TRẠNG THÁI',
             render: (row) =>
-              String(row.is_active) === '1' ? 'Hoạt động' : 'Ngừng sử dụng',
+              <span className={`template-status${String(row.is_active) === '1' ? ' is-active' : ''}`}>{String(row.is_active) === '1' ? 'Hoạt động' : 'Ngừng sử dụng'}</span>,
           },
         ]}
         actions={(row) => (
@@ -646,6 +659,6 @@ export function TemplatesPage() {
           </Button>
         )}
       />
-    </>
+    </div>
   );
 }

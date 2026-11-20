@@ -390,6 +390,7 @@ export function ResourcePanel({
   createLabel = "Thêm mới",
   titleIcon,
   emptyMessage,
+  toolbar,
 }: {
   title: string;
   path: string;
@@ -409,6 +410,7 @@ export function ResourcePanel({
   createLabel?: string;
   titleIcon?: ReactNode;
   emptyMessage?: ReactNode;
+  toolbar?: ReactNode;
 }) {
   const api = useApi();
   const { can } = useAuth();
@@ -482,6 +484,7 @@ export function ResourcePanel({
         className="ops-resource"
         action={
           <div className="ops-actions">
+            {toolbar}
             <Button
               variant="quiet"
               size="small"

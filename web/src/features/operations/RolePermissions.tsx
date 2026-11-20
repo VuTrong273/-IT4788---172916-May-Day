@@ -23,6 +23,8 @@ export function RolePermissions() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [search, setSearch] = useState("");
+  const [selectedGroup, setGroup] = useState("");
+  const [permissionPage, setPermissionPage] = useState(1);
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     if (!roleId) {
@@ -95,6 +97,9 @@ export function RolePermissions() {
     }
     return [...result];
   }, [permissions.data, search]);
+  const currentGroup = groups.find(([name]) => name === selectedGroup) ?? groups[0];
+  const pageCount = Math.max(1, Math.ceil((currentGroup?.[1].length ?? 0) / 6));
+  const currentPage = Math.min(permissionPage, pageCount);
   async function save() {
     if (busy || loading || !dirty || !roleId || error) return;
     setBusy(true);
@@ -160,6 +165,7 @@ export function RolePermissions() {
               onClick={() => {
                 setRole(String(item.id));
                 setSearch("");
+                setPermissionPage(1);
               }}
             >
               <span className="access-role-icon">
@@ -203,15 +209,24 @@ export function RolePermissions() {
             Tải lại
           </Button>
         </div>
+        <div className="access-permission-toolbar">
         <div className="access-search">
           <Icon name="search" size={16} />
           <input
             aria-label="Tìm chức năng phân quyền"
             placeholder="Tìm chức năng, ví dụ: bệnh án, xét nghiệm…"
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => { setSearch(event.target.value); setPermissionPage(1); }}
             disabled={busy}
           />
+        </div>
+        <div className="access-group-picker">
+          <label htmlFor="permission-group">Nhóm chức năng</label>
+          <select id="permission-group" value={currentGroup?.[0] ?? ""} disabled={busy || !groups.length} onChange={(event) => { setGroup(event.target.value); setPermissionPage(1); }}>
+            {!groups.length ? <option value="">Không có nhóm phù hợp</option> : null}
+            {groups.map(([name, items]) => <option key={name} value={name}>{name} ({items.length})</option>)}
+          </select>
+        </div>
         </div>
         <div className="access-permission-body">
           <Alert>{roles.error || permissions.error || error}</Alert>
@@ -232,11 +247,11 @@ export function RolePermissions() {
           ) : !role ? (
             <p>Thêm vai trò trong mục Quản lý vai trò để bắt đầu.</p>
           ) : groups.length ? (
-            groups.map(([group, items]) => (
+            (currentGroup ? [currentGroup] : []).map(([group, items]) => (
               <fieldset key={group} className="access-permission-group">
                 <legend>{group}</legend>
                 <div>
-                  {items.map(({ row, title }) => {
+                  {items.slice((currentPage - 1) * 6, currentPage * 6).map(({ row, title }) => {
                     const id = Number(row.id),
                       inheritedOnly = inherited.has(id),
                       checked = selected.has(id) || inheritedOnly;
@@ -281,6 +296,11 @@ export function RolePermissions() {
             <strong>{new Set([...selected, ...inherited]).size}</strong> chức
             năng được phép{dirty ? " · Có thay đổi chưa lưu" : ""}
           </span>
+        {pageCount > 1 ? <div className="access-group-pagination">
+          <Button size="small" variant="quiet" disabled={currentPage === 1} onClick={() => setPermissionPage(currentPage - 1)}>Trước</Button>
+          <span>{currentPage} / {pageCount}</span>
+          <Button size="small" variant="quiet" disabled={currentPage === pageCount} onClick={() => setPermissionPage(currentPage + 1)}>Sau</Button>
+        </div> : null}
           <Button
             icon={<Icon name="check" size={16} />}
             disabled={blocked || !dirty}
