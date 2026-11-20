@@ -12,7 +12,9 @@ import {
 
 import { appColors } from '@/constants/app-theme';
 import type { Session } from '@/features/auth/session';
+import { canAccess } from '@/features/auth/permissions';
 import type { MedicalRecordAnswer, TemplateQuestion } from '@/features/doctor/medical-records-api';
+import { medicalRecordsApi } from '@/features/doctor/medical-records-api';
 import {
   imageAttachmentsApi,
   validateImageSelection,
@@ -36,7 +38,7 @@ function imageName(asset: SelectedImage): string {
   return `image-${Date.now()}.${extension === 'jpeg' ? 'jpg' : extension}`;
 }
 
-async function appendImage(form: FormData, field: string, asset: SelectedImage): Promise<void> {
+export async function appendImage(form: FormData, field: string, asset: SelectedImage): Promise<void> {
   const name = imageName(asset);
   const mimeType = asset.mimeType ?? 'image/jpeg';
   if (Platform.OS === 'web') {
@@ -57,7 +59,7 @@ async function appendImage(form: FormData, field: string, asset: SelectedImage):
   } as unknown as Blob);
 }
 
-async function chooseImages(multiple: boolean): Promise<{
+export async function chooseImages(multiple: boolean): Promise<{
   assets: SelectedImage[];
   error?: string;
 } | null> {
@@ -294,7 +296,7 @@ export function RecordImageLibrary({
             <Text style={styles.meta}>
               {image.file_type ?? 'Không rõ định dạng'}{image.question_id ? ` · Câu hỏi ${image.question_id}` : ''}
             </Text>
-            {canDelete ? (
+            {canDelete && canAccess(session,'DELETE',`/image-attachments/${image.id}`) ? (
               deleteConfirmId === String(image.id) ? (
                 <View style={styles.inlineActions}>
                   <TextButton
@@ -348,6 +350,8 @@ export function QuestionImageWorkflow({
   onChanged: () => void;
 }) {
   const [linkedImages, setLinkedImages] = useState<AnswerImage[]>([]);
+  const [createdAnswer, setCreatedAnswer] = useState<MedicalRecordAnswer | undefined>();
+  answer = answer ?? createdAnswer;
   const [loading, setLoading] = useState(!!answer);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selected, setSelected] = useState<SelectedImage | null>(null);
@@ -435,8 +439,14 @@ export function QuestionImageWorkflow({
       setPendingAttachment(attachment);
       setSelected(null);
       onChanged();
-      if (answer) {
-        await linkAttachment(attachment, answer.id, true);
+      let currentAnswer = answer;
+      if (!currentAnswer && question.type_question === 'image') {
+        await medicalRecordsApi.saveAnswers(session, recordId, [{ question_id: question.question_id, answer_value: [] }]);
+        currentAnswer = (await medicalRecordsApi.answers(session, recordId)).find(item => item.question_id === question.question_id);
+        setCreatedAnswer(currentAnswer);
+      }
+      if (currentAnswer) {
+        await linkAttachment(attachment, currentAnswer.id, true);
       } else {
         setMessage('Máy chủ đã nhận ảnh, nhưng chưa gắn vào câu trả lời: chưa có câu trả lời đã lưu để lấy answer_id.');
       }
@@ -464,7 +474,7 @@ export function QuestionImageWorkflow({
       });
       setPendingAttachment(null);
       setMessage('Máy chủ xác nhận đã gắn ảnh vào câu trả lời.');
-      await loadLinkedImages();
+      setLinkedImages(await imageAttachmentsApi.listForAnswer(session, answerId));
       onChanged();
     } catch (error) {
       setOperationError(
@@ -519,7 +529,7 @@ export function QuestionImageWorkflow({
           <View style={styles.fileDetails}>
             <Text style={styles.fileName}>{linked.attachment?.file_name ?? `Ảnh liên kết #${linked.id}`}</Text>
             {linked.option_value ? <Text style={styles.meta}>Lựa chọn: {linked.option_value}</Text> : null}
-            {canEdit ? unlinkConfirmId === String(linked.id) ? (
+            {canEdit && canAccess(session,'DELETE',`/answer-images/${linked.id}`) ? unlinkConfirmId === String(linked.id) ? (
               <View style={styles.inlineActions}>
                 <TextButton
                   disabled={unlinkingId === String(linked.id)}
@@ -534,9 +544,9 @@ export function QuestionImageWorkflow({
           </View>
         </View>
       ))}
-      {canEdit ? (
+      {canEdit && canAccess(session,'POST','/image-attachments/upload') && canAccess(session,'POST','/answer-images') ? (
         <>
-          {!answer ? (
+          {!answer && question.type_question !== 'image' ? (
             <Text style={styles.meta}>
               Cần lưu câu trả lời trước để máy chủ cấp answer_id. Có thể tải ảnh lên trước; ảnh sẽ được ghi nhận là chưa liên kết cho đến khi có câu trả lời.
             </Text>

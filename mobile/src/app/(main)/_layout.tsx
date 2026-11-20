@@ -3,13 +3,14 @@ import { Stack } from 'expo-router';
 import { WorkspaceLoading, WorkspaceShell } from '@/components/workspace-shell';
 import { useAuthenticatedSession } from '@/features/auth/use-authenticated-session';
 import { getDemoRole } from '@/features/navigation/feature-routes';
+import { PermissionsProvider } from '@/components/permission-controls';
 
 export default function MainLayout() {
   const session = useAuthenticatedSession();
   if (!session) return <WorkspaceLoading />;
-  const role = getDemoRole(session.user.role_id);
+  const role = getDemoRole(session.user);
 
-  return <WorkspaceShell session={session} role={role}>
+  return <PermissionsProvider session={session}><WorkspaceShell session={session} role={role}>
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F0F5FA' } }} />
-  </WorkspaceShell>;
+  </WorkspaceShell></PermissionsProvider>;
 }

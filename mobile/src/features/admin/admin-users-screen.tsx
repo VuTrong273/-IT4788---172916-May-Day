@@ -1,6 +1,8 @@
+import { PermissionGate } from '@/components/permission-controls';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -496,6 +498,12 @@ export function AdminUsersScreen({ session }: { session: Session }) {
     }
   }
 
+  function closeDetails() {
+    if (saving) return;
+    setSelectedId(null); setSelectedSummary(null); setDetail(null);
+    setDetailError(null); resetEditor(); setConfirmDelete(false); setActionError(null);
+  }
+
   function selectUser(user: AdminUserListItem) {
     setSelectedId(user.user_id);
     setSelectedSummary(user);
@@ -515,27 +523,104 @@ export function AdminUsersScreen({ session }: { session: Session }) {
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.eyebrow}>MAY DAY / QUẢN TRỊ</Text>
-        <Text style={styles.title}>Người dùng và nhân viên</Text>
+        <Text style={styles.title}>Quản lý tài khoản</Text>
         <Text style={styles.subtitle}>
-          Tài khoản, trạng thái và phân công chỉ thay đổi sau khi API xác nhận. Vai trò và vị trí lấy từ danh mục máy chủ.
+          Xem hồ sơ, cập nhật trạng thái và phân công nhân viên.
         </Text>
 
         {notice ? <Text style={styles.successMessage}>{notice}</Text> : null}
         {actionError ? <Text accessibilityRole="alert" style={styles.errorMessage}>{actionError}</Text> : null}
 
         <View style={styles.topActions}>
-          <Pressable accessibilityRole="button" onPress={beginCreateUser} style={styles.primaryButton}>
+          <PermissionGate permission={['POST','/admin/users']}><Pressable accessibilityRole="button" onPress={beginCreateUser} style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>＋ Tạo tài khoản</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={beginCreateStaff} style={styles.secondaryButton}>
+          </Pressable></PermissionGate>
+          <PermissionGate permission={['POST','/auth/admin/create-staff']}><Pressable accessibilityRole="button" onPress={beginCreateStaff} style={styles.secondaryButton}>
             <Text style={styles.secondaryButtonText}>＋ Tạo nhân viên</Text>
-          </Pressable>
+          </Pressable></PermissionGate>
           <Pressable accessibilityRole="button" onPress={reloadList} style={styles.refreshButton}>
             <Text style={styles.refreshText}>Làm mới</Text>
           </Pressable>
         </View>
 
-        {editor ? (
+        
+
+        <View style={styles.sectionHeader}>
+          <View style={styles.headingBlock}>
+            <Text style={styles.sectionTitle}>Danh sách tài khoản</Text>
+            <Text style={styles.sectionSubtitle}>
+              {total === undefined ? `Trang ${page}` : `${total} tài khoản · trang ${page} / ${pageCount}`}
+            </Text>
+          </View>
+          {loading ? <ActivityIndicator color={appColors.primary} /> : null}
+        </View>
+
+        {listError ? (
+          <View style={styles.errorCard}>
+            <Text style={styles.errorTitle}>Không thể tải người dùng</Text>
+            <Text style={styles.errorBody}>{listError}</Text>
+            <Pressable accessibilityRole="button" onPress={reloadList} style={styles.retryButton}>
+              <Text style={styles.retryText}>Thử lại</Text>
+            </Pressable>
+          </View>
+        ) : loading && users.length === 0 ? (
+          <View style={styles.loadingRow}><ActivityIndicator color={appColors.primary} /><Text style={styles.mutedText}>Đang tải tài khoản…</Text></View>
+        ) : users.length === 0 ? (
+          <View style={styles.emptyCard}><Text style={styles.mutedText}>Máy chủ trả về danh sách trống.</Text></View>
+        ) : (
+          <View style={styles.list}>
+            {users.map((user) => (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected: selectedId === user.user_id }}
+                key={user.user_id}
+                onPress={() => selectUser(user)}
+                style={[styles.userCard, selectedId === user.user_id && styles.selectedUserCard]}>
+                <Text style={styles.userName}>{user.full_name}</Text>
+                <Text style={styles.userMeta}>{user.phone} · Vai trò ID {user.role_id}</Text>
+                <Text style={[styles.status, user.is_active === 1 ? styles.activeStatus : styles.inactiveStatus]}>
+                  {user.is_active === 1 ? 'Đang hoạt động' : 'Đã khoá'}
+                </Text>
+                <Text style={styles.openHint}>Mở chi tiết →</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {pageCount !== undefined && pageCount > 1 ? (
+          <View style={styles.pagination}>
+            <Pressable
+              accessibilityRole="button"
+              disabled={page <= 1 || loading}
+              onPress={() => { setPage((value) => Math.max(1, value - 1)); setLoading(true); setListError(null); }}
+              style={[styles.pageButton, (page <= 1 || loading) && styles.disabledButton]}>
+              <Text style={styles.secondaryButtonText}>Trước</Text>
+            </Pressable>
+            <Text style={styles.pageText}>Trang {page} / {pageCount}</Text>
+            <Pressable
+              accessibilityRole="button"
+              disabled={page >= pageCount || loading}
+              onPress={() => { setPage((value) => Math.min(pageCount, value + 1)); setLoading(true); setListError(null); }}
+              style={[styles.pageButton, (page >= pageCount || loading) && styles.disabledButton]}>
+              <Text style={styles.secondaryButtonText}>Tiếp</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        
+
+        
+      </ScrollView>
+      <Modal visible={selectedId !== null || editor !== null} animationType="slide" onRequestClose={closeDetails}>
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{editor ? 'Quản lý tài khoản' : 'Chi tiết tài khoản'}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel="Đóng chi tiết tài khoản" disabled={saving} onPress={closeDetails} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>Đóng</Text></Pressable>
+          </View>
+          <ScrollView key={editor ?? (confirmDelete ? 'delete' : 'detail')} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+            {actionError ? <Text accessibilityRole="alert" style={styles.errorMessage}>{actionError}</Text> : null}
+            {notice ? <Text style={styles.successMessage}>{notice}</Text> : null}
+            {editor ? (
           <View style={styles.formCard}>
             <Text style={styles.cardTitle}>
               {editor === 'create-user' ? 'Tạo tài khoản' :
@@ -648,70 +733,7 @@ export function AdminUsersScreen({ session }: { session: Session }) {
             </View>
           </View>
         ) : null}
-
-        <View style={styles.sectionHeader}>
-          <View style={styles.headingBlock}>
-            <Text style={styles.sectionTitle}>Danh sách tài khoản</Text>
-            <Text style={styles.sectionSubtitle}>
-              {total === undefined ? `Trang ${page}` : `${total} tài khoản · trang ${page} / ${pageCount}`}
-            </Text>
-          </View>
-          {loading ? <ActivityIndicator color={appColors.primary} /> : null}
-        </View>
-
-        {listError ? (
-          <View style={styles.errorCard}>
-            <Text style={styles.errorTitle}>Không thể tải người dùng</Text>
-            <Text style={styles.errorBody}>{listError}</Text>
-            <Pressable accessibilityRole="button" onPress={reloadList} style={styles.retryButton}>
-              <Text style={styles.retryText}>Thử lại</Text>
-            </Pressable>
-          </View>
-        ) : loading && users.length === 0 ? (
-          <View style={styles.loadingRow}><ActivityIndicator color={appColors.primary} /><Text style={styles.mutedText}>Đang tải tài khoản…</Text></View>
-        ) : users.length === 0 ? (
-          <View style={styles.emptyCard}><Text style={styles.mutedText}>Máy chủ trả về danh sách trống.</Text></View>
-        ) : (
-          <View style={styles.list}>
-            {users.map((user) => (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ selected: selectedId === user.user_id }}
-                key={user.user_id}
-                onPress={() => selectUser(user)}
-                style={[styles.userCard, selectedId === user.user_id && styles.selectedUserCard]}>
-                <Text style={styles.userName}>{user.full_name}</Text>
-                <Text style={styles.userMeta}>{user.phone} · Vai trò ID {user.role_id}</Text>
-                <Text style={[styles.status, user.is_active === 1 ? styles.activeStatus : styles.inactiveStatus]}>
-                  {user.is_active === 1 ? 'Đang hoạt động' : 'Đã khoá'}
-                </Text>
-                <Text style={styles.openHint}>Mở chi tiết →</Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
-
-        {pageCount !== undefined && pageCount > 1 ? (
-          <View style={styles.pagination}>
-            <Pressable
-              accessibilityRole="button"
-              disabled={page <= 1 || loading}
-              onPress={() => { setPage((value) => Math.max(1, value - 1)); setLoading(true); setListError(null); }}
-              style={[styles.pageButton, (page <= 1 || loading) && styles.disabledButton]}>
-              <Text style={styles.secondaryButtonText}>Trước</Text>
-            </Pressable>
-            <Text style={styles.pageText}>Trang {page} / {pageCount}</Text>
-            <Pressable
-              accessibilityRole="button"
-              disabled={page >= pageCount || loading}
-              onPress={() => { setPage((value) => Math.min(pageCount, value + 1)); setLoading(true); setListError(null); }}
-              style={[styles.pageButton, (page >= pageCount || loading) && styles.disabledButton]}>
-              <Text style={styles.secondaryButtonText}>Tiếp</Text>
-            </Pressable>
-          </View>
-        ) : null}
-
-        {selectedId !== null ? (
+            {!editor && !confirmDelete ? <>{selectedId !== null ? (
           <View style={styles.detailCard}>
             <View style={styles.sectionHeader}>
               <View style={styles.headingBlock}>
@@ -727,7 +749,7 @@ export function AdminUsersScreen({ session }: { session: Session }) {
                   accessibilityRole="button"
                   onPress={() => { setDetailLoading(true); setDetailError(null); setDetailReloadKey((value) => value + 1); }}
                   style={styles.retryButton}>
-                  <Text style={styles.retryText}>Tải lại danh sách</Text>
+                  <Text style={styles.retryText}>Thử tải lại chi tiết</Text>
                 </Pressable>
               </View>
             ) : detail ? (
@@ -744,24 +766,23 @@ export function AdminUsersScreen({ session }: { session: Session }) {
                   </Text>
                 ) : null}
                 <View style={styles.detailActions}>
-                  <Pressable accessibilityRole="button" onPress={beginEdit} style={styles.secondaryButton}>
+                  <PermissionGate permission={['PUT',`/admin/users/${detail?.user_id}`]}><Pressable accessibilityRole="button" onPress={beginEdit} style={styles.secondaryButton}>
                     <Text style={styles.secondaryButtonText}>Sửa người dùng</Text>
-                  </Pressable>
+                  </Pressable></PermissionGate>
                   {isStaffDetail(detail) ? (
-                    <Pressable accessibilityRole="button" onPress={beginAssignStaff} style={styles.secondaryButton}>
+                    <PermissionGate permission={['PUT',`/admin/users/${detail?.user_id}/assign`]}><Pressable accessibilityRole="button" onPress={beginAssignStaff} style={styles.secondaryButton}>
                       <Text style={styles.secondaryButtonText}>Phân công</Text>
-                    </Pressable>
+                    </Pressable></PermissionGate>
                   ) : null}
-                  <Pressable accessibilityRole="button" onPress={() => { setEditor(null); setConfirmDelete(true); setActionError(null); }} style={styles.deleteButton}>
+                  <PermissionGate permission={['DELETE',`/admin/users/${detail?.user_id}`]}><Pressable accessibilityRole="button" onPress={() => { setEditor(null); setConfirmDelete(true); setActionError(null); }} style={styles.deleteButton}>
                     <Text style={styles.deleteButtonText}>Xoá</Text>
-                  </Pressable>
+                  </Pressable></PermissionGate>
                 </View>
               </>
             ) : detailLoading ? null : null}
           </View>
-        ) : null}
-
-        {confirmDelete && detail ? (
+        ) : null}</> : null}
+            {confirmDelete && detail ? (
           <View style={styles.confirmCard}>
             <Text style={styles.cardTitle}>Xác nhận xoá người dùng</Text>
             <Text style={styles.errorBody}>
@@ -771,22 +792,26 @@ export function AdminUsersScreen({ session }: { session: Session }) {
               <Pressable accessibilityRole="button" disabled={saving} onPress={() => setConfirmDelete(false)} style={styles.secondaryButton}>
                 <Text style={styles.secondaryButtonText}>Huỷ</Text>
               </Pressable>
-              <Pressable
+              <PermissionGate permission={['DELETE',`/admin/users/${detail?.user_id}`]}><Pressable
                 accessibilityRole="button"
                 disabled={saving}
                 onPress={() => void deleteSelectedUser()}
                 style={[styles.deleteButton, saving && styles.disabledButton]}>
                 {saving ? <ActivityIndicator color={appColors.surface} /> : <Text style={styles.deleteButtonText}>Xác nhận xoá</Text>}
-              </Pressable>
+              </Pressable></PermissionGate>
             </View>
           </View>
         ) : null}
-      </ScrollView>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingVertical: 12, backgroundColor: appColors.surface, borderBottomWidth: 1, borderColor: appColors.border },
+  modalTitle: { fontSize: 19, fontWeight: '700', color: appColors.ink },
   safeArea: { flex: 1, backgroundColor: appColors.canvas },
   content: { flexGrow: 1, width: '100%', maxWidth: 1040, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 28, paddingBottom: 44 },
   eyebrow: { color: appColors.primary, fontSize: 11, fontWeight: '800', letterSpacing: 1.1 },

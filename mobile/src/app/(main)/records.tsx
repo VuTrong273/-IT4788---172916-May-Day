@@ -5,12 +5,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { appColors } from '@/constants/app-theme';
 import { useAuthenticatedSession } from '@/features/auth/use-authenticated-session';
 import { MedicalRecordHistory } from '@/features/doctor/medical-record-list';
-import { getDemoRole } from '@/features/navigation/feature-routes';
+import { getDemoRole, canOpenFeature } from '@/features/navigation/feature-routes';
 import { fontSizes, typography } from '@/constants/typography';
 
 export default function RecordsScreen() {
   const session = useAuthenticatedSession();
-  const isPatient = !!session && getDemoRole(session.user.role_id) === 'patient';
+  const isPatient = !!session && getDemoRole(session.user) === 'patient';
 
   if (!session) return <SafeAreaView style={styles.safeArea} />;
   if (!isPatient) {
@@ -34,12 +34,12 @@ export default function RecordsScreen() {
         <Text style={styles.eyebrow}>BỆNH ÁN / BỆNH NHÂN</Text>
         <Text style={styles.title}>Bệnh án của tôi</Text>
         <Text style={styles.subtitle}>Xem lịch sử khám do máy chủ trả về hoặc tạo bệnh án mới.</Text>
-        <Pressable
+        {canOpenFeature(session, 'create-medical-record') ? <Pressable
           accessibilityRole="button"
           onPress={() => router.push('/feature/create-medical-record')}
           style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
           <Text style={styles.primaryText}>Tạo bệnh án</Text>
-        </Pressable>
+        </Pressable> : null}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Lịch sử khám</Text>
         </View>

@@ -9,7 +9,7 @@ import { useAuthenticatedSession } from '@/features/auth/use-authenticated-sessi
 import { ClinicStructureScreen } from '@/features/clinic-structure/clinic-structure-screen';
 import { MedicalRecordList } from '@/features/doctor/medical-record-list';
 import { CreateMedicalRecord } from '@/features/records/create-medical-record';
-import { getDemoRole, getFeatureRoute } from '@/features/navigation/feature-routes';
+import { getDemoRole, getFeatureRoute, canOpenFeature } from '@/features/navigation/feature-routes';
 import { LesionEpisodeScreen } from '@/features/lesion-tracking/lesion-episode-screen';
 import { TemplateCatalogScreen } from '@/features/templates/template-catalog-screen';
 import { Uas7Screen } from '@/features/uas7/uas7-screen';
@@ -19,15 +19,15 @@ export default function FeatureScreen() {
   const { slug, medicalRecordId } = useLocalSearchParams<{ slug: string; medicalRecordId?: string }>();
   const session = useAuthenticatedSession();
   const feature = getFeatureRoute(slug);
-  const role = session ? getDemoRole(session.user.role_id) : null;
-  const isAllowed = !!feature && !!role && feature.roles.includes(role);
+  const role = session ? getDemoRole(session.user) : null;
+  const isAllowed = !!feature && !!role && canOpenFeature(session, feature.slug);
 
   if (!session) return <SafeAreaView style={styles.safeArea} />;
 
   if (isAllowed && (slug === 'pending-records' || slug === 'in-progress-records')) {
     return <MedicalRecordList session={session} status={slug === 'pending-records' ? 'pending' : 'in_progress'} />;
   }
-  if (isAllowed && (slug === 'lab-requests' || slug === 'prescriptions') && role === 'doctor') {
+  if (isAllowed && (slug === 'lab-requests' || slug === 'prescriptions') && role !== 'patient') {
     return (
       <MedicalRecordList
         clinicalFocus={slug === 'lab-requests' ? 'lab' : 'prescription'}
@@ -57,7 +57,7 @@ export default function FeatureScreen() {
   if (isAllowed && slug === 'access-control') {
     return <AccessControlScreen session={session} />;
   }
-  if (isAllowed && slug === 'admin-users' && role === 'admin') {
+  if (isAllowed && slug === 'admin-users') {
     return <AdminUsersScreen session={session} />;
   }
   if (isAllowed && slug === 'uas7') {

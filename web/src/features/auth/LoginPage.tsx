@@ -24,7 +24,7 @@ export function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   // If already logged in with valid staff/admin role, redirect to portal
-  if (session && roleFromId(session.user.role_id)) {
+  if (session && roleFromId(session.user)) {
     return <Navigate to="/app" replace />;
   }
 

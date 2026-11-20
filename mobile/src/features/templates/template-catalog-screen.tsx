@@ -1,3 +1,5 @@
+import { canAccess } from '@/features/auth/permissions';
+import { PermissionGate } from '@/components/permission-controls';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -35,6 +37,7 @@ const emptyDraft: TemplateDraft = {
   description: '',
   version: '',
   is_active: '1',
+  intake_duration: null,
 };
 
 function draftFromTemplate(template: TemplateSummary): TemplateDraft {
@@ -44,6 +47,7 @@ function draftFromTemplate(template: TemplateSummary): TemplateDraft {
     description: template.description ?? '',
     version: template.version ?? '',
     is_active: template.is_active,
+    intake_duration: template.intake_duration ?? null,
   };
 }
 
@@ -91,8 +95,8 @@ function FormField({
 
 export function TemplateCatalogScreen() {
   const session = useAuthenticatedSession();
-  const role = session ? getDemoRole(session.user.role_id) : null;
-  const isAdmin = role === 'admin';
+  const role = session ? getDemoRole(session.user) : null;
+  const isAdmin = (['POST', 'PUT', 'DELETE'] as const).some(method => ['/templates', '/templates/:id', '/templates/:id/sections', '/templates/sections/:id', '/templates/sections/:id/questions', '/templates/questions/:id'].some(path => canAccess(session, method, path)));
   const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -221,6 +225,7 @@ export function TemplateCatalogScreen() {
       description: draft.description.trim(),
       version: draft.version.trim(),
       ...(draft.is_active ? { is_active: draft.is_active } : {}),
+      intake_duration: draft.intake_duration ?? null,
     };
 
     try {
@@ -364,9 +369,9 @@ export function TemplateCatalogScreen() {
 
                 {isAdmin ? (
                   <View style={styles.actionRow}>
-                    {!editorOpen ? <ActionButton label="Chỉnh sửa" onPress={beginEdit} /> : null}
+                    {!editorOpen ? <PermissionGate permission={['PUT',`/templates/${selected?.code_template}`]}><ActionButton label="Chỉnh sửa" onPress={beginEdit} /></PermissionGate> : null}
                     {!editorOpen ? (
-                      <ActionButton
+                      <PermissionGate permission={['DELETE',`/templates/${selected?.code_template}`]}><ActionButton
                         label="Xóa mẫu phiếu"
                         onPress={() => {
                           setConfirmDelete(true);
@@ -374,7 +379,7 @@ export function TemplateCatalogScreen() {
                           setNotice('');
                         }}
                         danger
-                      />
+                      /></PermissionGate>
                     ) : null}
                   </View>
                 ) : null}
@@ -387,7 +392,7 @@ export function TemplateCatalogScreen() {
                     </Text>
                     <View style={styles.actionRow}>
                       <ActionButton label="Hủy" onPress={() => setConfirmDelete(false)} secondary disabled={deleting} />
-                      <ActionButton label={deleting ? 'Đang xóa…' : 'Xác nhận xóa'} onPress={() => void deleteTemplate()} danger disabled={deleting} />
+                      <PermissionGate permission={['DELETE',`/templates/${selected?.code_template}`]}><ActionButton label={deleting ? 'Đang xóa…' : 'Xác nhận xóa'} onPress={() => void deleteTemplate()} danger disabled={deleting} /></PermissionGate>
                     </View>
                   </View>
                 ) : null}
@@ -505,7 +510,7 @@ export function TemplateCatalogScreen() {
           <View style={styles.panel}>
             <View style={styles.listHeader}>
               <Text style={styles.sectionTitle}>Mẫu phiếu</Text>
-              {isAdmin ? <ActionButton label="＋ Tạo mẫu mới" onPress={openCreateForm} /> : null}
+              {isAdmin ? <PermissionGate permission={['POST','/templates']}><ActionButton label="＋ Tạo mẫu mới" onPress={openCreateForm} /></PermissionGate> : null}
             </View>
             <View accessibilityLabel="Lọc trạng thái mẫu phiếu" style={styles.filterRow}>
               <FilterButton label="Tất cả" selected={filter === 'all'} onPress={() => selectFilter('all')} />
@@ -609,6 +614,10 @@ function TemplateEditor({
         onChangeText={(version) => setDraft({ ...draft, version })}
       />
       <Text style={styles.fieldLabel}>Trạng thái do máy chủ hỗ trợ</Text>
+      <Text style={styles.fieldLabel}>Chọn tự động theo thời gian khởi phát</Text>
+      <FilterButton label="Không chọn tự động" selected={!draft.intake_duration} onPress={() => setDraft({ ...draft, intake_duration: null })} />
+      <FilterButton label="Dưới 6 tuần" selected={draft.intake_duration === 'lt6w'} onPress={() => setDraft({ ...draft, intake_duration: 'lt6w' })} />
+      <FilterButton label="Từ 6 tuần" selected={draft.intake_duration === 'gte6w'} onPress={() => setDraft({ ...draft, intake_duration: 'gte6w' })} />
       {!draft.is_active ? (
         <Text style={styles.metaText}>
           Máy chủ chưa cung cấp trạng thái; nếu không chọn, yêu cầu cập nhật sẽ giữ nguyên trường này.

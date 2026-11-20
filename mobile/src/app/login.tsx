@@ -21,22 +21,21 @@ import {
   type LoginFormValues,
 } from '@/features/auth/login-schema';
 import { styles } from '@/features/auth/login-styles';
-import { getUserRole, roleLabels } from '@/features/auth/roles';
 import { saveSession } from '@/features/auth/session';
 
 
 export default function LoginScreen() {
   const params = useLocalSearchParams<{
-    role?: string;
+    password_changed?: string;
     registered?: string;
     password_reset?: string;
     session_expired?: string;
     session_cleanup_failed?: string;
   }>();
 
-  const role = getUserRole(params.role);
-
-  const initialMessage = params.session_expired === '1'
+  const initialMessage = params.password_changed === '1'
+    ? 'Đổi mật khẩu thành công. Vui lòng đăng nhập lại.'
+    : params.session_expired === '1'
     ? 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
     : params.session_cleanup_failed === '1'
       ? 'Mật khẩu đã được đổi trên máy chủ, nhưng phiên cũ chưa thể xóa khỏi thiết bị. Hãy đăng nhập bằng mật khẩu mới.'
@@ -164,7 +163,7 @@ export default function LoginScreen() {
             {/* Badge */}
             <View style={styles.roleBadge}>
               <Text style={styles.roleBadgeText}>
-                CỔNG BỆNH NHÂN
+                CỔNG ĐĂNG NHẬP
               </Text>
             </View>
           </View>
@@ -213,17 +212,14 @@ export default function LoginScreen() {
                 <View style={styles.roleDescription}>
                   <Text style={styles.roleDescriptionIcon}>✓</Text>
                   <Text style={styles.roleDescriptionText}>
-                    Dành cho {roleLabels[role]}
+                    Đăng nhập bằng tài khoản của bạn
                   </Text>
                 </View>
 
                 <Pressable
                   accessibilityRole="button"
                   onPress={() =>
-                    router.push({
-                      pathname: '/forgot-password',
-                      params: { role },
-                    })
+                    router.push('/forgot-password')
                   }
                   style={styles.forgotLink}
                 >
@@ -268,33 +264,8 @@ export default function LoginScreen() {
                 </Text>
               </Pressable>
 
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => router.back()}
-                style={({ pressed }) => [
-                  styles.backButton,
-                  pressed && styles.backButtonPressed,
-                ]}
-              >
-                <Text style={styles.backButtonText}>← Quay lại</Text>
-              </Pressable>
-
-              {/* Patient information */}
-              <View style={styles.patientNotice}>
-                <Text style={styles.patientNoticeTitle}>
-                  Bệnh nhân ngoại trú
-                </Text>
-
-                <Text style={styles.patientNoticeText}>
-                  Vui lòng sử dụng <Text style={styles.patientNoticeBold}>
-                    Ứng dụng di động MayDay
-                  </Text> để tự khai báo thông số cơ thể, chấm điểm
-                  UAS7/AAS7 và tải ảnh tiến triển tổn thương.
-                </Text>
-              </View>
             </View>
 
-            {role === 'patient' ? (
               <View style={styles.signupRow}>
                 <Text style={styles.signupPrompt}>
                   Chưa có tài khoản?
@@ -310,7 +281,6 @@ export default function LoginScreen() {
                   </Text>
                 </Pressable>
               </View>
-            ) : null}
           </View>
 
           {/* Footer */}

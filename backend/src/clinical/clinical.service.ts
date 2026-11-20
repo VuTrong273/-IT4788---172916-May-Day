@@ -18,9 +18,8 @@ export class ClinicalService {
     user: AuthenticatedUser,
     write: boolean,
   ) {
-    const role = (
-      await tx.query('SELECT name FROM roles WHERE role_id = $1', [user.roleId])
-    ).rows[0]?.name;
+    const role = (await tx.query('SELECT base_role($1) AS name', [user.roleId]))
+      .rows[0]?.name;
     if (write && role !== 'doctor') fail('3103', 'Doctor role required', 403);
     const record = (
       await tx.query(

@@ -1,4 +1,4 @@
-﻿# May Day Mobile
+# May Day Mobile
 
 Ứng dụng Expo SDK 58 / React Native dùng chung backend với web, không có dữ liệu giả khi API không hoạt động.
 
@@ -25,12 +25,12 @@ Thay IP trên bằng IP máy chạy backend. Mở `http://<IP>:3000/` trên trì
 
 - Đăng ký, đăng nhập, hồ sơ, đổi mật khẩu và email khôi phục.
 - Chọn mẫu phiếu đang hoạt động, tạo bệnh án, lịch sử khám, lưu câu trả lời, bác sĩ tiếp nhận và hoàn tất.
-- Nhật ký đợt tổn thương: tạo, xem, sửa, xóa.
-- Chấm UAS7 theo ngày, lịch sử và tổng tuần khi có bệnh án đang khám.
+- Nhật ký đợt tổn thương: tạo, xem, sửa, xóa; thêm/đổi tên/xóa vị trí; ảnh theo mốc khởi phát, nặng nhất, trở lại bình thường; điểm ngứa/đau/rát 0–10 và số sẩn phù.
+- Chấm UAS7 theo ngày, lịch sử và tổng tuần khi bệnh án đang khám hoặc đã hoàn tất và còn mở theo dõi tại nhà.
 - Tải ảnh đơn/nhiều ảnh, thư viện ảnh, gắn/gỡ ảnh câu trả lời. Backend lưu MinIO và trả URL có chữ ký, hiệu lực một giờ; tải lại danh sách để lấy URL mới.
 - Xét nghiệm, đơn thuốc, quản trị người dùng, cơ sở, mẫu phiếu và phân quyền dùng cùng API với web.
 
-Mẫu phiếu được người dùng chọn theo hướng dẫn cơ sở y tế. Hiện chưa có bộ quy tắc chẩn đoán/phân loại tự động được cấu hình. Backend kiểm tra vai trò, quyền sở hữu bệnh án và chặn sửa dữ liệu khi bệnh án đã hoàn tất.
+Câu hỏi về thời gian khởi phát định hướng một trong hai phiếu mề đay (dưới 6 tuần / từ 6 tuần). Mỗi phiếu có 5 phần, 17 câu hỏi, chia phần bệnh nhân và bác sĩ; bác sĩ xác nhận chẩn đoán. Backend kiểm tra kiểu dữ liệu, quyền điền và câu bắt buộc trước khi chốt. Phiếu đã chốt không sửa được; nhật ký tại nhà tiếp tục cho đến khi bác sĩ dừng `followup_active`. UAS7 chỉ diễn giải mức độ khi đủ 7 ngày, không nhận ngày tương lai. Các mẫu này phục vụ kiểm tra nghiệp vụ; nội dung chuyên môn cần được cơ sở duyệt trước khi dùng thực tế.
 
 ## Kiểm tra
 

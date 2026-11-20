@@ -75,6 +75,16 @@ export class CatalogService {
           if (!existing.rows[0]) fail('2008', 'Role not found', 404);
           if (
             ['admin', 'doctor', 'patient'].includes(existing.rows[0].name) &&
+            values.parent_role_id != null
+          )
+            fail('2003', 'Built-in roles cannot inherit another role');
+          if (
+            ['admin', 'doctor', 'patient'].includes(existing.rows[0].name) &&
+            values.actor_type != null
+          )
+            fail('2003', 'Built-in role workflows cannot be changed');
+          if (
+            ['admin', 'doctor', 'patient'].includes(existing.rows[0].name) &&
             values.name !== undefined &&
             values.name !== existing.rows[0].name
           )
@@ -87,6 +97,18 @@ export class CatalogService {
             if (ancestors.rowCount) fail('2003', 'Role hierarchy cycle');
           }
         }
+        if (values.parent_role_id != null) {
+          const parent = (
+            await tx.query('SELECT base_role($1) AS name', [
+              values.parent_role_id,
+            ])
+          ).rows[0]?.name;
+          if (!['admin', 'doctor'].includes(parent))
+            fail(
+              '2003',
+              'Custom staff roles must inherit an administrator or doctor role',
+            );
+        }
       }
       const row = await this.save(
         tx,
@@ -95,6 +117,14 @@ export class CatalogService {
         values,
         rawId ? id(rawId) : undefined,
       );
+      if (key === 'roles' && rawId) {
+        const invalid = await tx.query(
+          'WITH RECURSIVE descendants AS (SELECT role_id FROM roles WHERE role_id=$1 UNION SELECT r.role_id FROM roles r JOIN descendants d ON r.parent_role_id=d.role_id) SELECT 1 FROM users u JOIN descendants d USING(role_id) WHERE base_role(u.role_id) IS NULL LIMIT 1',
+          [id(rawId)],
+        );
+        if (invalid.rowCount)
+          fail('2003', 'Assigned roles must retain a supported staff workflow');
+      }
       return success({ id: row[c.pk], ...row }, !rawId);
     });
   }
@@ -126,7 +156,15 @@ export class CatalogService {
   async remove(key: string, rawId: string) {
     const c = catalogs[key];
     return this.db.transaction(async (tx) => {
+      let affectedRoles: number[] = [];
       if (key === 'roles') {
+        await tx.query('LOCK TABLE roles IN SHARE ROW EXCLUSIVE MODE');
+        affectedRoles = (
+          await tx.query(
+            'WITH RECURSIVE descendants AS (SELECT role_id FROM roles WHERE role_id=$1 UNION SELECT r.role_id FROM roles r JOIN descendants d ON r.parent_role_id=d.role_id) SELECT role_id FROM descendants',
+            [id(rawId)],
+          )
+        ).rows.map((row) => row.role_id);
         const role = await tx.query(
           'SELECT name FROM roles WHERE role_id = $1',
           [id(rawId)],
@@ -139,6 +177,19 @@ export class CatalogService {
         [id(rawId)],
       );
       if (!result.rowCount) fail('2008', 'Resource not found', 404);
+      if (
+        affectedRoles.length &&
+        (
+          await tx.query(
+            'SELECT 1 FROM users WHERE role_id=ANY($1::int[]) AND base_role(role_id) IS NULL LIMIT 1',
+            [affectedRoles],
+          )
+        ).rowCount
+      )
+        fail(
+          '2003',
+          'Deleting this parent would remove the workflow of an assigned role',
+        );
       return success({});
     });
   }

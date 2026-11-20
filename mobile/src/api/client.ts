@@ -1,8 +1,11 @@
-import axios, {
+import {
   AxiosHeaders,
+  create,
   isAxiosError,
   type AxiosRequestConfig,
 } from 'axios';
+import { invalidateAccess, knownAccess } from '@/features/auth/access-events';
+import { hasEndpoint } from '@/features/auth/permissions';
 
 export const API_TIMEOUT_MS = 10_000;
 
@@ -109,7 +112,7 @@ try {
 
 export { apiUrl };
 
-export const apiClient = axios.create({
+export const apiClient = create({
   baseURL: apiUrl,
   timeout: API_TIMEOUT_MS,
   headers: { Accept: 'application/json' },
@@ -170,6 +173,10 @@ export async function apiRequest<T>(
   accessToken?: string,
 ): Promise<T> {
   const operation = operationFor(config);
+  const access = accessToken ? knownAccess(accessToken) : undefined;
+  if (access && config.url !== '/auth/access' && !hasEndpoint(access.endpoints, config.method ?? 'GET', config.url ?? '/', access.routes)) {
+    throw new ApiRequestError({ kind:'api', operation, status:403, apiCode:'3101', message:'Bạn chưa được cấp quyền thực hiện thao tác này.' });
+  }
   if (apiConfigurationProblem) {
     throw new ApiRequestError({
       kind: 'configuration',
@@ -208,7 +215,9 @@ export async function apiRequest<T>(
     });
     return response.data;
   } catch (error) {
-    throw toApiRequestError(error, operation);
+    const failure = toApiRequestError(error, operation);
+    if (accessToken && failure.apiCode === '3101') invalidateAccess(accessToken);
+    throw failure;
   }
 }
 

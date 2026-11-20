@@ -20,7 +20,7 @@ export class MonitoringService {
       const role = await this.access.role(tx, user);
       if (role !== 'patient') fail('3106', 'Patient access required', 403);
       const result = await tx.query(
-        "SELECT medical_record_id FROM medical_records WHERE patient_id=$1 AND status='in_progress' ORDER BY created_at DESC LIMIT 1",
+        "SELECT medical_record_id FROM medical_records WHERE patient_id=$1 AND status IN ('in_progress','completed') AND followup_active=true ORDER BY created_at DESC,medical_record_id DESC LIMIT 1",
         [user.userId],
       );
       return success(
@@ -37,8 +37,15 @@ export class MonitoringService {
   createScore(user: AuthenticatedUser, body: unknown) {
     const input = object(body);
     const scoreDate = dateOnly(input.score_date);
+    const today = new Date().toLocaleDateString('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+    });
+    if (scoreDate > today) fail('2006', 'Cannot score a future date');
     const score = (value: unknown, code: string) => {
-      if ((typeof value !== 'string' && typeof value !== 'number') || !/^[0-3]$/.test(String(value)))
+      if (
+        (typeof value !== 'string' && typeof value !== 'number') ||
+        !/^[0-3]$/.test(String(value))
+      )
         fail(code, 'Score must be between 0 and 3');
       return Number(value);
     };
@@ -53,7 +60,10 @@ export class MonitoringService {
         input.medical_record_id,
       );
       if (role !== 'patient') fail('3106', 'Patient access required', 403);
-      if (row.status !== 'in_progress')
+      if (
+        !['in_progress', 'completed'].includes(row.status) ||
+        row.followup_active === false
+      )
         fail('5001', 'Record is not eligible for UAS7', 409);
       const duplicate = await tx.query(
         'SELECT 1 FROM uas7_scores WHERE patient_id=$1 AND score_date=$2',
@@ -80,7 +90,14 @@ export class MonitoringService {
   ) {
     const startDate =
       start === undefined
-        ? new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10)
+        ? new Date(
+            Date.parse(
+              `${new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })}T00:00:00Z`,
+            ) -
+              6 * 86400000,
+          )
+            .toISOString()
+            .slice(0, 10)
         : dateOnly(start);
     return this.db.transaction(async (tx) => {
       const { patientId, role } = await this.access.patient(tx, user, patient);
@@ -101,15 +118,17 @@ export class MonitoringService {
         0,
       );
       const severity =
-        sum === 0
-          ? 'Không hoạt động'
-          : sum <= 6
-            ? 'Nhẹ'
-            : sum <= 15
-              ? 'Vừa'
-              : sum <= 27
-                ? 'Nặng'
-                : 'Rất nặng';
+        result.rowCount !== 7
+          ? 'Chưa đủ dữ liệu 7 ngày'
+          : sum === 0
+            ? 'Không hoạt động'
+            : sum <= 6
+              ? 'Kiểm soát tốt'
+              : sum <= 15
+                ? 'Nhẹ'
+                : sum <= 27
+                  ? 'Vừa'
+                  : 'Nặng';
       return success({
         patient_id: String(patientId),
         week_score: String(sum),
@@ -201,11 +220,10 @@ export class MonitoringService {
   createEpisode(user: AuthenticatedUser, body: unknown) {
     const { input, values } = this.episodeInput(body, true);
     return this.db.transaction(async (tx) => {
-      const { row, role } = await this.access.record(
+      const { row, role } = await this.access.monitoringRecord(
         tx,
         user,
         input.medical_record_id,
-        true,
       );
       if (role !== 'patient') fail('3106', 'Patient access required', 403);
       const keys = Object.keys(values);
@@ -240,17 +258,19 @@ export class MonitoringService {
       action === 'patch' ? this.episodeInput(body, false).values : undefined;
     return this.db.transaction(async (tx) => {
       const result = await tx.query(
-        'SELECT * FROM lesion_episodes WHERE episode_id=$1 FOR UPDATE',
+        'SELECT * FROM lesion_episodes WHERE episode_id=$1',
         [id(episodeId)],
       );
       const episode = result.rows[0];
       if (!episode) fail('4001', 'Episode not found', 404);
-      const { role } = await this.access.record(
-        tx,
-        user,
-        episode.medical_record_id,
-        action !== 'get',
-      );
+      const { role } =
+        action === 'get'
+          ? await this.access.record(tx, user, episode.medical_record_id)
+          : await this.access.monitoringRecord(
+              tx,
+              user,
+              episode.medical_record_id,
+            );
       if (action === 'get') return success(this.serialize(episode));
       if (role !== 'patient' || episode.patient_id !== user.userId)
         fail('3106', 'Only the owner can edit this episode', 403);

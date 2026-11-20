@@ -4,6 +4,7 @@ import type { AuthenticatedUser } from '../auth/jwt-auth.guard.js';
 import { DatabaseService, fail, success } from '../common/database.service.js';
 import { array, id, object, text } from '../common/validation.js';
 import { PatientAccessService } from './access.service.js';
+import { assertCompleteForm, validateAnswerType } from './form-validation.js';
 
 @Injectable()
 export class PatientRecordsService {
@@ -13,26 +14,34 @@ export class PatientRecordsService {
   ) {}
 
   async classificationQuestions() {
-    // Selection is explicit: no unconfigured clinical diagnostic rules are inferred.
+    // Routes to an intake form; the treating doctor confirms the diagnosis.
     return this.db.transaction(async (tx) => {
       const templates = (
         await tx.query(
-          'SELECT code_template, name FROM templates WHERE is_active=1 ORDER BY name, code_template',
+          'SELECT code_template,intake_duration FROM templates t WHERE is_active=1 AND intake_duration IS NOT NULL AND EXISTS(SELECT 1 FROM template_sections s JOIN questions q USING(section_id) WHERE s.template_id=t.code_template)',
         )
       ).rows;
       return success(
         templates.length
           ? [
               {
-                question_id: 'TEMPLATE_SELECTION',
+                question_id: 'Q_DURATION',
                 question_text:
-                  'Chọn mẫu phiếu khám theo hướng dẫn của cơ sở y tế',
+                  'Các đợt nổi mề đay bắt đầu xuất hiện từ bao lâu?',
                 type_question: 'radio',
-                options: templates.map((t, i) => ({
-                  id: i + 1,
-                  option_text: t.name,
-                  option_value: t.code_template,
-                })),
+                options: [
+                  { id: 1, option_text: 'Dưới 6 tuần', option_value: 'lt6w' },
+                  {
+                    id: 2,
+                    option_text: 'Từ 6 tuần trở lên',
+                    option_value: 'gte6w',
+                  },
+                ].filter((option) =>
+                  templates.some(
+                    (template) =>
+                      template.intake_duration === option.option_value,
+                  ),
+                ),
               },
             ]
           : [],
@@ -42,14 +51,16 @@ export class PatientRecordsService {
   async classify(body: unknown) {
     const input = object(body);
     const answers = array(input.answers).map(object);
-    if (answers.length !== 1 || answers[0].question_id !== 'TEMPLATE_SELECTION')
+    if (answers.length !== 1 || answers[0].question_id !== 'Q_DURATION')
       fail('4006', 'Classification answers are incomplete');
-    const code = text(answers[0].option_value, 225);
+    const duration = text(answers[0].option_value, 20);
+    if (!['lt6w', 'gte6w'].includes(duration))
+      fail('4006', 'Invalid duration choice');
     return this.db.transaction(async (tx) => {
       const row = (
         await tx.query(
-          'SELECT code_template AS template_id, name AS template_name FROM templates WHERE code_template=$1 AND is_active=1',
-          [code],
+          'SELECT code_template AS template_id, name AS template_name FROM templates t WHERE intake_duration=$1 AND is_active=1 AND EXISTS(SELECT 1 FROM template_sections s JOIN questions q USING(section_id) WHERE s.template_id=t.code_template)',
+          [duration],
         )
       ).rows[0];
       if (!row) fail('4101', 'Template not found', 404);
@@ -107,7 +118,7 @@ export class PatientRecordsService {
     return this.db.transaction(async (tx) => {
       const { patientId, role } = await this.access.patient(tx, user, patient);
       const rows = await tx.query(
-        `SELECT medical_record_id,status,instructions,created_at FROM medical_records WHERE patient_id=$1 ${role === 'doctor' ? 'AND assigned_doctor_id=$2' : ''} ORDER BY created_at DESC,medical_record_id DESC`,
+        `SELECT medical_record_id,status,followup_active,instructions,created_at FROM medical_records WHERE patient_id=$1 ${role === 'doctor' ? 'AND assigned_doctor_id=$2' : ''} ORDER BY created_at DESC,medical_record_id DESC`,
         role === 'doctor' ? [patientId, user.userId] : [patientId],
       );
       return success(rows.rows);
@@ -169,6 +180,15 @@ export class PatientRecordsService {
         ![role, 'patdoc'].includes(question.filled_by)
       )
         fail('3101', 'Section is not writable by this role', 403);
+      if (answer.clear === true) {
+        if (question.type_question === 'image')
+          fail('2003', 'Remove image links explicitly');
+        await tx.query(
+          'DELETE FROM answers WHERE medical_record_id=$1 AND question_id=$2',
+          [record.medical_record_id, questionId],
+        );
+        continue;
+      }
       const option =
         answer.question_option_id === null ||
         answer.question_option_id === undefined
@@ -189,8 +209,19 @@ export class PatientRecordsService {
           ? null
           : text(answer.answer_text);
       const answerValue = answer.answer_value ?? null;
-      if (option === null && answerText === null && answerValue === null)
+      if (
+        option === null &&
+        answerText === null &&
+        answerValue === null &&
+        question.type_question !== 'image'
+      )
         fail('4007', 'Answer has no value');
+      validateAnswerType(
+        question.type_question,
+        answerText,
+        answerValue,
+        option,
+      );
       if (
         ['checkbox', 'select', 'radio'].includes(question.type_question) &&
         answerValue !== null
@@ -222,6 +253,27 @@ export class PatientRecordsService {
   }
   async complete(user: AuthenticatedUser, recordId: unknown, body: unknown) {
     const input = object(body);
+    if (input.status === undefined && input.followup_active !== undefined) {
+      if (
+        typeof input.followup_active !== 'boolean' ||
+        Object.keys(input).length !== 1
+      )
+        fail('2003', 'Expected followup_active boolean');
+      return this.db.transaction(async (tx) => {
+        const { row, role } = await this.access.record(tx, user, recordId);
+        if (role !== 'doctor') fail('3103', 'Doctor role required', 403);
+        if (row.assigned_doctor_id !== user.userId)
+          fail('3105', 'Doctor is not assigned', 403);
+        return success(
+          (
+            await tx.query(
+              'UPDATE medical_records SET followup_active=$2 WHERE medical_record_id=$1 RETURNING *',
+              [row.medical_record_id, input.followup_active],
+            )
+          ).rows[0],
+        );
+      });
+    }
     if (input.status !== 'completed')
       fail('4009', 'Invalid medical record status');
     const instructions =
@@ -231,6 +283,7 @@ export class PatientRecordsService {
       if (role !== 'doctor') fail('3103', 'Doctor role required', 403);
       if (row.status !== 'in_progress')
         fail('4004', 'Record must be in progress', 409);
+      await assertCompleteForm(tx, row.medical_record_id, row.template_id);
       return success(
         (
           await tx.query(

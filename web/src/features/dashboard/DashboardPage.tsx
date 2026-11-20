@@ -16,18 +16,18 @@ function formatDate(value: string) {
 }
 
 export function DashboardPage() {
-  const { session } = useAuth();
+  const { session, can } = useAuth();
   const [pendingCount, setPendingCount] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
   const [recent, setRecent] = useState<MedicalRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const role = session ? roleFromId(session.user.role_id) : null;
+  const role = session ? roleFromId(session.user) : null;
   const firstName = session?.user.full_name.trim().split(/\s+/).at(-1) ?? 'bạn';
 
   const load = useCallback(async () => {
-    if (!session) return;
+    if (!session || !can('GET', '/medical_records/all')) return;
     setLoading(true);
     setError('');
     try {
@@ -47,9 +47,10 @@ export function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [session]);
+  }, [session, can]);
 
   useEffect(() => { void load(); }, [load]);
+  if (!can('GET', '/medical_records/all')) return <PageHeader eyebrow="KHÔNG GIAN LÀM VIỆC" title={`Xin chào, ${firstName}`} description="Chọn chức năng được cấp quyền trong menu. Liên hệ quản trị viên nếu cần bổ sung quyền." />;
 
   const statCards = [
     { label: 'Chờ tiếp nhận', value: pendingCount, icon: 'clock' as const, tone: 'amber', note: 'Bệnh án mới gửi' },
@@ -84,7 +85,7 @@ export function DashboardPage() {
           <div className="shortcut-list">
             <Link to="/app/records?status=pending" className="shortcut"><span className="shortcut__icon shortcut__icon--amber"><Icon name="clock" /></span><span><strong>Tiếp nhận bệnh án</strong><small>{loading ? 'Đang cập nhật…' : `${pendingCount} hồ sơ đang chờ`}</small></span><Icon name="chevron" size={17} /></Link>
             <Link to="/app/records?status=in_progress" className="shortcut"><span className="shortcut__icon shortcut__icon--green"><Icon name="activity" /></span><span><strong>Tiếp tục thăm khám</strong><small>{loading ? 'Đang cập nhật…' : `${activeCount} hồ sơ đang khám`}</small></span><Icon name="chevron" size={17} /></Link>
-            <Link to="/app/profile" className="shortcut"><span className="shortcut__icon shortcut__icon--slate"><Icon name="user" /></span><span><strong>Hồ sơ tài khoản</strong><small>Thông tin và bảo mật</small></span><Icon name="chevron" size={17} /></Link>
+            <Link to="/app/profile" className="shortcut"><span className="shortcut__icon shortcut__icon--slate"><Icon name="user" /></span><span><strong>Thông tin cá nhân</strong><small>Thông tin và bảo mật</small></span><Icon name="chevron" size={17} /></Link>
           </div>
           <div className="privacy-note"><Icon name="shield" size={17} /><span>Chỉ xem hồ sơ trong phạm vi quyền truy cập được cấp.</span></div>
         </Panel>

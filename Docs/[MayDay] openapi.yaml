@@ -19,6 +19,7 @@ info:
     | **Auth** | | | |
     | POST | `/auth/signup` | Đăng ký tài khoản bệnh nhân | công khai |
     | POST | `/auth/login` | Đăng nhập | công khai |
+    | GET | `/auth/access` | Quyền API của tài khoản hiện tại | admin, doctor, patient |
     | POST | `/auth/logout` | Đăng xuất | admin, doctor, patient |
     | POST | `/auth/recovery-email` | Gửi OTP xác minh email khôi phục *(bổ sung)* | admin, doctor, patient |
     | POST | `/auth/recovery-email/verify` | Xác minh email khôi phục *(bổ sung)* | admin, doctor, patient |
@@ -163,7 +164,7 @@ info:
 
     ### Quy ước UAS7 (Decision D5 - khác slide)
     Slide gốc ghi ISS7 = số lượng mề đay, HSS7 = ngứa. **Nhóm dùng chuẩn y khoa**: **`iss7` = điểm NGỨA (0-3)**, **`hss7` = điểm SỐ LƯỢNG MỀ ĐAY (0-3)**. `daily_score = iss7 + hss7` (0-6); tổng tuần 0-42.
-    5 mức độ: `0` Không hoạt động · `1-6` Nhẹ · `7-15` Vừa · `16-27` Nặng · `28-42` Rất nặng.
+    5 mức độ khi đủ 7 ngày: `0` Không hoạt động · `1-6` Kiểm soát tốt · `7-15` Nhẹ · `16-27` Vừa · `28-42` Nặng. Tuần thiếu dữ liệu không diễn giải mức độ.
 
     ### Vòng đời bệnh án (Decision D4)
     `pending` → (bác sĩ `accept`) → `in_progress` → (bác sĩ `PUT` + `status=completed`) → `completed`. Bệnh án `completed` **bị khoá**: không sửa câu trả lời, không thêm đợt tổn thương (lỗi 4003).
@@ -380,6 +381,34 @@ paths:
         '404': {$ref: '#/components/responses/E404_3007'}
         '500': {$ref: '#/components/responses/E500_9901'}
         '503': {$ref: '#/components/responses/E503_9902'}
+  /auth/access:
+    get:
+      tags: [Auth]
+      operationId: getOwnAccess
+      summary: Quyền API của tài khoản hiện tại
+      description: Yêu cầu JWT hợp lệ và tài khoản hoạt động; không yêu cầu quyền quản trị hoặc quyền đọc profile. Trả quyền trực tiếp/kế thừa và danh mục route để giao diện khớp chính xác route tĩnh với route tham số. Không nhận user_id hoặc role_id từ client. Backend vẫn kiểm tra quyền và sở hữu dữ liệu trên từng API nghiệp vụ.
+      security: [{bearerAuth: []}]
+      responses:
+        '200':
+          description: Danh sách quyền hiện tại
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: {type: string, example: '1000'}
+                  message: {type: string, example: OK}
+                  data:
+                    type: object
+                    properties:
+                      user_id: {type: integer}
+                      role_id: {type: integer}
+                      base_role: {type: string, enum: [admin, doctor, patient], nullable: true}
+                      endpoints: {type: array, items: {$ref: '#/components/schemas/EndpointGrant'}}
+                      routes: {type: array, items: {$ref: '#/components/schemas/EndpointGrant'}}
+        '401': {description: JWT thiếu hoặc không hợp lệ}
+        '403': {description: Tài khoản bị khóa}
+        '503': {description: Không kết nối được cơ sở dữ liệu}
   /auth/logout:
     post:
       tags: [Auth]
@@ -3169,7 +3198,7 @@ paths:
       description: |-
         **Quyền (RBAC):** `medical_record.classify` - vai trò được cấp mặc định: doctor, patient.
 
-        Bộ câu hỏi ngắn để hệ thống chọn đúng template (mề đay cấp / mạn...). Bộ câu hỏi lưu trong cấu hình/seed của hệ thống.
+        Câu hỏi Q_DURATION định hướng TPL_ACUTE_V1 (lt6w) hoặc TPL_CHRONIC_V1 (gte6w), được seed trong migration 003. Bác sĩ xác nhận chẩn đoán; phân nhóm thời gian chỉ chọn phiếu khai thác.
 
         **Mã trả về (HTTP: code nghiệp vụ):**
         - **200**: 1000
@@ -3417,7 +3446,7 @@ paths:
       description: |-
         **Quyền (RBAC):** `medical_record.complete` - vai trò được cấp mặc định: doctor.
 
-        Chỉ bác sĩ được phân công, chỉ khi bệnh án `in_progress`. `status` chỉ nhận `completed` (giá trị khác → `4009`). Ghi `completed_at = now()`. Chuyển trạng thái `pending → in_progress` chỉ qua `/accept`.
+        Chỉ bác sĩ được phân công, chỉ khi bệnh án `in_progress`. `status` chỉ nhận `completed` (giá trị khác → `4009`). Ghi `completed_at = now()`. Phải đủ câu bắt buộc đang hiển thị, bao gồm ảnh cho câu ảnh bắt buộc, nếu không trả 4007. Phiếu đã chốt bị khóa. Bác sĩ phụ trách gửi riêng `{followup_active: false}` hoặc `{followup_active: true}` qua cùng endpoint để dừng/mở lại nhật ký tại nhà mà không sửa phiếu. Chuyển trạng thái `pending → in_progress` chỉ qua `/accept`.
 
         **Mã trả về (HTTP: code nghiệp vụ):**
         - **200**: 1000
@@ -4080,7 +4109,7 @@ paths:
       description: |-
         **Quyền (RBAC):** `lesion_episode.create` - vai trò được cấp mặc định: patient.
 
-        Bệnh án phải của chính bệnh nhân và đang `in_progress`/`pending`. Bệnh án đã `completed` bị khoá, không ghi/sửa/xoá (`4003`). `context_tags` là **chuỗi JSON**.
+        Bệnh án phải của chính bệnh nhân. Nhật ký được ghi khi `followup_active=true`, kể cả sau khi chốt lượt khám; dừng theo dõi thì khóa ghi/sửa/xóa (`4003`). `context_tags` là **chuỗi JSON**.
 
         **Mã trả về (HTTP: code nghiệp vụ):**
         - **201**: 1001
@@ -4894,7 +4923,7 @@ paths:
       description: |-
         **Quyền (RBAC):** `uas7.eligibility` - vai trò được cấp mặc định: patient.
 
-        `eligible = "true"` khi bệnh nhân có bệnh án đang điều trị (`in_progress`) - lấy bệnh án mới nhất; khi đó trả thêm `medical_record_id`. Ngược lại `"false"`. Giá trị là **chuỗi**, không phải boolean.
+        `eligible = "true"` khi bệnh nhân có bệnh án `in_progress` hoặc `completed` và `followup_active=true` - lấy bệnh án mới nhất; khi đó trả thêm `medical_record_id`. Ngược lại `"false"`. Giá trị là **chuỗi**, không phải boolean.
 
         **Mã trả về (HTTP: code nghiệp vụ):**
         - **200**: 1000
@@ -5036,7 +5065,7 @@ paths:
 
         **Quyền (RBAC):** `uas7.read` - vai trò được cấp mặc định: admin, doctor, patient.
 
-        Tổng `daily_score` của 7 ngày bắt đầu từ `start_date` (mặc định: 7 ngày gần nhất tính đến hôm nay). Thang 0-42: `0` Không hoạt động · `1-6` Nhẹ · `7-15` Vừa · `16-27` Nặng · `28-42` Rất nặng. `completed_days` < 7 nghĩa là tuần chưa đủ dữ liệu.
+        Tổng `daily_score` của 7 ngày bắt đầu từ `start_date` (mặc định: 7 ngày gần nhất theo múi giờ Việt Nam). Khi đủ 7 ngày: `0` Không hoạt động · `1-6` Kiểm soát tốt · `7-15` Nhẹ · `16-27` Vừa · `28-42` Nặng. Khi `completed_days` < 7, trả `severity_label` = `Chưa đủ dữ liệu 7 ngày`; tổng chỉ tạm tính.
 
         Bệnh nhân chỉ truy cập dữ liệu của mình (`3106`); bác sĩ phụ trách bệnh án (`3105`).
 
@@ -5073,7 +5102,7 @@ paths:
                   value:
                     code: '1000'
                     message: OK
-                    data: {patient_id: '15', week_score: '18', severity_label: Nặng, completed_days: '7'}
+                    data: {patient_id: '15', week_score: '18', severity_label: Vừa, completed_days: '7'}
         '400': {$ref: '#/components/responses/E400_2006'}
         '401': {$ref: '#/components/responses/E401_3001_3002_3003'}
         '403': {$ref: '#/components/responses/E403_3101_3105_3106'}
@@ -5361,6 +5390,12 @@ components:
       bearerFormat: JWT
       description: 'Header `Authorization: Bearer <token>`. Token lấy từ /auth/login.'
   schemas:
+    EndpointGrant:
+      type: object
+      required: [method, path]
+      properties:
+        method: {type: string, enum: [GET, POST, PUT, PATCH, DELETE]}
+        path: {type: string, example: '/api/v1/medical_records/:id'}
     BaseResponse:
       type: object
       required: [code, message, data]
@@ -5377,6 +5412,7 @@ components:
     Role:
       type: object
       properties:
+        actor_type: {type: string, enum: [admin, doctor], nullable: true, description: Luồng làm việc cho vai trò tùy chỉnh; không tự cấp quyền API.}
         id: {type: integer, example: 2}
         name: {type: string, example: doctor}
         description: {type: string, nullable: true, example: Bác sĩ}
@@ -5445,6 +5481,7 @@ components:
     Profile:
       type: object
       properties:
+        base_role: {type: string, enum: [admin, doctor, patient], nullable: true, readOnly: true}
         user_id: {type: integer, example: 15}
         full_name: {type: string, example: Nguyễn Văn A}
         phone: {type: string, example: '0912345678'}
@@ -5561,6 +5598,7 @@ components:
     TemplateSummary:
       type: object
       properties:
+        intake_duration: {type: string, enum: [lt6w, gte6w], nullable: true, description: Nhóm chọn mẫu tự động; mỗi nhóm chỉ có một mẫu hoạt động.}
         code_template: {type: string, example: TPL_CHRONIC_V1}
         name: {type: string, example: Mề đay mạn tính}
         description: {type: string, nullable: true, example: Form khám mề đay mạn}
@@ -5571,6 +5609,7 @@ components:
     TemplateDetail:
       type: object
       properties:
+        intake_duration: {type: string, enum: [lt6w, gte6w], nullable: true}
         code_template: {type: string, example: TPL_CHRONIC_V1}
         name: {type: string, example: Mề đay mạn tính}
         description: {type: string, nullable: true}
@@ -5581,6 +5620,7 @@ components:
     MedicalRecord:
       type: object
       properties:
+        followup_active: {type: boolean, description: Theo dõi tại nhà độc lập với trạng thái hoàn tất lượt khám.}
         medical_record_id: {type: integer, example: 101}
         patient_id: {type: integer, example: 15}
         assigned_doctor_id: {type: integer, description: NULL khi chưa có bác sĩ nhận., nullable: true, example: 8}
@@ -5605,12 +5645,13 @@ components:
     AnswerInput:
       type: object
       properties:
+        clear: {type: boolean, description: Xóa câu trả lời văn bản hoặc lựa chọn đã lưu.}
         question_id: {type: string, example: Q_ITCH}
         question_option_id: {type: integer, description: ID lựa chọn (radio/select)., nullable: true, example: 101}
         answer_text: {type: string, description: Giá trị dạng chữ (text/textarea/number/date)., nullable: true}
         answer_value: {type: object, description: 'Giá trị JSON (checkbox: mảng value...).', nullable: true}
       required: [question_id]
-      description: Cần ít nhất 1 trong `question_option_id`, `answer_text`, `answer_value`.
+      description: Cần ít nhất 1 trong `question_option_id`, `answer_text`, `answer_value` hoặc `clear=true`. Câu ảnh dùng `answer_value=[]` để tạo answer_id trước khi gắn ảnh. clear không dùng cho câu ảnh; gỡ ảnh qua answer-images.
     Answer:
       type: object
       properties:
@@ -5999,6 +6040,7 @@ components:
               user_info:
                 type: object
                 properties:
+                  base_role: {type: string, enum: [admin, doctor, patient], nullable: true, readOnly: true}
                   user_id: {type: integer, example: 15}
                   full_name: {type: string, example: Nguyễn Văn A}
                   phone: {type: string, example: '0912345678'}
@@ -6196,6 +6238,7 @@ components:
     CreateRoleRequest:
       type: object
       properties:
+        actor_type: {type: string, enum: [admin, doctor], nullable: true, description: Luồng độc lập với quyền API; bỏ trống để dùng vai trò cha.}
         name: {type: string, example: nurse}
         description: {type: string, example: Điều dưỡng}
         parent_role_id: {type: integer, description: Vai trò cha (kế thừa)., nullable: true, example: 2}
@@ -6212,6 +6255,7 @@ components:
     UpdateRoleRequest:
       type: object
       properties:
+        actor_type: {type: string, enum: [admin, doctor], nullable: true}
         name: {type: string, example: nurse}
         description: {type: string, example: Điều dưỡng}
         parent_role_id: {type: integer, nullable: true, example: 2}
@@ -6461,6 +6505,7 @@ components:
     CreateTemplateRequest:
       type: object
       properties:
+        intake_duration: {type: string, enum: [lt6w, gte6w], nullable: true}
         code_template: {type: string, description: Mã template duy nhất (≤ 225 ký tự)., example: TPL_CHRONIC_V1}
         name: {type: string, example: Mề đay mạn tính}
         description: {type: string, example: Form khám mề đay mạn tính}
@@ -6483,6 +6528,7 @@ components:
     UpdateTemplateRequest:
       type: object
       properties:
+        intake_duration: {type: string, enum: [lt6w, gte6w], nullable: true}
         name: {type: string, example: Mề đay mạn tính}
         description: {type: string, example: Form khám mề đay mạn tính}
         version: {type: string, example: '1.0'}
@@ -6717,7 +6763,12 @@ components:
           type: string
           description: Lời dặn/kết luận của bác sĩ.
           example: Uống thuốc đều, tái khám sau 2 tuần
-      required: [status]
+        followup_active: {type: boolean, description: Gửi riêng để bác sĩ phụ trách dừng hoặc mở lại theo dõi tại nhà.}
+      oneOf:
+      - required: [status]
+        not: {required: [followup_active]}
+      - required: [followup_active]
+        not: {anyOf: [{required: [status]}, {required: [instructions]}]}
     GetAnswersResponse:
       allOf:
       - {$ref: '#/components/schemas/BaseResponse'}
@@ -7098,7 +7149,7 @@ components:
                 pattern: ^\d+$
                 example: '15'
               week_score: {type: string, description: Tổng điểm tuần 0-42 (chuỗi)., example: '18'}
-              severity_label: {type: string, enum: [Không hoạt động, Nhẹ, Vừa, Nặng, Rất nặng], example: Nặng}
+              severity_label: {type: string, enum: [Không hoạt động, Kiểm soát tốt, Nhẹ, Vừa, Nặng, Chưa đủ dữ liệu 7 ngày], example: Vừa}
               completed_days: {type: string, description: Số ngày đã chấm trong tuần (0-7)., example: '7'}
     CreatePrescriptionResponse:
       allOf:

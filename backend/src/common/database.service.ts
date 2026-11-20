@@ -1,5 +1,6 @@
 import { HttpException, Injectable, OnModuleDestroy } from '@nestjs/common';
-import pg from 'pg';
+import type pg from 'pg';
+import { createDatabasePool } from './database-pool.js';
 
 export function fail(code: string, message: string, status = 400): never {
   throw new HttpException({ code, message, data: {} }, status);
@@ -15,16 +16,13 @@ export function success(data: unknown, created = false) {
 
 @Injectable()
 export class DatabaseService implements OnModuleDestroy {
-  private readonly pool = new pg.Pool({
-    connectionString: process.env.DATABASE_URL,
-    connectionTimeoutMillis: 5000,
-    max: 10,
-  });
+  private readonly pool = createDatabasePool(DatabaseService.name);
 
   async transaction<T>(
     work: (client: pg.PoolClient) => Promise<T>,
   ): Promise<T> {
     let client: pg.PoolClient | undefined;
+    let discardClient = false;
     try {
       client = await this.pool.connect();
       await client.query('BEGIN');
@@ -32,7 +30,7 @@ export class DatabaseService implements OnModuleDestroy {
       await client.query('COMMIT');
       return result;
     } catch (error) {
-      if (client) await client.query('ROLLBACK').catch(() => undefined);
+      if (client) await client.query('ROLLBACK').catch(() => { discardClient = true; });
       if (error instanceof HttpException) throw error;
       const code = (error as { code?: string }).code;
       if (code === '23505') {
@@ -45,6 +43,12 @@ export class DatabaseService implements OnModuleDestroy {
           fail('3006', 'User phone already exists', 409);
         if (constraint === 'templates_pkey')
           fail('4102', 'Template code already exists', 409);
+        if (constraint === 'uq_templates_active_intake_duration')
+          fail(
+            '2009',
+            'An active template is already configured for this duration; disable or unmap it first',
+            409,
+          );
         fail('2009', 'Resource already exists', 409);
       }
       if (
@@ -62,7 +66,7 @@ export class DatabaseService implements OnModuleDestroy {
       }
       return fail('9902', 'Database error', 503);
     } finally {
-      client?.release();
+      client?.release(discardClient);
     }
   }
 

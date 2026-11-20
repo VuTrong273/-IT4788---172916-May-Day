@@ -35,6 +35,16 @@ const templateFields: Field[] = [
   { name: 'name', label: 'Tên mẫu', required: true, maxLength: 255 },
   { name: 'description', label: 'Mô tả', type: 'textarea', nullable: true },
   {
+    name: 'intake_duration',
+    label: 'Chọn tự động theo thời gian khởi phát',
+    type: 'select',
+    nullable: true,
+    choices: [
+      { value: 'lt6w', label: 'Dưới 6 tuần' },
+      { value: 'gte6w', label: 'Từ 6 tuần' },
+    ],
+  },
+  {
     name: 'version',
     label: 'Phiên bản',
     required: true,
@@ -151,7 +161,6 @@ function QuestionEditor({
       type: 'select',
       required: true,
       defaultValue: 'text',
-      createOnly: true,
       choices: questionTypes,
     },
     {
@@ -189,11 +198,29 @@ function QuestionEditor({
       name: 'parent_question_id',
       label: 'Phụ thuộc câu hỏi',
       type: 'select',
-      createOnly: true,
       nullable: true,
       choices: questions
-        .filter((q) => q.question_id !== row?.question_id && q.options.length)
+        .filter(
+          (q) =>
+            q.question_id !== row?.question_id &&
+            ['radio', 'checkbox', 'select'].includes(q.type_question) &&
+            q.options.length,
+        )
         .map((q) => ({ value: q.question_id, label: q.question_text })),
+    },
+    {
+      name: 'condition_value',
+      label: 'Hiển thị khi câu trả lời là',
+      type: 'select',
+      nullable: true,
+      dependsOn: 'parent_question_id',
+      choices: questions.flatMap((question) =>
+        question.options.map((option) => ({
+          value: option.option_value,
+          label: `${question.question_text} — ${option.option_text}`,
+          parent: question.question_id,
+        })),
+      ),
     },
   ];
   function updateOption(index: number, changes: Partial<Option>) {
@@ -208,11 +235,10 @@ function QuestionEditor({
       row={row ? { ...row, condition_value: condition } : undefined}
       onClose={onClose}
       prepare={(body, values) => {
-        const parent = row?.parent_question_id ?? values.parent_question_id;
-        const conditionValue = values.condition_value ?? condition;
-        if (row && values.condition_value === undefined)
-          body.show_if_answer = row.show_if_answer ?? null;
-        else if (parent && conditionValue)
+        delete body.condition_value;
+        const parent = values.parent_question_id;
+        const conditionValue = values.condition_value;
+        if (parent && conditionValue)
           body.show_if_answer = JSON.stringify({
             [String(parent)]: [conditionValue],
           });
@@ -220,9 +246,10 @@ function QuestionEditor({
           throw new Error(
             'Chọn câu trả lời để xác định khi nào hiển thị câu hỏi này.',
           );
+        else body.show_if_answer = null;
         if (
           ['radio', 'checkbox', 'select'].includes(
-            String(row?.type_question ?? values.type_question ?? 'text'),
+            String(values.type_question ?? row?.type_question ?? 'text'),
           )
         ) {
           if (!options.length)
@@ -237,7 +264,7 @@ function QuestionEditor({
             option_text: option.option_text.trim(),
             option_value: option.option_value.trim(),
           }));
-        }
+        } else body.options = [];
         return body;
       }}
       onSave={async (body) => {
@@ -251,38 +278,20 @@ function QuestionEditor({
         onSaved();
       }}
     >
-      {(values, change) => {
+      {(values) => {
         const type = String(
-          row?.type_question ?? values.type_question ?? 'text',
+          values.type_question ?? row?.type_question ?? 'text',
         );
         const parent = questions.find(
-          (q) =>
-            q.question_id ===
-            (row?.parent_question_id ?? values.parent_question_id),
+          (q) => q.question_id === values.parent_question_id,
         );
         return (
           <>
             {parent ? (
-              <label className="ops-field">
-                Hiển thị khi “{parent.question_text}” có câu trả lời
-                <select
-                  required
-                  value={values.condition_value ?? condition}
-                  onChange={(e) =>
-                    change({ ...values, condition_value: e.target.value })
-                  }
-                >
-                  <option value="">Chọn câu trả lời…</option>
-                  {parent.options.map((option) => (
-                    <option
-                      key={option.option_value}
-                      value={option.option_value}
-                    >
-                      {option.option_text}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <p className="ops-help">
+                Câu hỏi này hiển thị khi “{parent.question_text}” có câu trả lời
+                đã chọn.
+              </p>
             ) : null}
             {['radio', 'checkbox', 'select'].includes(type) ? (
               <section className="ops-subform">
@@ -338,19 +347,17 @@ function QuestionEditor({
                       />
                       Yêu cầu ảnh
                     </label>
-                    {!option.id ? (
-                      <Button
-                        variant="quiet"
-                        type="button"
-                        onClick={() =>
-                          setOptions((before) =>
-                            before.filter((_, i) => i !== index),
-                          )
-                        }
-                      >
-                        Bỏ lựa chọn
-                      </Button>
-                    ) : null}
+                    <Button
+                      variant="quiet"
+                      type="button"
+                      onClick={() =>
+                        setOptions((before) =>
+                          before.filter((_, i) => i !== index),
+                        )
+                      }
+                    >
+                      Bỏ lựa chọn
+                    </Button>
                   </div>
                 ))}
                 <Button
@@ -420,7 +427,7 @@ function TemplateBuilder({
         title={label(template.data.name)}
         description="Sắp xếp các phần, câu hỏi và lựa chọn. Mẫu đã có bệnh án sẽ được bảo vệ khỏi thay đổi cấu trúc."
         actions={
-          <Button
+          <Button permission={['POST', `/templates/${templateId}/sections`]}
             disabled={template.loading || Boolean(template.error)}
             onClick={() => setSectionEditor('new')}
           >
@@ -446,14 +453,14 @@ function TemplateBuilder({
             title={`${String(section.order)}. ${section.title}`}
             action={
               <div className="ops-actions">
-                <Button
+                <Button permission={['PUT', `/templates/sections/${section.section_id}`]}
                   size="small"
                   variant="quiet"
                   onClick={() => setSectionEditor(section)}
                 >
                   Sửa phần
                 </Button>
-                <Button
+                <Button permission={['DELETE', `/templates/sections/${section.section_id}`]}
                   size="small"
                   variant="danger"
                   onClick={() =>
@@ -465,7 +472,7 @@ function TemplateBuilder({
                 >
                   Xóa phần
                 </Button>
-                <Button
+                <Button permission={['POST', `/templates/sections/${section.section_id}/questions`]}
                   size="small"
                   onClick={() =>
                     setQuestionEditor({ sectionId: section.section_id })
@@ -511,7 +518,7 @@ function TemplateBuilder({
                       ) : null}
                     </div>
                     <div className="ops-actions">
-                      <Button
+                      <Button permission={['PUT', `/templates/questions/${question.question_id}`]}
                         variant="quiet"
                         size="small"
                         onClick={() =>
@@ -523,7 +530,7 @@ function TemplateBuilder({
                       >
                         Sửa câu hỏi
                       </Button>
-                      <Button
+                      <Button permission={['DELETE', `/templates/questions/${question.question_id}`]}
                         variant="danger"
                         size="small"
                         onClick={() =>
@@ -630,6 +637,7 @@ export function TemplatesPage() {
         ]}
         actions={(row) => (
           <Button
+            permission={['GET', `/templates/${row.code_template}`]}
             size="small"
             variant="quiet"
             onClick={() => setSelected(String(row.code_template))}

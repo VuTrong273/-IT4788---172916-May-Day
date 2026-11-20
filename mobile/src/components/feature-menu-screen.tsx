@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { appColors } from '@/constants/app-theme';
 import { useAuthenticatedSession } from '@/features/auth/use-authenticated-session';
-import { getDemoRole, getFeatureRoute, type FeatureRoute } from '@/features/navigation/feature-routes';
+import { getDemoRole, getFeatureRoute, canOpenFeature, type FeatureRoute } from '@/features/navigation/feature-routes';
 
 import { FeatureCard } from './feature-card';
 
@@ -15,10 +15,10 @@ type Props = {
 
 export function FeatureMenuScreen({ title, subtitle, slugs }: Props) {
   const session = useAuthenticatedSession();
-  const role = session ? getDemoRole(session.user.role_id) : null;
+  const role = session ? getDemoRole(session.user) : null;
   const features = slugs
     .map(getFeatureRoute)
-    .filter((item): item is FeatureRoute => item !== undefined && role !== null && item.roles.includes(role));
+    .filter((item): item is FeatureRoute => item !== undefined && role !== null && canOpenFeature(session, item.slug));
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>

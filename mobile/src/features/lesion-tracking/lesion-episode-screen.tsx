@@ -13,9 +13,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { appColors } from '@/constants/app-theme';
 import { useAuthenticatedSession } from '@/features/auth/use-authenticated-session';
+import { LesionDetails } from './lesion-details';
 import type { PatientHistoryItem } from '@/features/doctor/medical-records-api';
 import { medicalRecordsApi } from '@/features/doctor/medical-records-api';
 import { getDemoRole } from '@/features/navigation/feature-routes';
+import { canAccess } from '@/features/auth/permissions';
 import {
   lesionEpisodesApi,
   sortLesionEpisodesChronologically,
@@ -135,7 +137,7 @@ function displayTags(value: string | null): string {
 
 export function LesionEpisodeScreen({ medicalRecordId, recordLinkedReadOnly = false }: Props) {
   const session = useAuthenticatedSession();
-  const role = session ? getDemoRole(session.user.role_id) : null;
+  const role = session ? getDemoRole(session.user) : null;
   const patientView = role === 'patient' && !recordLinkedReadOnly;
   const recordIdIsValid = !!medicalRecordId && /^\d+$/.test(medicalRecordId);
   const [records, setRecords] = useState<PatientHistoryItem[]>([]);
@@ -209,7 +211,7 @@ export function LesionEpisodeScreen({ medicalRecordId, recordLinkedReadOnly = fa
   }, [load]));
 
   const editableRecordIds = useMemo(
-    () => new Set(records.filter((record) => record.status === 'pending' || record.status === 'in_progress')
+    () => new Set(records.filter((record) => record.followup_active !== false)
       .map((record) => String(record.medical_record_id))),
     [records],
   );
@@ -364,7 +366,8 @@ export function LesionEpisodeScreen({ medicalRecordId, recordLinkedReadOnly = fa
   }
 
   const recordsForFilter = records;
-  const canCreate = patientView && selectedRecordIsEditable;
+  const canCreate = canAccess(session,'POST','/lesion-episodes') && patientView && selectedRecordIsEditable;
+  const canEditSelected = patientView && !!selectedEpisode && records.some(record => String(record.medical_record_id) === selectedEpisode.medical_record_id && record.followup_active !== false);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
@@ -465,7 +468,7 @@ export function LesionEpisodeScreen({ medicalRecordId, recordLinkedReadOnly = fa
             <Text style={styles.episodeTitle}>{episode.name}</Text>
             <Text style={styles.label}>{dateLabel(episode.occurred_at)}</Text>
             <Text style={styles.muted}>Bệnh án #{episode.medical_record_id}</Text>
-            <ActionButton label="Xem chi tiết từ máy chủ" onPress={() => void openDetails(episode)} />
+            <ActionButton label={`Xem chi tiết: ${episode.name}`} onPress={() => void openDetails(episode)} />
           </View>
         ))}
 
@@ -485,19 +488,20 @@ export function LesionEpisodeScreen({ medicalRecordId, recordLinkedReadOnly = fa
             </Text>
             <Text style={styles.label}>MÔ TẢ</Text>
             <Text style={styles.body}>{selectedEpisode.description || 'Không có mô tả được ghi nhận.'}</Text>
-            {patientView && !editing ? (
+            <LesionDetails key={selectedEpisode.episode_id} session={session} episodeId={selectedEpisode.episode_id} canEdit={canEditSelected} />
+            {canEditSelected && !editing ? (
               <>
-                <ActionButton label="Chỉnh sửa" onPress={beginEdit} />
-                {confirmingDelete ? (
+                {canAccess(session,'PATCH',`/lesion-episodes/${selectedEpisode.episode_id}`) ? <ActionButton label="Chỉnh sửa" onPress={beginEdit} /> : null}
+                {canAccess(session,'DELETE',`/lesion-episodes/${selectedEpisode.episode_id}`) && (confirmingDelete ? (
                   <View style={styles.confirmBox}>
                     <Text style={styles.error}>Xóa đợt này cùng các vị trí và ảnh liên quan theo quy tắc máy chủ?</Text>
                     <ActionButton label={saving ? 'Đang xóa…' : 'Xác nhận xóa'} disabled={saving} destructive onPress={() => void submitDelete()} />
                     <TextButton label="Hủy" onPress={() => setConfirmingDelete(false)} />
                   </View>
-                ) : <ActionButton label="Xóa" destructive onPress={() => setConfirmingDelete(true)} />}
+                ) : <ActionButton label="Xóa" destructive onPress={() => setConfirmingDelete(true)} />)}
               </>
             ) : null}
-            {patientView && editing ? (
+            {canEditSelected && editing ? (
               <EpisodeForm
                 draft={draft}
                 error={formError}

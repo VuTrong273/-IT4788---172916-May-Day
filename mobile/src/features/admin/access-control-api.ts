@@ -2,6 +2,7 @@ import { apiRequest, requireApiCode, type ApiEnvelope } from '@/api/client';
 import type { Session } from '@/features/auth/session';
 
 export type AccessRole = {
+  actor_type?: 'admin' | 'doctor' | null;
   id: number;
   name: string;
   description?: string | null;
@@ -32,6 +33,7 @@ export type CatalogEndpoint = {
 };
 
 export type RoleWrite = {
+  actor_type?: 'admin' | 'doctor' | null;
   name: string;
   description?: string;
   parent_role_id?: number | null;

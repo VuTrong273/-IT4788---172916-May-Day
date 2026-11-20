@@ -279,6 +279,7 @@ CREATE INDEX idx_options_question ON question_options(question_id, sort_order);
 
 -- 3.1 medical_records --------------------------------------------------
 CREATE TABLE medical_records (
+    followup_active BOOLEAN NOT NULL DEFAULT true,
     medical_record_id  INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     patient_id         INTEGER NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,   -- không xoá BN đã có bệnh án (khoá tài khoản bằng is_active=0)
     assigned_doctor_id INTEGER REFERENCES users(user_id) ON DELETE SET NULL,

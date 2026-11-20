@@ -10,6 +10,7 @@ import type { Request } from 'express';
 import { errors, jwtVerify } from 'jose';
 import { IS_PUBLIC_KEY } from './public.decorator.js';
 import { UserRepository } from './user.repository.js';
+import { SELF_ACCESS_KEY } from './self-access.decorator.js';
 
 export interface AuthenticatedUser {
   userId: number;
@@ -43,7 +44,11 @@ export class JwtAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const authorization = request.headers.authorization;
     if (!authorization) {
-      return authError('3003', 'User not authenticated', HttpStatus.UNAUTHORIZED);
+      return authError(
+        '3003',
+        'User not authenticated',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
     const match = /^Bearer ([^\s]+)$/.exec(authorization);
     if (!match) {
@@ -61,10 +66,14 @@ export class JwtAuthGuard implements CanActivate {
 
     let payload;
     try {
-      ({ payload } = await jwtVerify(match[1], new TextEncoder().encode(secret), {
-        algorithms: ['HS256'],
-        requiredClaims: ['sub', 'jti', 'iat', 'exp'],
-      }));
+      ({ payload } = await jwtVerify(
+        match[1],
+        new TextEncoder().encode(secret),
+        {
+          algorithms: ['HS256'],
+          requiredClaims: ['sub', 'jti', 'iat', 'exp'],
+        },
+      ));
     } catch (caught) {
       if (caught instanceof errors.JWTExpired) {
         return authError('3002', 'Token expired', HttpStatus.UNAUTHORIZED);
@@ -88,13 +97,21 @@ export class JwtAuthGuard implements CanActivate {
     try {
       account = await this.users.findAuthState(userId, payload.jti);
     } catch {
-      return authError('9902', 'Database error', HttpStatus.SERVICE_UNAVAILABLE);
+      return authError(
+        '9902',
+        'Database error',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
     }
     if (!account) {
       return authError('3001', 'Token is invalid', HttpStatus.UNAUTHORIZED);
     }
     if (account.is_active !== 1) {
-      return authError('3010', 'User account is deactivated', HttpStatus.FORBIDDEN);
+      return authError(
+        '3010',
+        'User account is deactivated',
+        HttpStatus.FORBIDDEN,
+      );
     }
     if (account.is_blacklisted) {
       return authError('3001', 'Token is invalid', HttpStatus.UNAUTHORIZED);
@@ -116,6 +133,13 @@ export class JwtAuthGuard implements CanActivate {
     };
 
     const routePath: unknown = request.route?.path;
+    if (
+      this.reflector.getAllAndOverride<boolean>(SELF_ACCESS_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ])
+    )
+      return true;
     if (typeof routePath !== 'string') {
       return authError('3101', 'Permission denied', HttpStatus.FORBIDDEN);
     }
@@ -128,7 +152,11 @@ export class JwtAuthGuard implements CanActivate {
         routePath,
       );
     } catch {
-      return authError('9902', 'Database error', HttpStatus.SERVICE_UNAVAILABLE);
+      return authError(
+        '9902',
+        'Database error',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
     }
     if (!access || (access.is_public !== 1 && !access.is_allowed)) {
       return authError('3101', 'Permission denied', HttpStatus.FORBIDDEN);

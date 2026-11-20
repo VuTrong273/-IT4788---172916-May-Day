@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import { Button } from '@/components/ui/button';
@@ -18,10 +18,6 @@ const tabs: { label: string; value: RecordStatus | 'all' }[] = [
   { label: 'Đã hoàn tất', value: 'completed' },
 ];
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
-}
-
 export function RecordsPage() {
   const { session } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -33,6 +29,7 @@ export function RecordsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const searchRef = useRef<HTMLInputElement>(null);
   const pageSize = 20;
 
   const load = useCallback(async () => {
@@ -51,6 +48,14 @@ export function RecordsPage() {
   }, [session, page, status]);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    function focusSearch(event: KeyboardEvent) {
+      const target = event.target as HTMLElement;
+      if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey && !target.closest('input, textarea, select, [contenteditable="true"]')) { event.preventDefault(); searchRef.current?.focus(); }
+    }
+    window.addEventListener('keydown', focusSearch);
+    return () => window.removeEventListener('keydown', focusSearch);
+  }, []);
 
   const visibleRecords = useMemo(() => records.filter((record) => {
     const query = search.trim().toLowerCase();
@@ -58,33 +63,35 @@ export function RecordsPage() {
   }), [records, search]);
 
   const columns: DataColumn<MedicalRecord>[] = [
-    { key: 'record', header: 'MÃ BỆNH ÁN', render: (record) => <Link className="table-primary-link" to={`/app/records/${record.medical_record_id}`}>#{record.medical_record_id}</Link> },
-    { key: 'patient', header: 'BỆNH NHÂN', render: (record) => <span className="table-main-cell">Bệnh nhân #{record.patient_id}</span> },
+    { key: 'record', header: 'BỆNH ÁN', render: (record) => <Link className="records-record-link" to={`/app/records/${record.medical_record_id}`}><span className="records-file-icon"><Icon name="records" size={19} /></span><span><strong>#{record.medical_record_id}</strong><small>Mã bệnh án</small></span></Link> },
+    { key: 'patient', header: 'BỆNH NHÂN', render: (record) => <span className="records-patient-cell"><span className="records-patient-avatar">BN</span><span><strong>Bệnh nhân #{record.patient_id}</strong></span></span> },
     { key: 'template', header: 'MẪU PHIẾU', render: (record) => <span className="template-chip">{record.template_id}</span> },
-    { key: 'created', header: 'NGÀY TẠO', render: (record) => <span className="table-muted-cell">{formatDate(record.created_at)}</span> },
+    { key: 'created', header: 'NGÀY TẠO', render: (record) => <span className="records-date"><strong>{new Date(record.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</strong><small>{new Date(record.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</small></span> },
     { key: 'status', header: 'TRẠNG THÁI', render: (record) => <StatusBadge status={record.status} /> },
-    { key: 'action', header: '', className: 'data-table__action', render: (record) => <Link className="icon-button table-action" aria-label={`Mở bệnh án ${record.medical_record_id}`} to={`/app/records/${record.medical_record_id}`}><Icon name="chevron" size={17} /></Link> },
+    { key: 'action', header: '', className: 'data-table__action', render: (record) => <Link className="records-open" aria-label={`Mở bệnh án ${record.medical_record_id}`} to={`/app/records/${record.medical_record_id}`}>Xem hồ sơ<Icon name="arrow" size={15} /></Link> },
   ];
 
   function chooseStatus(value: RecordStatus | 'all') {
     setPage(1);
+    setSearch('');
     setSearchParams(value === 'all' ? {} : { status: value });
   }
 
   const maxPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <>
-      <PageHeader eyebrow="QUẢN LÝ KHÁM BỆNH" title="Bệnh án" description="Theo dõi hồ sơ theo trạng thái và tiếp tục các lượt khám đang xử lý." actions={<Button variant="secondary" icon={<Icon name="refresh" size={16} />} onClick={() => void load()}>Làm mới</Button>} />
-      <div className="records-summary-strip"><span className="records-summary-strip__icon"><Icon name="records" size={19} /></span><span><strong>{total.toLocaleString('vi-VN')}</strong><small>hồ sơ trong danh sách này</small></span><span className="records-summary-strip__scope"><Icon name="shield" size={15} /> Theo phạm vi tài khoản</span></div>
+    <div className="records-page">
+      <PageHeader eyebrow="QUẢN LÝ KHÁM BỆNH" title="Bệnh án" description="Tra cứu hồ sơ và theo dõi tiến trình khám bệnh." actions={<Button variant="secondary" disabled={loading} icon={<Icon name="refresh" size={16} />} onClick={() => void load()}>{loading ? 'Đang tải…' : 'Làm mới'}</Button>} />
       <Panel className="records-panel">
+        <div className="records-panel-heading"><div><span className="records-heading-icon"><Icon name="clipboard" size={21} /></span><h2>Danh sách bệnh án</h2><span className="records-total">{loading ? '…' : total.toLocaleString('vi-VN')} hồ sơ</span></div><span className="records-scope"><Icon name="shield" size={14} />Theo quyền truy cập của bạn</span></div>
         <div className="records-toolbar">
-          <div className="filter-tabs" role="tablist" aria-label="Lọc theo trạng thái">{tabs.map((tab) => <button type="button" role="tab" aria-selected={status === tab.value} className={`filter-tab${status === tab.value ? ' filter-tab--active' : ''}`} key={tab.value} onClick={() => chooseStatus(tab.value)}>{tab.label}{status === tab.value ? <span>{total}</span> : null}</button>)}</div>
-          <label className="table-search"><Icon name="search" size={17} /><input aria-label="Tìm theo mã bệnh án, bệnh nhân hoặc mẫu" placeholder="Tìm trong trang hiện tại" value={search} onChange={(event) => setSearch(event.target.value)} /><kbd>/</kbd></label>
+          <div className="filter-tabs" role="group" aria-label="Lọc theo trạng thái">{tabs.map((tab) => <button type="button" aria-pressed={status === tab.value} className={`filter-tab filter-tab--${tab.value}${status === tab.value ? ' filter-tab--active' : ''}`} key={tab.value} onClick={() => chooseStatus(tab.value)}>{tab.value !== 'all' ? <i aria-hidden="true" /> : null}{tab.label}</button>)}</div>
+          <label className="table-search"><Icon name="search" size={17} /><input ref={searchRef} aria-label="Tìm theo mã bệnh án, bệnh nhân hoặc mẫu trong trang hiện tại" placeholder="Tìm mã bệnh án, bệnh nhân…" value={search} onChange={(event) => setSearch(event.target.value)} onKeyDown={event => { if (event.key === 'Escape') setSearch(''); }} />{search ? <button type="button" aria-label="Xóa tìm kiếm" onClick={() => { setSearch(''); searchRef.current?.focus(); }}><Icon name="close" size={15} /></button> : <kbd>/</kbd>}</label>
         </div>
+        {search ? <p className="records-search-caption">{visibleRecords.length} kết quả trong {records.length} hồ sơ của trang hiện tại.</p> : null}
         {error ? <div className="records-empty"><EmptyState icon="alert" title="Không thể tải bệnh án" description={error} action={<Button variant="secondary" onClick={() => void load()}>Thử lại</Button>} /></div> : loading ? <div className="table-loading"><span /><span /><span /><span /></div> : visibleRecords.length ? <DataTable rows={visibleRecords} columns={columns} rowKey={(record) => record.medical_record_id} /> : <div className="records-empty"><EmptyState icon="records" title={search ? 'Không tìm thấy kết quả' : 'Chưa có bệnh án'} description={search ? 'Thử tìm với mã bệnh án, mã bệnh nhân hoặc mẫu phiếu khác.' : 'Khi có hồ sơ phù hợp, danh sách sẽ được cập nhật tại đây.'} action={search ? <Button size="small" variant="quiet" onClick={() => setSearch('')}>Xóa tìm kiếm</Button> : undefined} /></div>}
-        <div className="table-footer"><span>Hiển thị {total ? (page - 1) * pageSize + 1 : 0}–{Math.min(page * pageSize, total)} trong {total.toLocaleString('vi-VN')} hồ sơ</span><div className="pagination"><button className="pagination__button" disabled={page <= 1 || loading} onClick={() => setPage((current) => current - 1)}><Icon name="chevron" size={15} className="pagination__previous" />Trước</button><span>Trang <strong>{page}</strong> / {maxPages}</span><button className="pagination__button" disabled={page >= maxPages || loading} onClick={() => setPage((current) => current + 1)}>Sau<Icon name="chevron" size={15} /></button></div></div>
+        <div className="table-footer"><span>{search ? `Hiển thị ${visibleRecords.length} kết quả trên trang ${page}` : <>Hiển thị {total ? (page - 1) * pageSize + 1 : 0}–{Math.min(page * pageSize, total)} trong {total.toLocaleString('vi-VN')} hồ sơ</>}</span><div className="pagination"><button className="pagination__button" disabled={page <= 1 || loading} onClick={() => setPage((current) => current - 1)}><Icon name="chevron" size={15} className="pagination__previous" />Trước</button><span>Trang <strong>{page}</strong> / {maxPages}</span><button className="pagination__button" disabled={page >= maxPages || loading} onClick={() => setPage((current) => current + 1)}>Sau<Icon name="chevron" size={15} /></button></div></div>
       </Panel>
-    </>
+    </div>
   );
 }

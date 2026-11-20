@@ -108,6 +108,8 @@ Kết quả hiện tại là `Hello World!`. `start:dev` tự khởi động l�
 
 Backend đã bổ sung 58 API cho bệnh nhân, tài khoản nhân viên, cơ sở khám, RBAC, mẫu phiếu, xét nghiệm và đơn thuốc. Xem [danh mục API và quy tắc nghiệp vụ](./OPERATIONS_API.md).
 
+Bản hoàn thiện đã đăng ký đủ 106 route trong OpenAPI, gồm phiếu khám, ảnh, đợt/vị trí/mốc tổn thương và UAS7. [Biên bản nghiệm thu](../Docs/NGHIEM_THU.md) ghi phạm vi và giới hạn kiểm chứng. DB có sẵn cần áp dụng lần lượt các migration chưa chạy; đặc biệt [005](../Database/migrations/005_dynamic_roles_and_intake.sql) thêm luồng vai trò tùy chỉnh và cấu hình chọn mẫu. Compose chỉ tự chạy SQL khi volume DB mới.
+
 Chạy trong thư mục `backend/`:
 
 ```powershell

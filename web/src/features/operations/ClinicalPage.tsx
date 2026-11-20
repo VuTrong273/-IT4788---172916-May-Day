@@ -1,13 +1,16 @@
-﻿import { useEffect, useState, type FormEvent } from 'react';
-import { Link, useSearchParams } from 'react-router';
-import { Button } from '@/components/ui/button';
-import { PageHeader } from '@/components/ui/page-header';
-import { Panel } from '@/components/ui/panel';
-import { useAuth } from '@/features/auth/auth-context';
-import { ApiError } from '@/lib/api/client';
-import type { MedicalRecordDetail } from '@/features/medical-records/medical-records-api';
-import { label, message, useApi, useData, type Row } from './api';
-import { Alert, Modal, ResourcePanel } from './shared';
+import { useEffect, useState, type FormEvent } from "react";
+import { Link, useSearchParams } from "react-router";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { Panel } from "@/components/ui/panel";
+import { Icon } from "@/components/ui/icon";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { useAuth } from "@/features/auth/auth-context";
+import { roleFromId } from "@/features/auth/auth-types";
+import { ApiError } from "@/lib/api/client";
+import type { MedicalRecordDetail } from "@/features/medical-records/medical-records-api";
+import { label, message, useApi, useData, type Row } from "./api";
+import { Alert, Modal, ResourcePanel } from "./shared";
 
 type Medicine = {
   medicine_name: string;
@@ -35,11 +38,11 @@ type LabRequest = {
   items: LabItem[];
 };
 const emptyMedicine = (): Medicine => ({
-  medicine_name: '',
-  dosage: '',
-  frequency: '',
-  duration: '',
-  instruction: '',
+  medicine_name: "",
+  dosage: "",
+  frequency: "",
+  duration: "",
+  instruction: "",
 });
 
 function PrescriptionEditor({
@@ -53,16 +56,16 @@ function PrescriptionEditor({
 }) {
   const api = useApi();
   const [items, setItems] = useState<Medicine[]>([emptyMedicine()]);
-  const [note, setNote] = useState('');
+  const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   async function save(e: FormEvent) {
     e.preventDefault();
     if (busy) return;
     setBusy(true);
-    setError('');
+    setError("");
     try {
-      await api('/prescriptions', 'POST', {
+      await api("/prescriptions", "POST", {
         medical_record_id: String(recordId),
         note: note.trim() || null,
         items: items.map((item) =>
@@ -108,19 +111,19 @@ function PrescriptionEditor({
               <div className="ops-form-grid">
                 {(
                   [
-                    { key: 'medicine_name', label: 'Tên thuốc' },
-                    { key: 'dosage', label: 'Liều dùng' },
-                    { key: 'frequency', label: 'Tần suất' },
-                    { key: 'duration', label: 'Thời gian dùng' },
-                    { key: 'instruction', label: 'Hướng dẫn thêm' },
+                    { key: "medicine_name", label: "Tên thuốc" },
+                    { key: "dosage", label: "Liều dùng" },
+                    { key: "frequency", label: "Tần suất" },
+                    { key: "duration", label: "Thời gian dùng" },
+                    { key: "instruction", label: "Hướng dẫn thêm" },
                   ] as { key: keyof Medicine; label: string }[]
                 ).map((field) => (
                   <label className="ops-field" key={field.key}>
                     {field.label}
-                    {field.key !== 'instruction' ? ' *' : ''}
+                    {field.key !== "instruction" ? " *" : ""}
                     <input
-                      required={field.key !== 'instruction'}
-                      maxLength={field.key === 'instruction' ? 10000 : 255}
+                      required={field.key !== "instruction"}
+                      maxLength={field.key === "instruction" ? 10000 : 255}
                       value={item[field.key]}
                       onChange={(e) =>
                         setItems((before) =>
@@ -169,7 +172,7 @@ function PrescriptionEditor({
             Hủy
           </Button>
           <Button disabled={busy}>
-            {busy ? 'Đang lưu…' : 'Lưu đơn thuốc'}
+            {busy ? "Đang lưu…" : "Lưu đơn thuốc"}
           </Button>
         </div>
       </form>
@@ -187,17 +190,17 @@ function PrescriptionPanel({
   const api = useApi();
   const [data, setData] = useState<Prescription | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
   const [creating, setCreating] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
-    setError('');
+    setError("");
     setData(null);
     api<Prescription>(
       `/prescriptions/${recordId}`,
-      'GET',
+      "GET",
       undefined,
       controller.signal,
     )
@@ -207,7 +210,7 @@ function PrescriptionPanel({
       .catch((caught: unknown) => {
         if (
           !controller.signal.aborted &&
-          !(caught instanceof ApiError && caught.code === '2008')
+          !(caught instanceof ApiError && caught.code === "2008")
         )
           setError(message(caught));
       })
@@ -279,17 +282,17 @@ function LabRequestEditor({
   onClose: () => void;
 }) {
   const api = useApi();
-  const [items, setItems] = useState([{ test_name: '', description: '' }]);
-  const [note, setNote] = useState('');
+  const [items, setItems] = useState([{ test_name: "", description: "" }]);
+  const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   async function save(event: FormEvent) {
     event.preventDefault();
     if (busy) return;
     setBusy(true);
-    setError('');
+    setError("");
     try {
-      await api('/lab-requests', 'POST', {
+      await api("/lab-requests", "POST", {
         medical_record_id: String(recordId),
         note: note.trim() || null,
         items: items.map((item) => ({
@@ -369,7 +372,7 @@ function LabRequestEditor({
             onClick={() =>
               setItems((before) => [
                 ...before,
-                { test_name: '', description: '' },
+                { test_name: "", description: "" },
               ])
             }
           >
@@ -395,7 +398,7 @@ function LabRequestEditor({
           >
             Hủy
           </Button>
-          <Button disabled={busy}>{busy ? 'Đang lưu…' : 'Lưu chỉ định'}</Button>
+          <Button disabled={busy}>{busy ? "Đang lưu…" : "Lưu chỉ định"}</Button>
         </div>
       </form>
     </Modal>
@@ -417,19 +420,19 @@ function LabResultsEditor({
       request.items.map((item) => [
         item.id,
         {
-          result_value: item.result_value ?? '',
-          result_note: item.result_note ?? '',
+          result_value: item.result_value ?? "",
+          result_note: item.result_note ?? "",
         },
       ]),
     ),
   );
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   async function save(e: FormEvent) {
     e.preventDefault();
     if (busy) return;
     setBusy(true);
-    setError('');
+    setError("");
     try {
       const results = Object.entries(values)
         .filter(([, value]) => value.result_value.trim())
@@ -439,8 +442,8 @@ function LabResultsEditor({
           result_note: value.result_note.trim() || null,
         }));
       if (!results.length)
-        throw new Error('Nhập ít nhất một kết quả xét nghiệm.');
-      await api('/lab-results', 'POST', {
+        throw new Error("Nhập ít nhất một kết quả xét nghiệm.");
+      await api("/lab-results", "POST", {
         lab_request_id: request.id,
         results,
       });
@@ -513,7 +516,7 @@ function LabResultsEditor({
           >
             Hủy
           </Button>
-          <Button disabled={busy}>{busy ? 'Đang lưu…' : 'Lưu kết quả'}</Button>
+          <Button disabled={busy}>{busy ? "Đang lưu…" : "Lưu kết quả"}</Button>
         </div>
       </form>
     </Modal>
@@ -527,16 +530,29 @@ function LabsPanel({
   recordId: number;
   writable: boolean;
 }) {
+  const { can } = useAuth();
   const requests = useData<LabRequest[]>(`/lab-results/${recordId}`, []);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<LabRequest | null>(null);
   return (
     <Panel
-      title="Xét nghiệm"
-      className="ops-resource"
+      title={
+        <span className="resource-title">
+          <Icon name="lab" />
+          Chỉ định và kết quả xét nghiệm
+        </span>
+      }
+      className="ops-resource clinical-results"
       action={
-        writable && !requests.loading && !requests.error ? (
-          <Button size="small" onClick={() => setCreating(true)}>
+        writable &&
+        can("POST", "/lab-requests") &&
+        !requests.loading &&
+        !requests.error ? (
+          <Button
+            size="small"
+            icon={<Icon name="plus" size={16} />}
+            onClick={() => setCreating(true)}
+          >
             Chỉ định xét nghiệm
           </Button>
         ) : undefined
@@ -559,21 +575,22 @@ function LabsPanel({
             <section className="ops-lab" key={request.id}>
               <div className="ops-section-heading">
                 <h3>
-                  Phiếu #{request.id}{' '}
+                  <Icon name="clipboard" size={18} /> Phiếu #{request.id}{" "}
                   <span
-                    className={`ops-pill${request.status === 'completed' ? ' ops-pill--green' : ''}`}
+                    className={`ops-pill${request.status === "completed" ? " ops-pill--green" : ""}`}
                   >
-                    {request.status === 'completed'
-                      ? 'Đủ kết quả'
-                      : request.status === 'in_progress'
-                        ? 'Đang có kết quả'
-                        : 'Chờ kết quả'}
+                    {request.status === "completed"
+                      ? "Đủ kết quả"
+                      : request.status === "in_progress"
+                        ? "Đang có kết quả"
+                        : "Chờ kết quả"}
                   </span>
                 </h3>
-                {writable ? (
+                {writable && can("POST", "/lab-results") ? (
                   <Button
                     size="small"
                     variant="secondary"
+                    icon={<Icon name="edit" size={15} />}
                     onClick={() => setEditing(request)}
                   >
                     Nhập kết quả
@@ -601,7 +618,17 @@ function LabsPanel({
                             </small>
                           ) : null}
                         </td>
-                        <td>{item.result_value ?? 'Chưa có kết quả'}</td>
+                        <td>
+                          <span
+                            className={
+                              item.result_value
+                                ? "clinical-result-value"
+                                : "clinical-result-pending"
+                            }
+                          >
+                            {item.result_value ?? "Chưa có kết quả"}
+                          </span>
+                        </td>
                         <td>{label(item.result_note)}</td>
                       </tr>
                     ))}
@@ -612,7 +639,17 @@ function LabsPanel({
           ))}
         </div>
       ) : (
-        <div className="ops-state">Chưa có chỉ định xét nghiệm.</div>
+        <div className="clinical-empty">
+          <span>
+            <Icon name="lab" size={30} />
+          </span>
+          <strong>Chưa có chỉ định xét nghiệm</strong>
+          <p>
+            {writable
+              ? "Tạo chỉ định để bắt đầu theo dõi và cập nhật kết quả cho bệnh án này."
+              : "Các chỉ định và kết quả sẽ xuất hiện tại đây khi bác sĩ cập nhật."}
+          </p>
+        </div>
       )}
       {creating ? (
         <LabRequestEditor
@@ -634,17 +671,17 @@ function LabsPanel({
 
 export function ClinicalRecord({
   record,
-  mode = 'both',
+  mode = "both",
 }: {
   record: MedicalRecordDetail;
-  mode?: 'labs' | 'prescriptions' | 'both';
+  mode?: "labs" | "prescriptions" | "both";
 }) {
-  const { session } = useAuth();
-  const isDoctor = session?.user.role_id === 2;
+  const { session, can } = useAuth();
+  const isDoctor = !!session && roleFromId(session.user) === "doctor";
   const writable =
     isDoctor &&
     record.assigned_doctor_id === session.user.user_id &&
-    record.status === 'in_progress';
+    record.status === "in_progress";
   if (isDoctor && record.assigned_doctor_id !== session.user.user_id)
     return (
       <Panel>
@@ -655,16 +692,18 @@ export function ClinicalRecord({
     );
   return (
     <div className="ops-stack">
-      {record.status === 'completed' ? (
+      {record.status === "completed" ? (
         <p className="ops-help">Bệnh án đã hoàn tất. Dữ liệu chỉ được xem.</p>
       ) : null}
-      {mode !== 'prescriptions' ? (
+      {mode !== "prescriptions" &&
+      can("GET", `/lab-results/${record.medical_record_id}`) ? (
         <LabsPanel recordId={record.medical_record_id} writable={writable} />
       ) : null}
-      {mode !== 'labs' ? (
+      {mode !== "labs" &&
+      can("GET", `/prescriptions/${record.medical_record_id}`) ? (
         <PrescriptionPanel
           recordId={record.medical_record_id}
-          writable={writable}
+          writable={writable && can("POST", "/prescriptions")}
         />
       ) : null}
     </div>
@@ -676,7 +715,7 @@ function SelectedRecord({
   mode,
 }: {
   id: string;
-  mode: 'labs' | 'prescriptions';
+  mode: "labs" | "prescriptions";
 }) {
   const record = useData<MedicalRecordDetail | null>(
     `/medical_records/${id}`,
@@ -696,9 +735,15 @@ function SelectedRecord({
       ) : record.data ? (
         <>
           <div className="ops-context">
+            <span className="clinical-record-icon">
+              <Icon name="records" />
+            </span>
             <strong>Bệnh án #{record.data.medical_record_id}</strong>
             <span>Bệnh nhân #{record.data.patient_id}</span>
-            <Link to={`/app/records/${id}`}>Mở hồ sơ bệnh án →</Link>
+            <StatusBadge status={record.data.status} />
+            <Link to={`/app/records/${id}`}>
+              Xem hồ sơ đầy đủ <Icon name="arrow" size={15} />
+            </Link>
           </div>
           <ClinicalRecord record={record.data} mode={mode} />
         </>
@@ -707,45 +752,61 @@ function SelectedRecord({
   );
 }
 
-export function ClinicalPage({ mode }: { mode: 'labs' | 'prescriptions' }) {
+export function ClinicalPage({ mode }: { mode: "labs" | "prescriptions" }) {
   const [params, setParams] = useSearchParams();
-  const recordId = params.get('record');
-  const [search, setSearch] = useState(recordId ?? '');
+  const recordId = params.get("record");
+  const [search, setSearch] = useState(recordId ?? "");
   return (
-    <>
+    <div className="clinical-page">
       <PageHeader
         eyebrow="CHĂM SÓC VÀ ĐIỀU TRỊ"
-        title={mode === 'labs' ? 'Xét nghiệm' : 'Đơn thuốc'}
-        description="Chọn bệnh án để xem dữ liệu và thực hiện thao tác trong phạm vi được phân công."
+        title={mode === "labs" ? "Xét nghiệm" : "Đơn thuốc"}
+        description={
+          mode === "labs"
+            ? "Quản lý chỉ định, theo dõi và cập nhật kết quả xét nghiệm theo bệnh án."
+            : "Tra cứu và quản lý đơn thuốc theo từng bệnh án."
+        }
       />
       <form
-        className="ops-toolbar"
+        className="clinical-lookup"
         onSubmit={(e) => {
           e.preventDefault();
           if (/^[1-9]\d*$/.test(search)) setParams({ record: search });
         }}
       >
-        <label className="ops-filter">
-          Mã bệnh án
+        <div className="clinical-lookup__intro">
+          <span className="clinical-lookup__icon">
+            <Icon name={mode === "labs" ? "lab" : "prescription"} size={24} />
+          </span>
+          <div>
+            <strong>Tra cứu bệnh án</strong>
+            <p>Nhập mã để mở nhanh hoặc chọn trong danh sách bên dưới.</p>
+          </div>
+        </div>
+        <label className="clinical-lookup__input">
+          <Icon name="search" size={18} />
+          <span className="sr-only">Mã bệnh án</span>
           <input
             type="number"
             min={1}
             step={1}
             required
+            placeholder="Nhập mã bệnh án"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </label>
-        <Button type="submit" variant="secondary">
+        <Button type="submit" icon={<Icon name="arrow" size={16} />}>
           Mở bệnh án
         </Button>
         {recordId ? (
           <Button
             variant="quiet"
             type="button"
+            icon={<Icon name="records" size={16} />}
             onClick={() => {
               setParams({});
-              setSearch('');
+              setSearch("");
             }}
           >
             Chọn bệnh án khác
@@ -756,44 +817,83 @@ export function ClinicalPage({ mode }: { mode: 'labs' | 'prescriptions' }) {
         <SelectedRecord key={`${mode}-${recordId}`} id={recordId} mode={mode} />
       ) : (
         <ResourcePanel
-          title="Chọn bệnh án"
+          title="Danh sách bệnh án"
+          titleIcon={<Icon name="records" size={20} />}
           path="/medical_records"
           listPath="/medical_records/all"
           fields={[]}
           paginated
+          pageSize={5}
           canCreate={false}
           canEdit={false}
           canDelete={false}
           columns={[
-            { key: 'medical_record_id', label: 'MÃ BỆNH ÁN' },
-            { key: 'patient_id', label: 'MÃ BỆNH NHÂN' },
-            { key: 'template_id', label: 'MẪU PHIẾU' },
             {
-              key: 'status',
-              label: 'TRẠNG THÁI',
-              render: (row: Row) =>
-                row.status === 'pending'
-                  ? 'Chờ tiếp nhận'
-                  : row.status === 'in_progress'
-                    ? 'Đang khám'
-                    : 'Đã hoàn tất',
+              key: "medical_record_id",
+              label: "BỆNH ÁN",
+              render: (row: Row) => (
+                <span className="clinical-record-cell">
+                  <span className="clinical-record-icon">
+                    <Icon name="records" size={18} />
+                  </span>
+                  <strong>#{String(row.medical_record_id)}</strong>
+                </span>
+              ),
+            },
+            {
+              key: "patient_id",
+              label: "BỆNH NHÂN",
+              render: (row: Row) => (
+                <span className="clinical-patient">
+                  <Icon name="user" size={15} />
+                  Bệnh nhân #{String(row.patient_id)}
+                </span>
+              ),
+            },
+            {
+              key: "template_id",
+              label: "MẪU PHIẾU",
+              render: (row: Row) => (
+                <span className="clinical-template">
+                  <Icon name="template" size={14} />
+                  {label(row.template_id)}
+                </span>
+              ),
+            },
+            {
+              key: "status",
+              label: "TRẠNG THÁI",
+              render: (row: Row) => (
+                <StatusBadge
+                  status={
+                    row.status === "pending"
+                      ? "pending"
+                      : row.status === "in_progress"
+                        ? "in_progress"
+                        : row.status === "completed"
+                          ? "completed"
+                          : "unavailable"
+                  }
+                />
+              ),
             },
           ]}
           actions={(row) => (
             <Button
-              variant="quiet"
+              variant="secondary"
               size="small"
+              icon={<Icon name="arrow" size={14} />}
               onClick={() => {
                 const id = String(row.medical_record_id);
                 setSearch(id);
                 setParams({ record: id });
               }}
             >
-              Mở
+              {mode === "labs" ? "Xem xét nghiệm" : "Xem đơn thuốc"}
             </Button>
           )}
         />
       )}
-    </>
+    </div>
   );
 }

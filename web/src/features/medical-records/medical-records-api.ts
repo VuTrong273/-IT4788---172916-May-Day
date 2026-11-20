@@ -13,6 +13,7 @@ export type MedicalRecord = {
 };
 
 export type MedicalRecordDetail = MedicalRecord & {
+  followup_active?: boolean;
   created_by: number | null;
   instructions: string | null;
   completed_at: string | null;
@@ -45,10 +46,10 @@ export async function listMedicalRecords(session: Session, options: {
   return apiRequest<RecordListResponse>(`/medical_records/all?${params}`, { token: session.token });
 }
 
-export async function getMedicalRecord(session: Session, id: number) {
+export async function getMedicalRecord(session: Session, id: number, includeSummary = true) {
   const [recordResponse, summaryResponse] = await Promise.all([
     apiRequest(`/medical_records/${id}`, { token: session.token }),
-    apiRequest(`/medical_records/${id}/summary`, { token: session.token }),
+    includeSummary ? apiRequest(`/medical_records/${id}/summary`, { token: session.token }) : Promise.resolve({ data: null }),
   ]);
   return {
     record: unwrapEnvelope<MedicalRecordDetail>(recordResponse),

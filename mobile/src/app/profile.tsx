@@ -1,3 +1,5 @@
+import { canAccess } from '@/features/auth/permissions';
+import { useAuthenticatedSession } from '@/features/auth/use-authenticated-session';
 import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
 import {
@@ -50,6 +52,7 @@ const patientTextFields: {
 ];
 
 export default function ProfileScreen() {
+  const authenticated = useAuthenticatedSession();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [draft, setDraft] = useState<ProfileDraft | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -62,16 +65,18 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     let active = true;
+    if (!authenticated) return;
 
     async function loadProfile() {
       try {
-        const session = await getSession();
+        const session = authenticated;
         if (!active) return;
         if (!session) {
           router.dismissTo('/');
           return;
         }
 
+        if (!canAccess(session, 'GET', '/profile')) throw new Error('Bạn chưa được cấp quyền xem hồ sơ.');
         const data = await profileApi.getProfile(session);
         if (active) {
           setProfile(data);
@@ -94,7 +99,7 @@ export default function ProfileScreen() {
     return () => {
       active = false;
     };
-  }, [retryCount]);
+  }, [retryCount, authenticated]);
 
   async function leaveExpiredSession() {
     try {
@@ -171,7 +176,7 @@ export default function ProfileScreen() {
     setSuccessMessage('');
   }
 
-  const profileRole = profile ? getAuthenticatedRole(profile.role_id) : null;
+  const profileRole = profile ? getAuthenticatedRole(profile) : null;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
@@ -217,7 +222,7 @@ export default function ProfileScreen() {
             />
             <ProfileRow label="Email khôi phục" value={profile.recovery_email} />
 
-            {profile.role_id === 3 ? (
+            {profileRole === 'patient' ? (
               <>
                 <View style={styles.row}>
                   <Text style={styles.label}>Giới tính</Text>
@@ -296,7 +301,7 @@ export default function ProfileScreen() {
             ) : null}
             {saveError ? <Text accessibilityRole="alert" style={styles.errorText}>{saveError}</Text> : null}
 
-            {isEditing ? (
+            {canAccess(authenticated, 'PUT', '/profile') ? isEditing ? (
               <View style={styles.actions}>
                 <Pressable
                   accessibilityRole="button"
@@ -326,7 +331,7 @@ export default function ProfileScreen() {
                 style={styles.primaryButton}>
                 <Text style={styles.primaryButtonText}>Chỉnh sửa hồ sơ</Text>
               </Pressable>
-            )}
+            ) : null}
           </View>
         ) : null}
       </ScrollView>

@@ -1,4 +1,7 @@
 import type { UserRole } from '@/features/auth/roles';
+import type { Session } from '@/features/auth/session';
+import { canOpenFeature } from './feature-routes';
+import { canAccess } from '@/features/auth/permissions';
 
 export type WorkspaceNavigationItem = {
   id: string;
@@ -15,7 +18,7 @@ const navigationByRole: Record<UserRole, WorkspaceNavigationItem[]> = {
     { id: 'tracking', label: 'Theo dõi', href: '/tracking', glyph: '♡', group: 'CHĂM SÓC' },
     { id: 'results', label: 'Kết quả', href: '/feature/my-results', glyph: '◉', group: 'CHĂM SÓC' },
     { id: 'templates', label: 'Mẫu phiếu', href: '/feature/templates', glyph: '▧', group: 'CHĂM SÓC' },
-    { id: 'account', label: 'Tài khoản', href: '/account', glyph: '◎', group: 'TÀI KHOẢN' },
+    { id: 'account', label: 'Thông tin cá nhân', href: '/account', glyph: '◎', group: 'TÀI KHOẢN' },
   ],
   doctor: [
     { id: 'home', label: 'Tổng quan', href: '/home', glyph: '⌂', group: 'KHÁM BỆNH' },
@@ -26,7 +29,7 @@ const navigationByRole: Record<UserRole, WorkspaceNavigationItem[]> = {
     { id: 'labs', label: 'Xét nghiệm', href: '/feature/lab-requests', glyph: '⚕', group: 'LÂM SÀNG' },
     { id: 'prescriptions', label: 'Đơn thuốc', href: '/feature/prescriptions', glyph: '＋', group: 'LÂM SÀNG' },
     { id: 'facilities', label: 'Cơ sở khám', href: '/feature/clinic-branches', glyph: '⌖', group: 'THÔNG TIN' },
-    { id: 'account', label: 'Tài khoản', href: '/account', glyph: '◎', group: 'TÀI KHOẢN' },
+    { id: 'account', label: 'Thông tin cá nhân', href: '/account', glyph: '◎', group: 'TÀI KHOẢN' },
   ],
   admin: [
     { id: 'home', label: 'Tổng quan', href: '/home', glyph: '⌂', group: 'QUẢN TRỊ' },
@@ -35,12 +38,32 @@ const navigationByRole: Record<UserRole, WorkspaceNavigationItem[]> = {
     { id: 'facilities', label: 'Cơ sở khám', href: '/feature/clinic-branches', glyph: '⌖', group: 'QUẢN TRỊ' },
     { id: 'templates', label: 'Mẫu phiếu', href: '/feature/templates', glyph: '▧', group: 'CẤU HÌNH' },
     { id: 'permissions', label: 'Phân quyền', href: '/feature/access-control', glyph: '◈', group: 'CẤU HÌNH' },
-    { id: 'account', label: 'Tài khoản', href: '/account', glyph: '◎', group: 'TÀI KHOẢN' },
+    { id: 'account', label: 'Thông tin cá nhân', href: '/account', glyph: '◎', group: 'TÀI KHOẢN' },
   ],
 };
 
-export function getWorkspaceNavigation(role: UserRole | null): WorkspaceNavigationItem[] {
-  return role ? navigationByRole[role] : [];
+export function getWorkspaceNavigation(role: UserRole | null, session?: Session): WorkspaceNavigationItem[] {
+  const preferred = role ? navigationByRole[role] : [];
+  const items = session && role && role !== 'patient' ? [...new Map([...preferred, ...Object.values(navigationByRole).flat().filter(item => item.href.startsWith('/feature/'))].map(item => [item.href,item])).values()] : preferred;
+  if (!session) return items;
+  return items.filter(item => {
+    if (item.href.startsWith('/feature/')) return canOpenFeature(session, item.href.slice('/feature/'.length));
+    if (item.href === '/patients') return canOpenFeature(session, 'patients');
+    if (item.href === '/records') return canOpenFeature(session, 'my-medical-records');
+    if (item.href === '/tracking') return canOpenFeature(session,'lesion-tracking') || canOpenFeature(session,'uas7') || canOpenFeature(session,'my-results');
+    return true;
+  });
+}
+
+export function canOpenMobilePage(session: Session, pathname: string): boolean {
+  if (pathname.startsWith('/feature/')) return canOpenFeature(session,pathname.slice('/feature/'.length));
+  if (pathname.startsWith('/medical-records/')) return canAccess(session,'GET',pathname.replace('/medical-records/','/medical_records/'));
+  if (pathname === '/patients') return canOpenFeature(session,'patients');
+  if (pathname === '/records') return canOpenFeature(session,'my-medical-records');
+  if (pathname === '/profile') return canAccess(session,'GET','/profile');
+  if (pathname === '/recovery-email') return canAccess(session,'POST','/auth/recovery-email') && canAccess(session,'POST','/auth/recovery-email/verify');
+  if (pathname === '/change-password') return canAccess(session,'PUT','/auth/change-password');
+  return ['/home','/account','/tracking','/explore','/dashboard'].includes(pathname);
 }
 
 export function splitMobileNavigation(items: WorkspaceNavigationItem[]) {

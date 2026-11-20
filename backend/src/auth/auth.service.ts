@@ -35,7 +35,9 @@ function parseLogin(body: unknown): { phone: string; password: string } {
   return { phone: values.phone, password: values.password };
 }
 
-function parseSignup(body: unknown): Omit<NewPatient, 'passwordHash'> & { password: string } {
+function parseSignup(
+  body: unknown,
+): Omit<NewPatient, 'passwordHash'> & { password: string } {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) {
     return error('2007', 'Request body is invalid', HttpStatus.BAD_REQUEST);
   }
@@ -53,7 +55,8 @@ function parseSignup(body: unknown): Omit<NewPatient, 'passwordHash'> & { passwo
     typeof values.phone !== 'string' ||
     typeof values.password !== 'string' ||
     (values.gender !== undefined && typeof values.gender !== 'string') ||
-    (values.year_of_birth !== undefined && typeof values.year_of_birth !== 'number')
+    (values.year_of_birth !== undefined &&
+      typeof values.year_of_birth !== 'number')
   ) {
     return error('2002', 'Invalid parameter type', HttpStatus.BAD_REQUEST);
   }
@@ -90,7 +93,10 @@ function parseSignup(body: unknown): Omit<NewPatient, 'passwordHash'> & { passwo
   };
 }
 
-function parseChangePassword(body: unknown): { oldPassword: string; newPassword: string } {
+function parseChangePassword(body: unknown): {
+  oldPassword: string;
+  newPassword: string;
+} {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) {
     return error('2007', 'Request body is invalid', HttpStatus.BAD_REQUEST);
   }
@@ -109,7 +115,11 @@ function parseChangePassword(body: unknown): { oldPassword: string; newPassword:
   ) {
     return error('2002', 'Invalid parameter type', HttpStatus.BAD_REQUEST);
   }
-  if (!values.old_password || !values.new_password || !values.confirm_password) {
+  if (
+    !values.old_password ||
+    !values.new_password ||
+    !values.confirm_password
+  ) {
     return error('2001', 'Missing required parameter', HttpStatus.BAD_REQUEST);
   }
   if (
@@ -156,12 +166,22 @@ function parseOtp(body: unknown): string {
   return otp;
 }
 
-function otpHash(purpose: 'verify' | 'reset', ownerId: number | string, otp: string): string {
+function otpHash(
+  purpose: 'verify' | 'reset',
+  ownerId: number | string,
+  otp: string,
+): string {
   const secret = process.env.JWT_SECRET;
   if (!secret || secret.length < 32) {
-    return error('9901', 'Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    return error(
+      '9901',
+      'Internal server error',
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
   }
-  return createHmac('sha256', secret).update(`${purpose}:${ownerId}:${otp}`).digest('hex');
+  return createHmac('sha256', secret)
+    .update(`${purpose}:${ownerId}:${otp}`)
+    .digest('hex');
 }
 
 function createOtp(): string {
@@ -206,18 +226,33 @@ export class AuthService {
     const hashed = otpHash('verify', user.userId, code);
     let requested;
     try {
-      requested = await this.users.requestRecoveryEmail(user.userId, email, hashed);
+      requested = await this.users.requestRecoveryEmail(
+        user.userId,
+        email,
+        hashed,
+      );
     } catch {
       return error('9902', 'Database error', HttpStatus.SERVICE_UNAVAILABLE);
     }
-    if (!requested) return error('2003', 'Email already set or request too soon', HttpStatus.BAD_REQUEST);
+    if (!requested)
+      return error(
+        '2003',
+        'Email already set or request too soon',
+        HttpStatus.BAD_REQUEST,
+      );
     try {
       await this.mail.sendOtp(email, code, 'verify');
     } catch {
-      await this.users.cancelRecoveryEmail(user.userId, hashed).catch(() => undefined);
+      await this.users
+        .cancelRecoveryEmail(user.userId, hashed)
+        .catch(() => undefined);
       return error('9903', 'Email delivery failed', HttpStatus.BAD_GATEWAY);
     }
-    return { code: '1000', message: 'OTP has been sent to your email', data: { expires_in: 600 } };
+    return {
+      code: '1000',
+      message: 'OTP has been sent to your email',
+      data: { expires_in: 600 },
+    };
   }
 
   async verifyRecoveryEmail(user: AuthenticatedUser, body: unknown) {
@@ -229,7 +264,8 @@ export class AuthService {
       return error('9902', 'Database error', HttpStatus.SERVICE_UNAVAILABLE);
     }
     if (result === 'success') return { code: '1000', message: 'OK', data: {} };
-    if (result === 'conflict') return error('3006', 'Email already in use', HttpStatus.CONFLICT);
+    if (result === 'conflict')
+      return error('3006', 'Email already in use', HttpStatus.CONFLICT);
     if (result === 'expired' || result === 'missing') {
       return error('3005', 'OTP expired', HttpStatus.BAD_REQUEST);
     }
@@ -244,7 +280,11 @@ export class AuthService {
     } catch {
       return error('9902', 'Database error', HttpStatus.SERVICE_UNAVAILABLE);
     }
-    const response = { code: '1000', message: 'If an email is registered, an OTP has been sent', data: { expires_in: 600 } };
+    const response = {
+      code: '1000',
+      message: 'If an email is registered, an OTP has been sent',
+      data: { expires_in: 600 },
+    };
     if (!target?.recovery_email || target.is_active !== 1) return response;
 
     const code = createOtp();
@@ -259,7 +299,9 @@ export class AuthService {
     try {
       await this.mail.sendOtp(target.recovery_email, code, 'reset');
     } catch {
-      await this.users.cancelPasswordReset(target.user_id, hashed).catch(() => undefined);
+      await this.users
+        .cancelPasswordReset(target.user_id, hashed)
+        .catch(() => undefined);
       return error('9903', 'Email delivery failed', HttpStatus.BAD_GATEWAY);
     }
     return response;
@@ -283,7 +325,8 @@ export class AuthService {
       return error('9902', 'Database error', HttpStatus.SERVICE_UNAVAILABLE);
     }
     if (result === 'success') return { code: '1000', message: 'OK', data: {} };
-    if (result === 'invalid') return error('3004', 'OTP is incorrect', HttpStatus.BAD_REQUEST);
+    if (result === 'invalid')
+      return error('3004', 'OTP is incorrect', HttpStatus.BAD_REQUEST);
     return error('3005', 'OTP expired', HttpStatus.BAD_REQUEST);
   }
 
@@ -380,7 +423,11 @@ export class AuthService {
 
     const secret = process.env.JWT_SECRET;
     if (!secret || secret.length < 32) {
-      return error('9901', 'Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+      return error(
+        '9901',
+        'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
     const issuedAtMs = Date.now();
@@ -405,8 +452,23 @@ export class AuthService {
           full_name: user.full_name,
           phone: user.phone,
           role_id: user.role_id,
+          ...(user.base_role !== undefined
+            ? { base_role: user.base_role }
+            : {}),
         },
       },
     };
+  }
+
+  async ownAccess(user: AuthenticatedUser) {
+    try {
+      const access = await this.users.findOwnAccess(user.userId);
+      if (!access)
+        return error('3007', 'User account not found', HttpStatus.NOT_FOUND);
+      return { code: '1000', message: 'OK', data: access };
+    } catch (caught) {
+      if (caught instanceof HttpException) throw caught;
+      return error('9902', 'Database error', HttpStatus.SERVICE_UNAVAILABLE);
+    }
   }
 }

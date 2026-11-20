@@ -1,4 +1,6 @@
 import { getAuthenticatedRole, type UserRole } from '@/features/auth/roles';
+import { canAccess } from '@/features/auth/permissions';
+import type { Session } from '@/features/auth/session';
 
 export type FeatureRoute = {
   slug: string;
@@ -101,10 +103,39 @@ export const featureRoutes: FeatureRoute[] = [
   },
 ];
 
-export function getDemoRole(roleId: number): UserRole | null {
+export function getDemoRole(roleId: unknown): UserRole | null {
   return getAuthenticatedRole(roleId);
 }
 
 export function getFeatureRoute(slug: string): FeatureRoute | undefined {
   return featureRoutes.find((item) => item.slug === slug);
+}
+
+const featureRequirements: Record<string, [string, string][]> = {
+  'create-medical-record': [['POST','/medical_records'], ['GET','/templates/:id'], ['GET','/medical_records/classify-questions'], ['POST','/medical_records/classify']],
+  'my-medical-records': [['GET','/medical_records/patients/:id/history']],
+  'lesion-tracking': [['GET','/lesion-episodes/my']],
+  'uas7': [['GET','/uas7-scores/patient/:patient_id']],
+  'my-results': [['GET','/medical_records/patients/:id/history']],
+  'pending-records': [['GET','/medical_records/all'], ['GET','/medical_records/:id']],
+  'in-progress-records': [['GET','/medical_records/all'], ['GET','/medical_records/:id']],
+  'patients': [['GET','/doctor/patients/search']],
+  'lab-requests': [['GET','/medical_records/all'], ['GET','/medical_records/:id'], ['GET','/lab-results/:record_id']],
+  'prescriptions': [['GET','/medical_records/all'], ['GET','/medical_records/:id'], ['GET','/prescriptions/:medical_record_id']],
+  'templates': [['GET','/templates/all'], ['GET','/templates/:id']],
+  'admin-medical-records': [['GET','/medical_records/all'], ['GET','/medical_records/:id']],
+  'admin-users': [['GET','/admin/users']],
+  'clinic-branches': [['GET','/branches'], ['GET','/departments'], ['GET','/rooms']],
+  'access-control': [['GET','/roles'], ['GET','/permissions'], ['GET','/api_endpoints']],
+};
+export function canOpenFeature(session: Session | null, slug: string): boolean {
+  const role = session ? getAuthenticatedRole(session.user) : null;
+  const feature = getFeatureRoute(slug);
+  if (!session || !role || !feature || (role === 'patient' && !feature.roles.includes(role))) return false;
+  if (slug === 'create-medical-record' && role === 'admin') return false;
+  const requirements = featureRequirements[slug];
+  if (!requirements) return false;
+  if (slug === 'access-control' || slug === 'clinic-branches') return requirements.some(([method,path]) => canAccess(session,method,path));
+  if (slug === 'lesion-tracking' && role !== 'patient') return canAccess(session,'GET','/lesion-episodes/record/:medical_record_id');
+  return requirements.every(([method,path]) => canAccess(session,method,path));
 }

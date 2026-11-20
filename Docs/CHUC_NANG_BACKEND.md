@@ -47,6 +47,8 @@ Bản demo đầu tiên có ba role mặc định `admin`, `doctor`, `patient`; 
 
 ## 7. Kiểm thử và bàn giao
 
+Trạng thái thực hiện và khác biệt so với PDF gốc được ghi tại [biên bản nghiệm thu ngày 17/11/2026](./NGHIEM_THU.md). Vai trò tùy chỉnh dùng `actor_type` hoặc vai trò cha; cấu hình mẫu tự động dùng `intake_duration`. Không dùng số endpoint để suy ra tỷ lệ hoàn thành toàn dự án.
+
 - Mỗi nhóm API có test cho luồng đúng, dữ liệu sai, sai quyền, truy cập chéo và các mã lỗi quan trọng trong OpenAPI.
 - Chạy thử kịch bản liền mạch admin → bệnh nhân → bác sĩ → bệnh nhân bằng mobile/web gọi API thật.
 - Bàn giao lệnh chạy, seed demo, tài khoản thử và hướng dẫn xử lý lỗi local. Người không viết backend phải tự dựng và chạy được hệ thống.

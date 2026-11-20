@@ -1,7 +1,8 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
-import pg from 'pg';
+import { createDatabasePool } from '../common/database-pool.js';
 
 export interface LoginUser {
+  base_role?: 'admin' | 'doctor' | 'patient' | null;
   user_id: number;
   full_name: string;
   phone: string;
@@ -16,7 +17,8 @@ export interface RecoveryTarget {
   is_active: number;
 }
 
-export type OtpResult = 'success' | 'missing' | 'expired' | 'invalid' | 'conflict';
+export type OtpResult =
+  'success' | 'missing' | 'expired' | 'invalid' | 'conflict';
 
 export interface NewPatient {
   fullName: string;
@@ -49,6 +51,7 @@ export interface EndpointAccess {
 }
 
 export interface ProfileRow {
+  base_role?: 'admin' | 'doctor' | 'patient' | null;
   user_id: number;
   full_name: string;
   phone: string;
@@ -76,7 +79,7 @@ export type ProfileChanges = Record<string, string | number | null>;
 
 export class PatientProfileRequiredError extends Error {}
 
-const PROFILE_SELECT = `SELECT u.user_id, u.full_name, u.phone, u.recovery_email, u.role_id, u.gender,
+const PROFILE_SELECT = `SELECT u.user_id, u.full_name, u.phone, u.recovery_email, u.role_id, base_role(u.role_id) AS base_role, u.gender,
               p.year_of_birth, p.career, p.ethnic, p.hamlet_address,
               p.commune_address, p.city_address, p.work_place,
               p.health_insurance_number,
@@ -90,29 +93,37 @@ const PROFILE_SELECT = `SELECT u.user_id, u.full_name, u.phone, u.recovery_email
 
 const USER_PROFILE_COLUMNS = new Set(['full_name', 'gender']);
 const PATIENT_PROFILE_COLUMNS = new Set([
-  'year_of_birth', 'career', 'ethnic', 'hamlet_address', 'commune_address',
-  'city_address', 'work_place', 'health_insurance_number',
-  'health_insurance_validate', 'next_of_kin_name', 'next_of_kin_phone',
+  'year_of_birth',
+  'career',
+  'ethnic',
+  'hamlet_address',
+  'commune_address',
+  'city_address',
+  'work_place',
+  'health_insurance_number',
+  'health_insurance_validate',
+  'next_of_kin_name',
+  'next_of_kin_phone',
 ]);
 
 @Injectable()
 export class UserRepository implements OnModuleDestroy {
-  private readonly pool = new pg.Pool({
-    connectionString: process.env.DATABASE_URL,
-    connectionTimeoutMillis: 5000,
-    max: 10,
-  });
+  private readonly pool = createDatabasePool(UserRepository.name);
 
   async findByPhone(phone: string): Promise<LoginUser | null> {
     const result = await this.pool.query<LoginUser>(
-      `SELECT user_id, full_name, phone, password_hash, role_id, is_active
+      `SELECT user_id, full_name, phone, password_hash, role_id, base_role(role_id) AS base_role, is_active
        FROM users WHERE phone = $1`,
       [phone],
     );
     return result.rows[0] ?? null;
   }
 
-  async requestRecoveryEmail(userId: number, email: string, otpHash: string): Promise<boolean> {
+  async requestRecoveryEmail(
+    userId: number,
+    email: string,
+    otpHash: string,
+  ): Promise<boolean> {
     const result = await this.pool.query(
       `UPDATE users SET pending_recovery_email = $2, email_verify_token = $3,
           email_verify_expires = now() + interval '10 minutes',
@@ -138,7 +149,10 @@ export class UserRepository implements OnModuleDestroy {
     );
   }
 
-  async verifyRecoveryEmail(userId: number, otpHash: string): Promise<OtpResult> {
+  async verifyRecoveryEmail(
+    userId: number,
+    otpHash: string,
+  ): Promise<OtpResult> {
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
@@ -157,7 +171,10 @@ export class UserRepository implements OnModuleDestroy {
         await client.query('COMMIT');
         return 'missing';
       }
-      if (!row.email_verify_expires || row.email_verify_expires.getTime() <= Date.now()) {
+      if (
+        !row.email_verify_expires ||
+        row.email_verify_expires.getTime() <= Date.now()
+      ) {
         await client.query(
           `UPDATE users SET pending_recovery_email = NULL, email_verify_token = NULL,
               email_verify_expires = NULL WHERE user_id = $1`,
@@ -187,7 +204,12 @@ export class UserRepository implements OnModuleDestroy {
           [userId],
         );
       } catch (error) {
-        if (typeof error === 'object' && error !== null && 'code' in error && error.code === '23505') {
+        if (
+          typeof error === 'object' &&
+          error !== null &&
+          'code' in error &&
+          error.code === '23505'
+        ) {
           await client.query('ROLLBACK');
           return 'conflict';
         }
@@ -211,7 +233,10 @@ export class UserRepository implements OnModuleDestroy {
     return result.rows[0] ?? null;
   }
 
-  async requestPasswordReset(userId: number, otpHash: string): Promise<boolean> {
+  async requestPasswordReset(
+    userId: number,
+    otpHash: string,
+  ): Promise<boolean> {
     const result = await this.pool.query(
       `UPDATE users SET reset_token = $2, reset_token_expires = now() + interval '10 minutes',
           reset_sent_at = now(), reset_attempts = 0
@@ -230,7 +255,11 @@ export class UserRepository implements OnModuleDestroy {
     );
   }
 
-  async finishPasswordReset(email: string, otpHash: string, passwordHash: string): Promise<OtpResult> {
+  async finishPasswordReset(
+    email: string,
+    otpHash: string,
+    passwordHash: string,
+  ): Promise<OtpResult> {
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
@@ -248,7 +277,11 @@ export class UserRepository implements OnModuleDestroy {
         await client.query('COMMIT');
         return 'missing';
       }
-      if (!row.reset_token || !row.reset_token_expires || row.reset_token_expires.getTime() <= Date.now()) {
+      if (
+        !row.reset_token ||
+        !row.reset_token_expires ||
+        row.reset_token_expires.getTime() <= Date.now()
+      ) {
         await client.query('COMMIT');
         return 'expired';
       }
@@ -326,7 +359,11 @@ export class UserRepository implements OnModuleDestroy {
     return result.rows[0] ?? null;
   }
 
-  async blacklistToken(userId: number, jti: string, expiresAt: Date): Promise<void> {
+  async blacklistToken(
+    userId: number,
+    jti: string,
+    expiresAt: Date,
+  ): Promise<void> {
     await this.pool.query(
       `INSERT INTO token_blacklist (user_id, jti, expires_at)
        VALUES ($1, $2, $3)
@@ -407,32 +444,64 @@ export class UserRepository implements OnModuleDestroy {
     return result.rows[0] ?? null;
   }
 
+  async findOwnAccess(userId: number) {
+    const result = await this.pool.query(
+      `WITH RECURSIVE inherited_roles AS (
+      SELECT r.role_id,r.parent_role_id FROM roles r JOIN users u USING(role_id) WHERE u.user_id=$1
+      UNION SELECT r.role_id,r.parent_role_id FROM roles r JOIN inherited_roles child ON child.parent_role_id=r.role_id
+    ) SELECT u.user_id,u.role_id,base_role(u.role_id) AS base_role,
+      (SELECT jsonb_agg(jsonb_build_object('method',e.method,'path',e.path) ORDER BY e.method,e.path) FROM api_endpoints e) AS routes,
+      COALESCE((SELECT jsonb_agg(jsonb_build_object('method',e.method,'path',e.path) ORDER BY e.method,e.path)
+        FROM api_endpoints e WHERE e.is_public=1 OR EXISTS(
+          SELECT 1 FROM permissions_endpoints pe JOIN role_permissions rp USING(permission_id)
+          WHERE pe.endpoint_id=e.endpoint_id AND rp.role_id IN (SELECT role_id FROM inherited_roles)
+        )), '[]'::jsonb) AS endpoints
+      FROM users u WHERE u.user_id=$1`,
+      [userId],
+    );
+    return result.rows[0] ?? null;
+  }
+
   async findProfile(userId: number): Promise<ProfileRow | null> {
     const result = await this.pool.query<ProfileRow>(PROFILE_SELECT, [userId]);
     return result.rows[0] ?? null;
   }
 
-  async updateProfile(userId: number, changes: ProfileChanges): Promise<ProfileRow | null> {
-    const userEntries = Object.entries(changes).filter(([key]) => USER_PROFILE_COLUMNS.has(key));
-    const patientEntries = Object.entries(changes).filter(([key]) => PATIENT_PROFILE_COLUMNS.has(key));
+  async updateProfile(
+    userId: number,
+    changes: ProfileChanges,
+  ): Promise<ProfileRow | null> {
+    const userEntries = Object.entries(changes).filter(([key]) =>
+      USER_PROFILE_COLUMNS.has(key),
+    );
+    const patientEntries = Object.entries(changes).filter(([key]) =>
+      PATIENT_PROFILE_COLUMNS.has(key),
+    );
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
-      const account = await client.query('SELECT 1 FROM users WHERE user_id = $1 FOR UPDATE', [userId]);
+      const account = await client.query(
+        'SELECT 1 FROM users WHERE user_id = $1 FOR UPDATE',
+        [userId],
+      );
       if (!account.rowCount) {
         await client.query('ROLLBACK');
         return null;
       }
 
       if (userEntries.length > 0) {
-        const assignments = userEntries.map(([column], index) => `${column} = $${index + 2}`);
+        const assignments = userEntries.map(
+          ([column], index) => `${column} = $${index + 2}`,
+        );
         await client.query(
           `UPDATE users SET ${assignments.join(', ')}, updated_at = now() WHERE user_id = $1`,
           [userId, ...userEntries.map(([, value]) => value)],
         );
       }
       if (patientEntries.length > 0) {
-        const assignments = patientEntries.map(([column], index) => `${column} = $${index + 2}`);
+        const assignments = patientEntries.map(
+          ([column], index) => `${column} = $${index + 2}`,
+        );
         const result = await client.query(
           `UPDATE patients SET ${assignments.join(', ')}, updated_at = now() WHERE user_id = $1`,
           [userId, ...patientEntries.map(([, value]) => value)],

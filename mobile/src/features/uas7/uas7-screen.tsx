@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { appColors } from '@/constants/app-theme';
 import { useAuthenticatedSession } from '@/features/auth/use-authenticated-session';
 import { getDemoRole } from '@/features/navigation/feature-routes';
+import { canAccess } from '@/features/auth/permissions';
 import {
   uas7Api,
   type Uas7Eligibility,
@@ -111,7 +112,7 @@ export function Uas7Screen() {
     patientId?: string | string[];
     patient_id?: string | string[];
   }>();
-  const role = session ? getDemoRole(session.user.role_id) : null;
+  const role = session ? getDemoRole(session.user) : null;
   const patient = role === 'patient';
   const routePatientId = params.patientId ?? params.patient_id;
   const rawPatientId = Array.isArray(routePatientId) ? routePatientId[0] : routePatientId;
@@ -265,7 +266,7 @@ export function Uas7Screen() {
 
   const eligibilityRecordId = eligibility?.medical_record_id;
   const hasEligibilityRecordId = !!eligibilityRecordId && /^\d+$/.test(eligibilityRecordId);
-  const canSubmit = patient && eligibility?.eligible === 'true' && hasEligibilityRecordId;
+  const canSubmit = canAccess(session,'POST','/uas7-scores') && patient && eligibility?.eligible === 'true' && hasEligibilityRecordId;
   const readOnly = !patient;
 
   return (
@@ -427,6 +428,7 @@ export function Uas7Screen() {
                 <Text style={styles.weekScale}>/ 42</Text>
                 <Text style={styles.severity}>{week.severity_label}</Text>
                 <Text style={styles.mutedText}>Số ngày đã chấm: {week.completed_days}/7</Text>
+                {Number(week.completed_days) < 7 ? <Text style={styles.mutedText}>Đây là tổng tạm tính; chưa diễn giải mức độ UAS7 cho đến khi đủ 7 ngày.</Text> : null}
               </View>
             ) : null}
           </View>

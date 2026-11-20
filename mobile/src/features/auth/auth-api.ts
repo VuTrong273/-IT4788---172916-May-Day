@@ -13,6 +13,7 @@ type LoginResponse = {
       full_name: string;
       phone: string;
       role_id: number;
+      base_role?: 'admin' | 'doctor' | 'patient' | null;
     };
   };
 };
@@ -157,7 +158,7 @@ export const authApi = {
         !response.data?.token ||
         !Number.isInteger(identity?.user_id) ||
         identity.user_id <= 0 ||
-        !getAuthenticatedRole(identity.role_id)
+        !getAuthenticatedRole(identity)
       ) {
         throw new ApiRequestError({
           kind: 'api',

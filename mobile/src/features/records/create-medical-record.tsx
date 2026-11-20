@@ -22,7 +22,7 @@ import { getDemoRole } from '@/features/navigation/feature-routes';
 import { typography } from '@/constants/typography';
 
 export function CreateMedicalRecord({ session }: { session: Session }) {
-  const isDoctor = getDemoRole(session.user.role_id) === 'doctor';
+  const isDoctor = getDemoRole(session.user) === 'doctor';
   const [questions, setQuestions] = useState<ClassificationQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [patientId, setPatientId] = useState('');
@@ -131,7 +131,7 @@ export function CreateMedicalRecord({ session }: { session: Session }) {
         <Text style={styles.eyebrow}>BỆNH ÁN / TẠO MỚI</Text>
         <Text style={styles.title}>Tạo bệnh án</Text>
         <Text style={styles.subtitle}>
-          Chọn mẫu phiếu khám theo hướng dẫn của cơ sở y tế, sau đó xác nhận để tạo bệnh án.
+          Trả lời câu hỏi về thời gian xuất hiện triệu chứng để chọn phiếu khai thác phù hợp. Bác sĩ sẽ khám và xác nhận chẩn đoán.
         </Text>
 
         {isDoctor ? (

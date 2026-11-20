@@ -4,6 +4,7 @@ export type TemplateDraft = {
   description: string;
   version: string;
   is_active?: '1' | '0';
+  intake_duration?: 'lt6w' | 'gte6w' | null;
 };
 
 export function validateTemplateDraft(

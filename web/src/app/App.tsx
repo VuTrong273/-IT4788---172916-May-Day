@@ -6,7 +6,7 @@ import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage';
 import { useAuth } from '@/features/auth/auth-context';
-import { roleFromId, type UserRole } from '@/features/auth/auth-types';
+import type { UserRole } from '@/features/auth/auth-types';
 import { PasswordPage } from '@/features/auth/PasswordPage';
 import { RecordDetailPage } from '@/features/medical-records/RecordDetailPage';
 import { RecordsPage } from '@/features/medical-records/RecordsPage';
@@ -25,9 +25,10 @@ function ProtectedRoute() {
 }
 
 function RoleRoute({ allow, children }: { allow: UserRole[]; children: ReactNode }) {
-  const { session } = useAuth();
-  const role = session ? roleFromId(session.user.role_id) : null;
-  return role && allow.includes(role) ? children : <Navigate to="/app" replace />;
+  // Endpoint permissions in AppShell protect the page. Roles choose clinical
+  // ownership rules on the server, rather than limiting navigation here.
+  void allow;
+  return children;
 }
 
 export function App() {

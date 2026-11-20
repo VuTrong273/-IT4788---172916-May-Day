@@ -9,6 +9,8 @@ import {
   Uas7Controller,
 } from './monitoring.controller.js';
 import { ImagesService } from './images.service.js';
+import { LesionDetailsService } from './lesion-details.service.js';
+import { LesionLocationsController, LesionPhotosController } from './lesion-details.controller.js';
 import {
   AnswerImagesController,
   ImagesController,
@@ -23,6 +25,8 @@ import {
     ImagesController,
     AnswerImagesController,
     MediaFilesController,
+    LesionLocationsController,
+    LesionPhotosController,
   ],
   providers: [
     DatabaseService,
@@ -30,6 +34,7 @@ import {
     PatientRecordsService,
     MonitoringService,
     ImagesService,
+    LesionDetailsService,
   ],
 })
 export class PatientCareModule {}

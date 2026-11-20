@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { canOpenMobilePage } from '@/features/navigation/workspace-navigation';
+import { useAuthenticatedSession } from '@/features/auth/use-authenticated-session';
+import { useState } from 'react';
 import { router } from 'expo-router';
 import {
   ActivityIndicator,
@@ -15,12 +17,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { appColors } from '@/constants/app-theme';
 import { authApi, isExpiredAuthSession, shouldClearAuthSecrets } from '@/features/auth/auth-api';
 import { otpStyles as styles } from '@/features/auth/otp-styles';
-import { clearSession, getSession, type Session } from '@/features/auth/session';
+import { clearSession } from '@/features/auth/session';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function RecoveryEmailScreen() {
-  const [session, setSession] = useState<Session | null>(null);
+  const session = useAuthenticatedSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
@@ -28,17 +30,6 @@ export default function RecoveryEmailScreen() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    let active = true;
-    getSession().then((saved) => {
-      if (!active) return;
-      if (saved) setSession(saved);
-      else router.dismissTo('/');
-    }).catch(() => {
-      if (active) router.dismissTo('/');
-    });
-    return () => { active = false; };
-  }, []);
 
   async function submit() {
     if (!session || isSubmitting) return;
@@ -88,6 +79,8 @@ export default function RecoveryEmailScreen() {
   if (!session) {
     return <SafeAreaView style={styles.safeArea}><ActivityIndicator color={appColors.primary} /></SafeAreaView>;
   }
+
+  if (!canOpenMobilePage(session, '/recovery-email')) return <SafeAreaView><Text>Bạn chưa được cấp quyền sử dụng chức năng này.</Text></SafeAreaView>;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>

@@ -11,6 +11,10 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ../Database/000_RelationshipTable.sql:/docker-entrypoint-initdb.d/000_RelationshipTable.sql:ro
       - ../Database/001_Seed_RBAC.sql:/docker-entrypoint-initdb.d/001_Seed_RBAC.sql:ro
+      - ../Database/migrations/003_urticaria_templates.sql:/docker-entrypoint-initdb.d/003_urticaria_templates.sql:ro
+      - ../Database/migrations/004_followup_state.sql:/docker-entrypoint-initdb.d/004_followup_state.sql:ro
+      - ../Database/migrations/005_dynamic_roles_and_intake.sql:/docker-entrypoint-initdb.d/005_dynamic_roles_and_intake.sql:ro
+      - ../Database/migrations/006_self_access.sql:/docker-entrypoint-initdb.d/006_self_access.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "psql -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\" -tAc 'SELECT 1' >/dev/null"]
       interval: 5s

@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 
 
 import { appColors } from '@/constants/app-theme';
 import type { Session } from '@/features/auth/session';
+import { canAccess } from '@/features/auth/permissions';
 import {
   clinicalApi,
   type LabRequestWithResults,
@@ -48,8 +49,8 @@ export function ClinicalRecordPanel({ session, recordId, canWrite }: Props) {
     setLabError(null);
     setPrescriptionError(null);
     const [labsResult, prescriptionResult] = await Promise.allSettled([
-      clinicalApi.listLabResults(session, recordId),
-      clinicalApi.getPrescription(session, recordId),
+      canAccess(session,'GET',`/lab-results/${recordId}`) ? clinicalApi.listLabResults(session, recordId) : Promise.resolve([]),
+      canAccess(session,'GET',`/prescriptions/${recordId}`) ? clinicalApi.getPrescription(session, recordId) : Promise.resolve(null),
     ]);
 
     if (active()) {
@@ -202,7 +203,7 @@ export function ClinicalRecordPanel({ session, recordId, canWrite }: Props) {
       {loading ? <ActivityIndicator color={appColors.primary} style={styles.loading} /> : null}
       {success ? <Text accessibilityLiveRegion="polite" style={styles.success}>{success}</Text> : null}
 
-      <View style={styles.section}>
+      {canAccess(session,'GET',`/lab-results/${recordId}`) ? <View style={styles.section}>
         <Text style={styles.sectionTitle}>Chỉ định và kết quả xét nghiệm</Text>
         {labError ? <Text accessibilityLiveRegion="polite" style={styles.error}>{labError}</Text> : null}
         {labRequests?.length === 0 ? <Text style={styles.help}>Máy chủ chưa trả về phiếu xét nghiệm nào cho bệnh án này.</Text> : null}
@@ -215,7 +216,7 @@ export function ClinicalRecordPanel({ session, recordId, canWrite }: Props) {
               return (
                 <View key={item.id} style={styles.listItem}>
                   <Text style={styles.itemTitle}>{item.test_name}</Text>
-                  {canWrite ? (
+                  {canWrite && canAccess(session,'POST','/lab-results') ? (
                     <>
                       {hasResult ? <Text style={styles.help}>Đã lưu trên máy chủ: {item.result_value}</Text> : null}
                       <TextInput
@@ -242,7 +243,7 @@ export function ClinicalRecordPanel({ session, recordId, canWrite }: Props) {
                 </View>
               );
             })}
-            {canWrite && request.items.length > 0 ? (
+            {canWrite && canAccess(session,'POST','/lab-results') && request.items.length > 0 ? (
               <Button
                 disabled={busy !== null}
                 label={busy === request.id ? 'Đang lưu...' : 'Lưu kết quả đã nhập'}
@@ -251,7 +252,7 @@ export function ClinicalRecordPanel({ session, recordId, canWrite }: Props) {
             ) : null}
           </View>
         ))}
-        {canWrite ? (
+        {canWrite && canAccess(session,'POST','/lab-requests') ? (
           <View style={styles.formCard}>
             <Text style={styles.cardTitle}>Tạo phiếu chỉ định</Text>
             <Text style={styles.help}>Nhập mỗi xét nghiệm trên một dòng; phiếu rỗng sẽ không được gửi.</Text>
@@ -273,9 +274,9 @@ export function ClinicalRecordPanel({ session, recordId, canWrite }: Props) {
             <Button disabled={busy !== null} label={busy === 'lab' ? 'Đang gửi...' : 'Tạo chỉ định'} onPress={() => void createLabRequest()} />
           </View>
         ) : null}
-      </View>
+      </View> : null}
 
-      <View style={styles.section}>
+      {canAccess(session,'GET',`/prescriptions/${recordId}`) ? <View style={styles.section}>
         <Text style={styles.sectionTitle}>Đơn thuốc</Text>
         {prescriptionError ? <Text accessibilityLiveRegion="polite" style={styles.error}>{prescriptionError}</Text> : null}
         {prescriptionLoaded && !prescription ? (
@@ -297,7 +298,7 @@ export function ClinicalRecordPanel({ session, recordId, canWrite }: Props) {
             {prescription.created_at ? <Text style={styles.help}>Kê lúc {dateLabel(prescription.created_at)}</Text> : null}
           </View>
         ) : null}
-        {canWrite && prescriptionLoaded && !prescription ? (
+        {canWrite && canAccess(session,'POST','/prescriptions') && prescriptionLoaded && !prescription ? (
           <View style={styles.formCard}>
             <Text style={styles.cardTitle}>Kê đơn thuốc</Text>
             {prescriptionItems.map((item, index) => (
@@ -328,7 +329,7 @@ export function ClinicalRecordPanel({ session, recordId, canWrite }: Props) {
             <Button disabled={busy !== null} label={busy === 'prescription' ? 'Đang gửi...' : 'Gửi đơn thuốc'} onPress={() => void createPrescription()} />
           </View>
         ) : null}
-      </View>
+      </View> : null}
     </View>
   );
 }

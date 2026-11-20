@@ -1,3 +1,4 @@
+import { PermissionGate } from '@/components/permission-controls';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -467,7 +468,7 @@ export function TemplateAuthoring({
           </Text>
         </View>
         {!editorOpen ? (
-          <Action label="Thêm phần" onPress={() => startSectionEditor()} />
+          <PermissionGate permission={['POST',`/templates/${template.code_template}/sections`]}><Action label="Thêm phần" onPress={() => startSectionEditor()} /></PermissionGate>
         ) : null}
       </View>
 
@@ -530,15 +531,15 @@ export function TemplateAuthoring({
                   </View>
                   {!editorOpen ? (
                     <View style={styles.actions}>
-                      <Action label="Sửa phần" secondary onPress={() => startSectionEditor(section)} />
-                      <Action
+                      <PermissionGate permission={['PUT',`/templates/sections/${section.section_id}`]}><Action label="Sửa phần" secondary onPress={() => startSectionEditor(section)} /></PermissionGate>
+                      <PermissionGate permission={['DELETE',`/templates/sections/${section.section_id}`]}><Action
                         label="Xóa phần"
                         danger
                         onPress={() => {
                           setSectionDeleteId(section.section_id);
                           setError('');
                         }}
-                      />
+                      /></PermissionGate>
                     </View>
                   ) : null}
                 </View>
@@ -551,12 +552,12 @@ export function TemplateAuthoring({
                     </Text>
                     <View style={styles.actions}>
                       <Action label="Hủy" secondary disabled={saving} onPress={() => setSectionDeleteId(null)} />
-                      <Action
+                      <PermissionGate permission={['DELETE',`/templates/sections/${section.section_id}`]}><Action
                         label={saving ? 'Đang xóa…' : 'Xác nhận xóa phần'}
                         danger
                         disabled={saving}
                         onPress={() => void deleteSection(section)}
-                      />
+                      /></PermissionGate>
                     </View>
                   </View>
                 ) : null}
@@ -592,11 +593,11 @@ export function TemplateAuthoring({
                 ))}
 
                 {!editorOpen ? (
-                  <Action
+                  <PermissionGate permission={['POST',`/templates/sections/${section.section_id}/questions`]}><Action
                     label="Thêm câu hỏi"
                     secondary
                     onPress={() => startQuestionEditor(section.section_id)}
-                  />
+                  /></PermissionGate>
                 ) : null}
                 {questionEditor?.sectionId === section.section_id && questionEditor.questionId === null ? (
                   <QuestionEditorForm

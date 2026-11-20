@@ -6,19 +6,20 @@ import {
   useState,
   type FormEvent,
   type ReactNode,
-} from 'react';
-import { Button } from '@/components/ui/button';
-import { DataTable } from '@/components/ui/data-table';
-import { Panel } from '@/components/ui/panel';
-import { Icon } from '@/components/ui/icon';
-import { label, message, rowId, useApi, type Result, type Row } from './api';
+} from "react";
+import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/ui/data-table";
+import { Panel } from "@/components/ui/panel";
+import { Icon } from "@/components/ui/icon";
+import { useAuth } from "@/features/auth/auth-context";
+import { label, message, rowId, useApi, type Result, type Row } from "./api";
 
 export type Choice = { value: string; label: string; parent?: string };
 export type Field = {
   name: string;
   label: string;
   type?:
-    'text' | 'number' | 'password' | 'date' | 'select' | 'textarea' | 'tel';
+    "text" | "number" | "password" | "date" | "select" | "textarea" | "tel";
   required?: boolean;
   min?: number;
   max?: number;
@@ -34,7 +35,7 @@ export type Field = {
   hint?: string;
 };
 export type Values = Record<string, string>;
-export const choices = (rows: Row[], name = 'name'): Choice[] =>
+export const choices = (rows: Row[], name = "name"): Choice[] =>
   rows.map((r) => ({ value: rowId(r), label: label(r[name]) }));
 export function Alert({
   children,
@@ -45,10 +46,10 @@ export function Alert({
 }) {
   return children ? (
     <div
-      className={`ops-alert${success ? ' ops-alert--success' : ''}`}
-      role={success ? 'status' : 'alert'}
+      className={`ops-alert${success ? " ops-alert--success" : ""}`}
+      role={success ? "status" : "alert"}
     >
-      <Icon name={success ? 'check' : 'alert'} size={18} />
+      <Icon name={success ? "check" : "alert"} size={18} />
       <span>{children}</span>
     </div>
   ) : null;
@@ -72,7 +73,7 @@ export function Tabs({
           role="tab"
           aria-selected={value === item.value}
           className={
-            value === item.value ? 'ops-tab ops-tab--active' : 'ops-tab'
+            value === item.value ? "ops-tab ops-tab--active" : "ops-tab"
           }
           key={item.value}
           onClick={() => onChange(item.value)}
@@ -144,7 +145,7 @@ export function Fields({
       {fields
         .filter((field) => !editing || !field.createOnly)
         .map((field) => {
-          const value = values[field.name] ?? field.defaultValue ?? '';
+          const value = values[field.name] ?? field.defaultValue ?? "";
           const options = field.choices?.filter(
             (option) =>
               !field.dependsOn || option.parent === values[field.dependsOn],
@@ -159,15 +160,15 @@ export function Fields({
                   cleared.has(child.dependsOn) &&
                   !cleared.has(child.name)
                 ) {
-                  result[child.name] = '';
+                  result[child.name] = "";
                   cleared.add(child.name);
                 }
             onChange(result);
           };
           const props = {
             id: `${prefix}-${field.name}`,
-            'aria-labelledby': `${prefix}-${field.name}-label`,
-            'aria-describedby': field.hint
+            "aria-labelledby": `${prefix}-${field.name}-label`,
+            "aria-describedby": field.hint
               ? `${prefix}-${field.name}-hint`
               : undefined,
             name: field.name,
@@ -179,18 +180,18 @@ export function Fields({
           };
           return (
             <label
-              className={`ops-field${field.type === 'textarea' ? ' ops-field--wide' : ''}`}
+              className={`ops-field${field.type === "textarea" ? " ops-field--wide" : ""}`}
               key={field.name}
               htmlFor={props.id}
             >
               <span id={`${props.id}-label`}>
                 {field.label}
-                {field.required ? ' *' : ''}
+                {field.required ? " *" : ""}
               </span>
-              {field.type === 'select' ? (
+              {field.type === "select" ? (
                 <select {...props}>
                   <option value="">
-                    {field.required ? 'Chọn…' : 'Không chọn'}
+                    {field.required ? "Chọn…" : "Không chọn"}
                   </option>
                   {options?.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -198,7 +199,7 @@ export function Fields({
                     </option>
                   ))}
                 </select>
-              ) : field.type === 'textarea' ? (
+              ) : field.type === "textarea" ? (
                 <textarea
                   {...props}
                   rows={3}
@@ -207,14 +208,14 @@ export function Fields({
               ) : (
                 <input
                   {...props}
-                  type={field.type ?? 'text'}
+                  type={field.type ?? "text"}
                   min={field.min}
                   max={field.max}
                   minLength={field.minLength}
                   maxLength={field.maxLength ?? 255}
                   pattern={field.pattern}
                   autoComplete={
-                    field.type === 'password' ? 'new-password' : undefined
+                    field.type === "password" ? "new-password" : undefined
                   }
                 />
               )}
@@ -232,7 +233,7 @@ export function initialValues(fields: Field[], row?: Row): Values {
     fields.map((field) => [
       field.name,
       row?.[field.name] === null || row?.[field.name] === undefined
-        ? (field.defaultValue ?? '')
+        ? (field.defaultValue ?? "")
         : String(row[field.name]),
     ]),
   );
@@ -241,15 +242,15 @@ export function payload(fields: Field[], values: Values, editing = false): Row {
   const result: Row = {};
   for (const field of fields) {
     if (editing && field.createOnly) continue;
-    const value = values[field.name] ?? field.defaultValue ?? '';
-    if (value === '') {
+    const value = values[field.name] ?? field.defaultValue ?? "";
+    if (value === "") {
       if (field.nullable) result[field.name] = null;
       continue;
     }
     result[field.name] =
-      field.numeric || field.type === 'number'
+      field.numeric || field.type === "number"
         ? Number(value)
-        : field.type === 'password'
+        : field.type === "password"
           ? value
           : value.trim();
   }
@@ -274,12 +275,12 @@ export function Editor({
 }) {
   const [values, setValues] = useState(() => initialValues(fields, row));
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (busy) return;
     setBusy(true);
-    setError('');
+    setError("");
     try {
       const body = payload(fields, values, Boolean(row));
       await onSave(prepare ? prepare(body, values) : body);
@@ -313,7 +314,7 @@ export function Editor({
             Hủy
           </Button>
           <Button type="submit" disabled={busy}>
-            {busy ? 'Đang lưu…' : 'Lưu thay đổi'}
+            {busy ? "Đang lưu…" : "Lưu thay đổi"}
           </Button>
         </div>
       </form>
@@ -332,7 +333,7 @@ export function Confirm({
   onClose: () => void;
 }) {
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   return (
     <Modal title={title} onClose={onClose} busy={busy}>
       <div className="ops-form">
@@ -347,7 +348,7 @@ export function Confirm({
             disabled={busy}
             onClick={async () => {
               setBusy(true);
-              setError('');
+              setError("");
               try {
                 await onConfirm();
                 onClose();
@@ -358,7 +359,7 @@ export function Confirm({
               }
             }}
           >
-            {busy ? 'Đang xử lý…' : 'Xác nhận'}
+            {busy ? "Đang xử lý…" : "Xác nhận"}
           </Button>
         </div>
       </div>
@@ -385,6 +386,10 @@ export function ResourcePanel({
   onChanged,
   prepare,
   refreshKey = 0,
+  pageSize = 20,
+  createLabel = "Thêm mới",
+  titleIcon,
+  emptyMessage,
 }: {
   title: string;
   path: string;
@@ -400,23 +405,34 @@ export function ResourcePanel({
   onChanged?: () => void;
   prepare?: (body: Row, values: Values) => Row;
   refreshKey?: number;
+  pageSize?: number;
+  createLabel?: string;
+  titleIcon?: ReactNode;
+  emptyMessage?: ReactNode;
 }) {
   const api = useApi();
+  const { can } = useAuth();
+  const readable = can("GET", listPath);
   const [page, setPage] = useState(1);
   const [revision, setRevision] = useState(0);
   const [result, setResult] = useState<Result<Row[]> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [editor, setEditor] = useState<Row | 'new' | null>(null);
+  const [error, setError] = useState("");
+  const [editor, setEditor] = useState<Row | "new" | null>(null);
   const [deleting, setDeleting] = useState<Row | null>(null);
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useState("");
   const reload = useCallback(() => setRevision((value) => value + 1), []);
   useEffect(() => {
     const controller = new AbortController();
+    if (!readable) {
+      setResult(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    setError('');
-    const url = `${listPath}${paginated ? `${listPath.includes('?') ? '&' : '?'}page=${page}&limit=20` : ''}`;
-    api<Row[]>(url, 'GET', undefined, controller.signal)
+    setError("");
+    const url = `${listPath}${paginated ? `${listPath.includes("?") ? "&" : "?"}page=${page}&limit=${pageSize}` : ""}`;
+    api<Row[]>(url, "GET", undefined, controller.signal)
       .then((next) => {
         if (controller.signal.aborted) return;
         if (paginated && page > 1 && !next.data.length) {
@@ -432,39 +448,59 @@ export function ResourcePanel({
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [api, listPath, paginated, page, revision, refreshKey]);
+  }, [
+    api,
+    listPath,
+    paginated,
+    page,
+    pageSize,
+    revision,
+    refreshKey,
+    readable,
+  ]);
   function changed(text: string) {
     setNotice(text);
     reload();
     onChanged?.();
   }
   const allowed = (flag: boolean | ((row: Row) => boolean), row: Row) =>
-    typeof flag === 'function' ? flag(row) : flag;
+    typeof flag === "function" ? flag(row) : flag;
+  if (!readable) return null;
   return (
     <>
       <Panel
-        title={title}
+        title={
+          titleIcon ? (
+            <span className="resource-title">
+              {titleIcon}
+              {title}
+            </span>
+          ) : (
+            title
+          )
+        }
         className="ops-resource"
         action={
           <div className="ops-actions">
             <Button
               variant="quiet"
               size="small"
+              icon={<Icon name="refresh" size={15} />}
               onClick={reload}
               disabled={loading}
             >
               Làm mới
             </Button>
-            {canCreate ? (
+            {canCreate && can("POST", createPath) ? (
               <Button
                 size="small"
                 icon={<Icon name="plus" size={16} />}
                 onClick={() => {
-                  setNotice('');
-                  setEditor('new');
+                  setNotice("");
+                  setEditor("new");
                 }}
               >
-                Thêm mới
+                {createLabel}
               </Button>
             ) : null}
           </div>
@@ -484,7 +520,12 @@ export function ResourcePanel({
           </div>
         ) : !result?.data.length ? (
           <div className="ops-state">
-            Chưa có dữ liệu. {canCreate ? 'Chọn “Thêm mới” để bắt đầu.' : ''}
+            {emptyMessage ?? (
+              <>
+                Chưa có dữ liệu.{" "}
+                {canCreate ? "Chọn “Thêm mới” để bắt đầu." : ""}
+              </>
+            )}
           </div>
         ) : (
           <DataTable
@@ -497,29 +538,33 @@ export function ResourcePanel({
                 render: column.render ?? ((row: Row) => label(row[column.key])),
               })),
               {
-                key: 'actions',
-                header: 'THAO TÁC',
+                key: "actions",
+                header: "THAO TÁC",
                 render: (row) => (
                   <div className="ops-actions">
                     {actions?.(row, reload)}
-                    {allowed(canEdit, row) ? (
+                    {allowed(canEdit, row) &&
+                    can("PUT", `${path}/${rowId(row)}`) ? (
                       <Button
                         variant="quiet"
                         size="small"
+                        icon={<Icon name="edit" size={14} />}
                         onClick={() => {
-                          setNotice('');
+                          setNotice("");
                           setEditor(row);
                         }}
                       >
                         Sửa
                       </Button>
                     ) : null}
-                    {allowed(canDelete, row) ? (
+                    {allowed(canDelete, row) &&
+                    can("DELETE", `${path}/${rowId(row)}`) ? (
                       <Button
                         variant="danger"
                         size="small"
+                        icon={<Icon name="trash" size={14} />}
                         onClick={() => {
-                          setNotice('');
+                          setNotice("");
                           setDeleting(row);
                         }}
                       >
@@ -545,13 +590,13 @@ export function ResourcePanel({
                 Trước
               </Button>
               <span>
-                Trang {page} /{' '}
-                {Math.max(1, Math.ceil((result.total ?? 0) / 20))}
+                Trang {page} /{" "}
+                {Math.max(1, Math.ceil((result.total ?? 0) / pageSize))}
               </span>
               <Button
                 variant="quiet"
                 size="small"
-                disabled={loading || page * 20 >= (result.total ?? 0)}
+                disabled={loading || page * pageSize >= (result.total ?? 0)}
                 onClick={() => setPage((v) => v + 1)}
               >
                 Sau
@@ -560,26 +605,30 @@ export function ResourcePanel({
           </div>
         ) : null}
       </Panel>
-      {editor ? (
+      {editor &&
+      can(
+        editor === "new" ? "POST" : "PUT",
+        editor === "new" ? createPath : `${path}/${rowId(editor)}`,
+      ) ? (
         <Editor
-          title={`${editor === 'new' ? 'Thêm' : 'Cập nhật'} · ${title}`}
+          title={`${editor === "new" ? "Thêm" : "Cập nhật"} · ${title}`}
           fields={fields}
-          row={editor === 'new' ? undefined : editor}
+          row={editor === "new" ? undefined : editor}
           prepare={prepare}
           onClose={() => setEditor(null)}
           onSave={async (body) => {
             await api(
-              editor === 'new'
+              editor === "new"
                 ? createPath
                 : `${path}/${encodeURIComponent(rowId(editor))}`,
-              editor === 'new' ? 'POST' : 'PUT',
+              editor === "new" ? "POST" : "PUT",
               body,
             );
-            changed('Đã lưu thay đổi.');
+            changed("Đã lưu thay đổi.");
           }}
         />
       ) : null}
-      {deleting ? (
+      {deleting && can("DELETE", `${path}/${rowId(deleting)}`) ? (
         <Confirm
           title={`Xóa · ${title}`}
           description={`Xác nhận xóa “${label(deleting.name ?? deleting.title ?? deleting.full_name ?? rowId(deleting))}”? Thao tác có thể bị từ chối nếu dữ liệu đang được sử dụng.`}
@@ -587,9 +636,9 @@ export function ResourcePanel({
           onConfirm={async () => {
             await api(
               `${path}/${encodeURIComponent(rowId(deleting))}`,
-              'DELETE',
+              "DELETE",
             );
-            changed('Đã xóa dữ liệu.');
+            changed("Đã xóa dữ liệu.");
           }}
         />
       ) : null}

@@ -37,7 +37,7 @@ export class ImagesService {
       .update(`media:${imageId}:${expires}`)
       .digest('hex');
   }
-  private present(row: Record<string, unknown>, origin: string) {
+  present(row: Record<string, unknown>, origin: string) {
     const imageId = Number(row.attachment_id);
     const expires = String(
       Math.floor(Date.now() / 1000) + IMAGE_LINK_TTL_SECONDS,
@@ -95,11 +95,12 @@ export class ImagesService {
     const stored: string[] = [];
     try {
       const rows = await this.db.transaction(async (tx) => {
-        const recordId =
-          input.recordId === undefined ? null : id(input.recordId);
+        const recordValue = input.medical_record_id ?? input.recordId;
+        const recordId = recordValue === undefined ? null : id(recordValue);
         if (recordId) await this.access.record(tx, user, recordId, true);
+        const questionValue = input.question_id ?? input.questionId;
         const questionId =
-          input.questionId === undefined ? null : text(input.questionId, 50);
+          questionValue === undefined ? null : text(questionValue, 50);
         if (questionId) {
           if (!recordId)
             fail('2001', 'recordId is required for a question image');

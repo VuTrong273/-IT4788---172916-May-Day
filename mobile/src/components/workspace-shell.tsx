@@ -20,12 +20,14 @@ import { clearAuthenticatedSession } from '@/features/auth/sign-out';
 import type { Session } from '@/features/auth/session';
 import {
   getWorkspaceNavigation,
+  canOpenMobilePage,
   getWorkspacePageTitle,
   isAnyNavigationItemActive,
   isNavigationItemActive,
   splitMobileNavigation,
   type WorkspaceNavigationItem,
 } from '@/features/navigation/workspace-navigation';
+import { refreshSessionAccess } from '@/features/auth/access-api';
 
 type Props = {
   session: Session;
@@ -44,7 +46,7 @@ export function WorkspaceShell({ session, role, children }: Props) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [jumpQuery, setJumpQuery] = useState('');
   const [signingOut, setSigningOut] = useState(false);
-  const items = useMemo(() => getWorkspaceNavigation(role), [role]);
+  const items = useMemo(() => getWorkspaceNavigation(role, session), [role, session]);
   const mobileNavigation = useMemo(() => splitMobileNavigation(items), [items]);
   const wide = width >= DESKTOP_BREAKPOINT;
   const tablet = width >= TABLET_BREAKPOINT && width < DESKTOP_BREAKPOINT;
@@ -161,7 +163,7 @@ export function WorkspaceShell({ session, role, children }: Props) {
             </Pressable>
           </View>
 
-          <View style={styles.page}>{children}</View>
+          <View style={styles.page}>{!session.access ? <View><Text accessibilityRole="alert">{session.accessError ?? 'Đang tải quyền truy cập…'}</Text><Pressable accessibilityRole="button" onPress={() => void refreshSessionAccess(session).catch(() => undefined)}><Text>Tải lại quyền truy cập</Text></Pressable></View> : canOpenMobilePage(session, pathname) ? children : <Text accessibilityRole="alert">Bạn chưa được cấp quyền sử dụng chức năng này.</Text>}</View>
           {wide ? (
             <View style={styles.workspaceFooter}>
               <Text style={styles.footerText}>© {new Date().getFullYear()} May Day Healthcare</Text>

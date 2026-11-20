@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { PageHeader } from '@/components/ui/page-header';
 import { useAuth } from '@/features/auth/auth-context';
+import { PageHeader } from '@/components/ui/page-header';
 import { label, rowId, useApi, useData, type Row } from './api';
 import {
   Alert,
@@ -64,7 +64,13 @@ export function UserDetails({
 }
 
 export function UsersPage() {
-  const { session } = useAuth();
+  const { can, session } = useAuth();
+  const [pageSize, setPageSize] = useState(() => Math.max(2, Math.min(12, Math.floor((window.innerHeight - 500) / 46))));
+  useEffect(() => {
+    const resize = () => setPageSize(Math.max(2, Math.min(12, Math.floor((window.innerHeight - 500) / 46))));
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, []);
   const api = useApi();
   const [revision, setRevision] = useState(0);
   const roles = useData<Row[]>('/roles', []);
@@ -146,15 +152,15 @@ export function UsersPage() {
   if (filter) params.set('role_id', filter);
   if (query) params.set('keyword', query);
   return (
-    <>
+    <div className="users-page">
       <PageHeader
         eyebrow="QUẢN TRỊ HỆ THỐNG"
         title="Tài khoản"
         description="Quản lý người dùng, trạng thái truy cập và phân công nhân viên."
         actions={
-          <Button disabled={!ready} onClick={() => setStaff(true)}>
+          can('POST','/auth/admin/create-staff') ? <Button disabled={!ready} onClick={() => setStaff(true)}>
             Thêm nhân viên
-          </Button>
+          </Button> : undefined
         }
       />
       <Alert>
@@ -191,11 +197,12 @@ export function UsersPage() {
         </Button>
       </form>
       <ResourcePanel
-        key={params.toString()}
+        key={`${params.toString()}-${pageSize}`}
         title="Danh sách tài khoản"
         path="/admin/users"
         listPath={`/admin/users?${params}`}
         paginated
+        pageSize={pageSize}
         fields={fields}
         refreshKey={revision}
         canCreate={ready}
@@ -222,10 +229,10 @@ export function UsersPage() {
         ]}
         actions={(row) => (
           <>
-            <Button variant="quiet" size="small" onClick={() => setDetail(row)}>
+            {can('GET', `/admin/users/${rowId(row)}`) ? <Button variant="quiet" size="small" onClick={() => setDetail(row)}>
               Chi tiết
-            </Button>
-            {roleName(row.role_id) !== 'patient' ? (
+            </Button> : null}
+            {roleName(row.role_id) !== 'patient' && can('PUT', `/admin/users/${rowId(row)}/assign`) ? (
               <Button
                 variant="quiet"
                 size="small"
@@ -277,6 +284,6 @@ export function UsersPage() {
           onClose={() => setDetail(null)}
         />
       ) : null}
-    </>
+    </div>
   );
 }

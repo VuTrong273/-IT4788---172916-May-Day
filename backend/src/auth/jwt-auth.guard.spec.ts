@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { SignJWT } from 'jose';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { UserRepository } from './user.repository.js';
+import { SELF_ACCESS_KEY } from './self-access.decorator.js';
 
 const SECRET = 'test-secret-with-at-least-thirty-two-characters';
 
@@ -81,14 +82,35 @@ describe('JwtAuthGuard', () => {
     });
   });
 
-  it.each(['Basic abc', 'Bearer ', 'Bearer abc def', 'Bearer invalid'])
-    ('rejects an invalid Authorization header: %s', async (authorization) => {
+  it('allows an authenticated account to read its own grants without profile permission', async () => {
+    getAllAndOverride.mockImplementation((key) => key === SELF_ACCESS_KEY);
+    request.route.path = '/api/v1/auth/access';
+    request.headers.authorization = `Bearer ${await token()}`;
+    await expect(guard.canActivate(context)).resolves.toBe(true);
+    expect(findAuthState).toHaveBeenCalled();
+    expect(findEndpointAccess).not.toHaveBeenCalled();
+  });
+
+  it('still rejects a locked account on the self access route', async () => {
+    getAllAndOverride.mockImplementation((key) => key === SELF_ACCESS_KEY);
+    request.headers.authorization = `Bearer ${await token()}`;
+    findAuthState.mockResolvedValue({ is_active: 0 });
+    await expect(guard.canActivate(context)).rejects.toMatchObject({
+      status: 403,
+      response: { code: '3010' },
+    });
+  });
+
+  it.each(['Basic abc', 'Bearer ', 'Bearer abc def', 'Bearer invalid'])(
+    'rejects an invalid Authorization header: %s',
+    async (authorization) => {
       request.headers.authorization = authorization;
       await expect(guard.canActivate(context)).rejects.toMatchObject({
         status: 401,
         response: { code: '3001' },
       });
-    });
+    },
+  );
 
   it('rejects an expired token', async () => {
     request.headers.authorization = `Bearer ${await token({ expired: true })}`;
@@ -107,7 +129,11 @@ describe('JwtAuthGuard', () => {
       'GET',
       '/api/v1/profile',
     );
-    expect(request.user).toMatchObject({ userId: 7, roleId: 2, jti: 'test-jti' });
+    expect(request.user).toMatchObject({
+      userId: 7,
+      roleId: 2,
+      jti: 'test-jti',
+    });
   });
 
   it('rejects a role without permission for the endpoint', async () => {

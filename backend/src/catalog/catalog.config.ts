@@ -40,6 +40,7 @@ export const catalogs: Record<string, CatalogConfig> = {
       name: str(50),
       description: str(255, true),
       parent_role_id: int(1, 2147483647, true),
+      actor_type: { ...str(10, true), values: ['admin', 'doctor'] },
     },
     required: ['name'],
   },

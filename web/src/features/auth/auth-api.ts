@@ -33,7 +33,7 @@ export function getProfile<T>(token: string): Promise<T> {
   return apiRequest('/profile', { token }).then((response) => unwrapEnvelope<T>(response));
 }
 
-export function updateProfile<T>(token: string, changes: { full_name: string }): Promise<T> {
+export function updateProfile<T>(token: string, changes: { full_name: string; gender?: string | null }): Promise<T> {
   return apiRequest('/profile', { method: 'PUT', body: JSON.stringify(changes), token })
     .then((response) => unwrapEnvelope<T>(response));
 }

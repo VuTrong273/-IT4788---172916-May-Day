@@ -6,6 +6,7 @@ import {
 import type { Session } from '@/features/auth/session';
 
 export type TemplateSummary = {
+  intake_duration?: 'lt6w' | 'gte6w' | null;
   code_template: string;
   name: string;
   description?: string | null;
@@ -109,6 +110,7 @@ export type TemplateListResponse = ApiEnvelope<TemplateSummary[]> & {
 };
 
 export type TemplateWriteInput = {
+  intake_duration?: 'lt6w' | 'gte6w' | null;
   code_template: string;
   name: string;
   description?: string;

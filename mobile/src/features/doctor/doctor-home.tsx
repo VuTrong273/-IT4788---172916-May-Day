@@ -12,7 +12,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { FeatureCard } from '@/components/feature-card';
 import { appColors } from '@/constants/app-theme';
 import { fontSizes, typography } from '@/constants/typography';
-import { getFeatureRoute } from '@/features/navigation/feature-routes';
+import { getFeatureRoute, canOpenFeature } from '@/features/navigation/feature-routes';
+import { useAuthenticatedSession } from '@/features/auth/use-authenticated-session';
 
 const workflow = [
   {
@@ -44,12 +45,13 @@ type Props = {
 };
 
 export function DoctorHome({ fullName }: Props) {
+  const session = useAuthenticatedSession();
   const firstName =
     fullName.trim().split(/\s+/).at(-1) || fullName;
 
   const quickFeatures = quickSlugs
     .map(getFeatureRoute)
-    .filter((feature) => feature !== undefined);
+    .filter((feature): feature is NonNullable<typeof feature> => feature !== undefined && canOpenFeature(session, feature.slug));
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
@@ -67,7 +69,7 @@ export function DoctorHome({ fullName }: Props) {
         </View>
 
         {/* Pending records */}
-        <View style={styles.hero}>
+        {canOpenFeature(session, 'pending-records') ? <View style={styles.hero}>
           <View style={styles.heroDecoration} />
 
           <Text style={styles.heroEyebrow}>BẮT ĐẦU CÔNG VIỆC</Text>
@@ -94,7 +96,7 @@ export function DoctorHome({ fullName }: Props) {
             <Text style={styles.heroButtonText}>Mở bệnh án chờ</Text>
             <Text style={styles.heroButtonArrow}>›</Text>
           </Pressable>
-        </View>
+        </View> : null}
 
         {/* Workflow */}
         <View style={styles.section}>

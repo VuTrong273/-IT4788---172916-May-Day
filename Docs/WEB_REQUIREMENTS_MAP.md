@@ -27,7 +27,7 @@ OpenAPI mô tả hợp đồng API dự kiến. Nó không chứng minh API đã
 | Đăng nhập / bảo mật | JWT; quên mật khẩu bằng email và OTP; đổi mật khẩu làm mất hiệu lực token cũ | `/auth/login`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password`, `/auth/change-password` | Đã có màn hình và client API trong `features/auth`. |
 | Hồ sơ cá nhân | Chỉ đọc/cập nhật hồ sơ tài khoản hiện tại | `GET/PUT /profile` | Đã có trang hồ sơ. |
 | Tổng quan | Bệnh án theo trạng thái, liên kết tới hàng đợi; không bịa số liệu | `GET /medical_records/all` | Đọc dữ liệu backend thật. |
-| Bệnh án | Vòng đời `pending → in_progress → completed`; bác sĩ nhận trước khi thao tác; hoàn tất thì khoá; admin có thể xoá theo ràng buộc | `GET /medical_records/all`, `GET /medical_records/{id}`, `GET /medical_records/{id}/summary`, `POST /medical_records/{id}/accept`, `PUT /medical_records/{id}`, `DELETE /medical_records/{id}` | Danh sách/chi tiết/nhận bệnh án có; cập nhật câu trả lời và hoàn tất cần được bổ sung theo hợp đồng sau khi xác nhận runtime. |
+| Bệnh án | Vòng đời `pending → in_progress → completed`; bác sĩ nhận trước khi thao tác; hoàn tất khóa phiếu; theo dõi tại nhà có trạng thái riêng | `/medical_records`, `/medical_records/{id}/answers`, `/templates/{id}` | Đã có xem, tiếp nhận, phiếu động theo điều kiện, lưu câu trả lời và ảnh, hoàn tất, đóng/mở theo dõi; admin xóa có xác nhận. |
 | Bệnh nhân | Bác sĩ tìm kiếm hoặc tạo hồ sơ; chỉ hiện dữ liệu có quyền | `GET /doctor/patients/search`, `POST /doctor/patients` | Đã có tìm kiếm, tạo và xem hồ sơ. |
 | Tài khoản | Admin quản lý trạng thái/vai trò và gán nhân viên vào chi nhánh/khoa/phòng | `/admin/users`, `/admin/users/{id}`, `/admin/users/{id}/assign` | Đã có danh sách/phân trang/lọc, tạo/sửa/xóa, tạo nhân viên và phân công. |
 | Cơ sở khám | Cấu trúc chi nhánh → khoa → phòng; ràng buộc xoá theo quan hệ | `/branches`, `/departments`, `/rooms` | Đã có quản lý cả ba cấp, lọc theo cấp cha và xác nhận xóa. |
@@ -36,9 +36,15 @@ OpenAPI mô tả hợp đồng API dự kiến. Nó không chứng minh API đã
 | Xét nghiệm | Bác sĩ chỉ định và nhập kết quả trong bệnh án | `POST /lab-requests`, `GET /lab-results/{record_id}`, `POST /lab-results` | Đã có chỉ định, nhập/cập nhật kết quả từng phần và xem trạng thái; admin chỉ đọc. |
 | Đơn thuốc | Bác sĩ kê đơn theo bệnh án; một bệnh án tối đa một đơn theo mã lỗi đặc tả | `POST /prescriptions`, `GET /prescriptions/{medical_record_id}` | Đã có kê/xem đơn trong phạm vi bệnh án; admin chỉ đọc. |
 
+## Giao diện phân quyền theo chức năng
+
+PRD trang 4–5 yêu cầu quản lý vai trò, quyền, gán quyền cho vai trò và cấu hình quyền truy cập API. Giao diện mặc định cung cấp chọn vai trò và đánh dấu chức năng bằng tiếng Việt, chia nhóm khám bệnh, xét nghiệm, theo dõi, mẫu phiếu, tài khoản và cơ sở khám. Quyền kế thừa hiển thị riêng, chỉ sửa tại vai trò gốc. Quản lý vai trò vẫn cho tạo vai trò tùy chỉnh và chọn luồng làm việc.
+
+Danh mục quyền, danh mục API và ánh xạ quyền–API được giữ trong **Cấu hình nâng cao** để đáp ứng yêu cầu cấu hình hệ thống. Nhãn giao diện không thay đổi mã quyền hoặc các ánh xạ đã lưu. Lưu phân quyền sử dụng các ID hiện có và kiểm tra thay đổi đồng thời trước khi ghi.
+
 ## Kiểm tra phạm vi backend hiện có
 
-Backend hiện có auth, profile, danh sách/chi tiết/tóm tắt/nhận bệnh án và đã bổ sung 58 API cho tài khoản, cơ sở khám, RBAC, mẫu phiếu, bệnh nhân, xét nghiệm, đơn thuốc. Các API mới được kiểm thử qua HTTP với PostgreSQL thật, JWT và quyền từ seed; xem [danh mục và quy tắc API](../backend/OPERATIONS_API.md). Các trang web tương ứng đã tích hợp API, có kiểm thử Playwright và live smoke test chỉ đọc với backend thật. Phần tạo/phân loại/chốt bệnh án, trả lời phiếu và các nghiệp vụ ảnh/tổn thương/UAS7 vẫn chưa nằm trong thay đổi này.
+Backend đã đăng ký đủ 106 route trong OpenAPI; đây là kiểm tra sự hiện diện, không phải tỷ lệ hoàn thành nghiệp vụ. Web đọc nhật ký đợt/vị trí/ảnh theo mốc và UAS7; mobile ghi dữ liệu theo dõi. Vai trò tùy chỉnh dùng `actor_type` hoặc kế thừa vai trò cha để chọn luồng; quyền API vẫn được kiểm tra từ DB mỗi request. Mẫu có `intake_duration` để cấu hình chọn tự động. Xem [biên bản đối chiếu và kiểm chứng](./NGHIEM_THU.md) và [danh mục API](../backend/OPERATIONS_API.md).
 
 ## Quy tắc triển khai UI
 

@@ -33,4 +33,10 @@ describe('platform-neutral session validation', () => {
     expect(parseSession('{broken')).toBeNull();
     expect(parseSession(null)).toBeNull();
   });
+  test('accepts custom staff roles with a server workflow and rejects unresolved roles', () => {
+    const custom = { ...validSession, user: { ...validSession.user, role_id: 42, base_role: 'doctor' as const } };
+    expect(parseSession(JSON.stringify(custom))).toEqual(custom);
+    expect(isValidSession({ ...custom, user: { ...custom.user, base_role: null } })).toBe(false);
+    expect(isValidSession({ ...custom, user: { ...custom.user, base_role: 'unsupported' } })).toBe(false);
+  });
 });

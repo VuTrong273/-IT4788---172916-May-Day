@@ -8,10 +8,9 @@ import { id } from '../common/validation.js';
 export class PatientAccessService {
   async role(tx: pg.PoolClient, user: AuthenticatedUser) {
     return (
-      await tx.query<{ name: string }>(
-        'SELECT name FROM roles WHERE role_id=$1',
-        [user.roleId],
-      )
+      await tx.query<{ name: string }>('SELECT base_role($1) AS name', [
+        user.roleId,
+      ])
     ).rows[0]?.name;
   }
   async record(
@@ -58,6 +57,16 @@ export class PatientAccessService {
     if (!['admin', 'doctor', 'patient'].includes(role ?? ''))
       fail('3101', 'Permission denied', 403);
     return { patientId, role };
+  }
+  async monitoringRecord(
+    tx: pg.PoolClient,
+    user: AuthenticatedUser,
+    rawId: unknown,
+  ) {
+    const result = await this.record(tx, user, rawId);
+    if (result.row.followup_active === false)
+      fail('4003', 'Home monitoring has been closed', 409);
+    return result;
   }
 }
 

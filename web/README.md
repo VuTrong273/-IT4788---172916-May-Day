@@ -65,4 +65,4 @@ npm run build
 npm run typecheck
 ```
 
-Đặc tả nghiệp vụ và ánh xạ từng module/role/endpoint nằm tại [WEB_REQUIREMENTS_MAP.md](../Docs/WEB_REQUIREMENTS_MAP.md). Phân loại/tạo/chốt bệnh án, điền câu trả lời, ảnh tổn thương và UAS7 chưa nằm trong phần tích hợp này vì backend tương ứng chưa được triển khai. Giao diện không giả lập các thao tác đó.
+Đặc tả nghiệp vụ và ánh xạ từng module/role/endpoint nằm tại [WEB_REQUIREMENTS_MAP.md](../Docs/WEB_REQUIREMENTS_MAP.md). Chi tiết bệnh án hỗ trợ phiếu khám động, câu hỏi điều kiện, câu trả lời và ảnh, hoàn tất khám, đóng/mở theo dõi, xem UAS7 và ảnh tổn thương theo mốc. Admin xóa bệnh án có xác nhận. Hồ sơ nhân viên cập nhật họ tên và giới tính. Vai trò tùy chỉnh được nhận diện qua `base_role` do backend trả về; quyền API vẫn được kiểm tra tại máy chủ.

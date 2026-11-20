@@ -1,11 +1,26 @@
-import { Body, Controller, HttpCode, Post, Put, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  Put,
+  Req,
+} from '@nestjs/common';
 import { AuthService } from './auth.service.js';
 import type { AuthenticatedRequest } from './jwt-auth.guard.js';
 import { Public } from './public.decorator.js';
+import { SelfAccess } from './self-access.decorator.js';
 
 @Controller('api/v1/auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Get('access')
+  @SelfAccess()
+  access(@Req() request: AuthenticatedRequest) {
+    return this.authService.ownAccess(request.user);
+  }
 
   @Post('signup')
   @Public()
@@ -22,13 +37,19 @@ export class AuthController {
 
   @Post('recovery-email')
   @HttpCode(200)
-  requestRecoveryEmail(@Req() request: AuthenticatedRequest, @Body() body: unknown) {
+  requestRecoveryEmail(
+    @Req() request: AuthenticatedRequest,
+    @Body() body: unknown,
+  ) {
     return this.authService.requestRecoveryEmail(request.user, body);
   }
 
   @Post('recovery-email/verify')
   @HttpCode(200)
-  verifyRecoveryEmail(@Req() request: AuthenticatedRequest, @Body() body: unknown) {
+  verifyRecoveryEmail(
+    @Req() request: AuthenticatedRequest,
+    @Body() body: unknown,
+  ) {
     return this.authService.verifyRecoveryEmail(request.user, body);
   }
 

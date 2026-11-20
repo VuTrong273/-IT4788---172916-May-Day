@@ -1,7 +1,7 @@
 import type { PropsWithChildren, ReactNode } from 'react';
 
 export function Panel({ title, action, children, className = '' }: PropsWithChildren<{
-  title?: string;
+  title?: ReactNode;
   action?: ReactNode;
   className?: string;
 }>) {

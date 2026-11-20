@@ -3,6 +3,7 @@
 # Run `npm run test:contract` to check identities. Reconcile evidence before final validation.
 columns: [method, path, action, domain, roles, task, status]
 operations:
+  - ["GET","/auth/access","getOwnAccess","Auth",["admin","doctor","patient"],"T016","planned"]
   - ["POST","/auth/signup","signup","Auth",["public"],"T004","planned"]
   - ["POST","/auth/login","login","Auth",["public"],"T004","planned"]
   - ["POST","/auth/logout","logout","Auth",["admin","doctor","patient"],"T004","planned"]

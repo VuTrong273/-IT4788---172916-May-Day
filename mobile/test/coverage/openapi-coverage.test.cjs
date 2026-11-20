@@ -18,14 +18,14 @@ describe('OpenAPI operation coverage baseline', () => {
   const openApi = readYaml(openApiPath);
   const ledger = readYaml(ledgerPath);
 
-  test('enumerates 106 unique method/path operations', () => {
+  test('enumerates 107 unique method/path operations', () => {
     const operations = collectOperations(openApi);
     const keys = operations.map((operation) =>
       operationKey(operation.method, operation.path),
     );
 
-    expect(operations).toHaveLength(106);
-    expect(new Set(keys).size).toBe(106);
+    expect(operations).toHaveLength(107);
+    expect(new Set(keys).size).toBe(107);
   });
 
   test('matches each operation with role, action, domain, and implementation task', () => {
@@ -39,7 +39,7 @@ describe('OpenAPI operation coverage baseline', () => {
     };
 
     expect(validateCoverage(openApi, duplicateLedger).errors).toContain(
-      'Coverage ledger contains 107 rows; expected 106.',
+      'Coverage ledger contains 108 rows; expected 107.',
     );
     expect(
       validateCoverage(openApi, duplicateLedger).errors.some((message) =>

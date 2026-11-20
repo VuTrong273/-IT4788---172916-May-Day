@@ -18,6 +18,7 @@ export type MedicalRecordListItem = {
 };
 
 export type MedicalRecord = MedicalRecordListItem & {
+  followup_active?: boolean;
   created_by: number | null;
   instructions: string | null;
   completed_at: string | null;
@@ -37,6 +38,7 @@ export type MedicalRecordSummary = {
 };
 
 export type PatientHistoryItem = {
+  followup_active?: boolean;
   medical_record_id: number;
   status: MedicalRecordStatus;
   instructions: string | null;
@@ -64,6 +66,7 @@ export type MedicalRecordAnswer = {
 
 export type AnswerInput = {
   question_id: string;
+  clear?: boolean;
   question_option_id?: number | null;
   answer_text?: string | null;
   answer_value?: unknown | null;
@@ -244,12 +247,15 @@ export const medicalRecordsApi = {
 
   delete: (session: Session, id: number) =>
     request<Record<string, never>>(session, `/medical_records/${id}`, 'delete'),
+  setFollowup: (session: Session, id: number, active: boolean) =>
+    request<MedicalRecord>(session, `/medical_records/${id}`, 'put', { followup_active: active }),
 
   answers: (session: Session, id: number) =>
     request<MedicalRecordAnswer[]>(session, `/medical_records/${id}/answers`),
 
   saveAnswers: (session: Session, id: number, answers: AnswerInput[]) => {
     const hasValue = (answer: AnswerInput) =>
+      answer.clear === true ||
       answer.question_option_id !== undefined && answer.question_option_id !== null ||
       answer.answer_text !== undefined && answer.answer_text !== null && answer.answer_text !== '' ||
       answer.answer_value !== undefined && answer.answer_value !== null;

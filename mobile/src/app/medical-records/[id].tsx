@@ -29,6 +29,7 @@ import {
   type TemplateQuestion,
 } from '@/features/doctor/medical-records-api';
 import { getDemoRole } from '@/features/navigation/feature-routes';
+import { canAccess } from '@/features/auth/permissions';
 
 type QuestionDraft = {
   optionId?: number;
@@ -130,6 +131,7 @@ export default function MedicalRecordDetailScreen() {
       if (active()) { setError('Mã bệnh án không hợp lệ.'); setLoading(false); }
       return;
     }
+    if (!canAccess(session, 'GET', `/medical_records/${id}`)) { if (active()) { setRecord(null); setError('Bạn chưa được cấp quyền xem bệnh án.'); setLoading(false); } return; }
     setLoading(true);
     setAnswersLoading(true);
     setError(null);
@@ -146,7 +148,7 @@ export default function MedicalRecordDetailScreen() {
 
     const [detailResult, summaryResult] = await Promise.allSettled([
       medicalRecordsApi.get(session, id),
-      medicalRecordsApi.summary(session, id),
+      canAccess(session,'GET',`/medical_records/${id}/summary`) ? medicalRecordsApi.summary(session, id) : Promise.resolve(null),
     ]);
     if (!active()) return;
     if (detailResult.status === 'rejected') {
@@ -167,8 +169,8 @@ export default function MedicalRecordDetailScreen() {
     setLoading(false);
 
     const [answerResult, templateResult] = await Promise.allSettled([
-      medicalRecordsApi.answers(session, id),
-      medicalRecordsApi.template(session, currentRecord.template_id),
+      canAccess(session,'GET',`/medical_records/${id}/answers`) ? medicalRecordsApi.answers(session, id) : Promise.resolve([]),
+      canAccess(session,'GET',`/templates/${currentRecord.template_id}`) ? medicalRecordsApi.template(session, currentRecord.template_id) : Promise.resolve(null),
     ]);
     if (!active()) return;
     let currentAnswers: MedicalRecordAnswer[] = [];
@@ -180,13 +182,13 @@ export default function MedicalRecordDetailScreen() {
       setAnswers([]);
       setAnswersReadError(answerResult.reason instanceof Error ? answerResult.reason.message : 'Không tải được câu trả lời.');
     }
-    if (templateResult.status === 'fulfilled') {
+    if (templateResult.status === 'fulfilled' && templateResult.value) {
       setTemplate(templateResult.value);
       setDrafts(answerDrafts(templateResult.value, currentAnswers));
       setTemplateError(null);
     } else {
       setTemplate(null);
-      setTemplateError(templateResult.reason instanceof Error ? templateResult.reason.message : 'Không tải được mẫu phiếu.');
+      setTemplateError(templateResult.status === 'rejected' && templateResult.reason instanceof Error ? templateResult.reason.message : 'Bạn chưa được cấp quyền xem mẫu phiếu.');
     }
     setAnswersLoading(false);
   }, [session, id]);
@@ -197,19 +199,32 @@ export default function MedicalRecordDetailScreen() {
     return () => { active = false; };
   }, [load]));
 
-  const role = session ? getDemoRole(session.user.role_id) : null;
-  const canAccept = role === 'doctor' && record?.status === 'pending' && record.assigned_doctor_id === null;
+  const role = session ? getDemoRole(session.user) : null;
+  const canAccept = canAccess(session,'POST',`/medical_records/${id}/accept`) && role === 'doctor' && record?.status === 'pending' && record.assigned_doctor_id === null;
   const isAssignedDoctor = role === 'doctor' && record?.assigned_doctor_id === session?.user.user_id;
   const isPatientOwner = role === 'patient' && record?.patient_id === session?.user.user_id;
-  const canComplete = !!isAssignedDoctor && record?.status === 'in_progress';
-  const canDelete = role === 'admin';
+  const canComplete = canAccess(session,'PUT',`/medical_records/${id}`) && !!isAssignedDoctor && record?.status === 'in_progress';
+  const canDelete = role === 'admin' && canAccess(session,'DELETE',`/medical_records/${id}`);
   const canReadClinical = role === 'admin' || !!isAssignedDoctor || !!isPatientOwner;
-  const canViewImages = canReadClinical;
-  const canEditImages = record?.status !== 'completed' && (!!isAssignedDoctor || !!isPatientOwner);
-  const canEditAnswers = record?.status !== 'completed'
+  const canViewImages = canReadClinical && canAccess(session,'GET','/image-attachments/user/:user_id');
+  const canEditImages = canAccess(session,'POST','/image-attachments/upload-multiple') && record?.status !== 'completed' && (!!isAssignedDoctor || !!isPatientOwner);
+  const canEditAnswers = canAccess(session,'PUT',`/medical_records/${id}/answers`) && record?.status !== 'completed'
     && !answersLoading
     && !answersReadError
     && (!!isAssignedDoctor || !!isPatientOwner);
+
+  async function toggleFollowup() {
+    if (!session || !record || !isAssignedDoctor || savingAction) return;
+    setSavingAction(true);
+    setError(null);
+    try {
+      const updated = await medicalRecordsApi.setFollowup(session, record.medical_record_id, record.followup_active === false);
+      setRecord(updated);
+      setSuccess(updated.followup_active ? 'Đã mở lại theo dõi tại nhà.' : 'Đã dừng ghi nhật ký tại nhà. Dữ liệu cũ vẫn xem được.');
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Không cập nhật được theo dõi.');
+    } finally { setSavingAction(false); }
+  }
 
   const questionsById = useMemo(() => {
     const map = new Map<string, TemplateQuestion>();
@@ -242,14 +257,22 @@ export default function MedicalRecordDetailScreen() {
       for (const question of section.questions) {
         if (!isQuestionVisible(question, questionsById, drafts)) continue;
         const draft = drafts[question.question_id] ?? emptyDraft();
+        const existing = answers.some(answer => answer.question_id === question.question_id);
+        if (question.type_question === 'image') {
+          if (!existing) payload.push({ question_id: question.question_id, answer_value: [] });
+          continue;
+        }
         if (question.type_question === 'checkbox') {
           if (draft.values.length) payload.push({ question_id: question.question_id, answer_value: draft.values });
+          else if (existing) payload.push({ question_id: question.question_id, clear: true });
         } else if (['radio', 'select'].includes(question.type_question)) {
           if (draft.optionId !== undefined) {
             payload.push({ question_id: question.question_id, question_option_id: draft.optionId });
           }
         } else if (draft.text.trim()) {
           payload.push({ question_id: question.question_id, answer_text: draft.text.trim() });
+        } else if (existing) {
+          payload.push({ question_id: question.question_id, clear: true });
         }
       }
     }
@@ -263,7 +286,7 @@ export default function MedicalRecordDetailScreen() {
       .flatMap((section) => section.questions)
       .find((question) => question.is_required === 1
         && isQuestionVisible(question, questionsById, drafts)
-        && !answerPayload().some((answer) => answer.question_id === question.question_id)
+        && !answerPayload().some((answer) => answer.question_id === question.question_id && !answer.clear)
         && !(question.type_question === 'image'
           && answers.some((answer) => answer.question_id === question.question_id)));
     if (requiredMissing) {
@@ -445,6 +468,8 @@ export default function MedicalRecordDetailScreen() {
               <Text style={styles.label}>MẪU PHIẾU</Text>
               <Text style={styles.value}>{template?.name ?? record.template_id}</Text>
               <Text style={styles.secondary}>Tạo lúc {dateLabel(record.created_at)}</Text>
+              <Text style={styles.secondary}>Theo dõi tại nhà: {record.followup_active === false ? 'Đã dừng' : 'Đang mở'}</Text>
+              {isAssignedDoctor && canAccess(session,'PUT',`/medical_records/${id}`) ? <ActionButton label={record.followup_active === false ? 'Mở lại theo dõi tại nhà' : 'Dừng theo dõi tại nhà'} onPress={() => void toggleFollowup()} disabled={savingAction} /> : null}
               {record.completed_at ? <Text style={styles.secondary}>Hoàn tất lúc {dateLabel(record.completed_at)}</Text> : null}
               {record.instructions ? <Text style={styles.secondary}>Lời dặn: {record.instructions}</Text> : null}
             </View>
@@ -469,7 +494,7 @@ export default function MedicalRecordDetailScreen() {
               />
             ) : null}
 
-            {isAssignedDoctor && record.status === 'in_progress' ? (
+            {isAssignedDoctor && canAccess(session, 'GET', `/uas7-scores/patient/${record.patient_id}`) && ['in_progress', 'completed'].includes(record.status) ? (
               <View style={styles.actionCard}>
                 <Text style={styles.actionTitle}>Theo dõi UAS7</Text>
                 <Text style={styles.secondary}>
@@ -485,7 +510,7 @@ export default function MedicalRecordDetailScreen() {
               </View>
             ) : null}
 
-            {isPatientOwner || isAssignedDoctor || role === 'admin' ? (
+            {(isPatientOwner || isAssignedDoctor || role === 'admin') && canAccess(session, 'GET', `/lesion-episodes/record/${record.medical_record_id}`) ? (
               <View style={styles.actionCard}>
                 <Text style={styles.actionTitle}>Theo dõi tổn thương</Text>
                 <Text style={styles.secondary}>

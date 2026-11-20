@@ -17,6 +17,7 @@ import { DoctorHome } from '@/features/doctor/doctor-home';
 import {
   getDemoRole,
   getFeatureRoute,
+  canOpenFeature,
 } from '@/features/navigation/feature-routes';
 
 export default function HomeScreen() {
@@ -24,7 +25,7 @@ export default function HomeScreen() {
   const { width } = useWindowDimensions();
 
   const role = session
-    ? getDemoRole(session.user.role_id)
+    ? getDemoRole(session.user)
     : null;
 
   const quickSlugs =
@@ -36,7 +37,7 @@ export default function HomeScreen() {
 
   const quickFeatures = quickSlugs
     .map(getFeatureRoute)
-    .filter((item) => item !== undefined);
+    .filter((item): item is NonNullable<typeof item> => item !== undefined && canOpenFeature(session, item.slug));
 
   if (!session) {
     return <View style={styles.empty} />;

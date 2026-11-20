@@ -1,40 +1,22 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { render, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
-
-import HomeScreen from '@/app/index';
+import EntryScreen from '@/app/index';
 import { getSession } from '@/features/auth/session';
 
-jest.mock('expo-router', () => ({
-  router: {
-    push: jest.fn(),
-    replace: jest.fn(),
-  },
-  useLocalSearchParams: () => ({}),
-}));
+jest.mock('expo-router', () => ({ router: { replace: jest.fn() }, useLocalSearchParams: () => ({}) }));
+jest.mock('@/features/auth/session', () => ({ getSession: jest.fn() }));
 
-jest.mock('@/features/auth/session', () => ({
-  getSession: jest.fn(),
-}));
-
-describe('signed-out role selection', () => {
-  beforeEach(() => {
+describe('application entry', () => {
+  beforeEach(() => jest.clearAllMocks());
+  test('opens login directly when signed out', async () => {
     jest.mocked(getSession).mockResolvedValue(null);
+    await render(<EntryScreen />);
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/login'));
   });
-
-  test('renders role choices and routes the selected role to sign-in', async () => {
-    await render(<HomeScreen />);
-
-    await waitFor(() => {
-      expect(screen.getByText('MAY DAY')).toBeTruthy();
-    });
-
-    await fireEvent.press(screen.getByRole('button', { name: /^Bác sĩ/ }));
-    await fireEvent.press(screen.getByRole('button', { name: 'Tiếp tục' }));
-
-    expect(router.push).toHaveBeenCalledWith({
-      pathname: '/login',
-      params: { role: 'doctor' },
-    });
+  test('keeps an existing account in its authenticated workspace', async () => {
+    jest.mocked(getSession).mockResolvedValue({ token: 'test', user: { user_id: 7, role_id: 2, full_name: 'Doctor', phone: '0900000000' } });
+    await render(<EntryScreen />);
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/home'));
   });
 });

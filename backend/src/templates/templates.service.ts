@@ -3,7 +3,6 @@ import type pg from 'pg';
 import { DatabaseService, fail, success } from '../common/database.service.js';
 import { CatalogService } from '../catalog/catalog.service.js';
 import {
-  array,
   id,
   int,
   object,
@@ -21,6 +20,7 @@ const templateFields: Fields = {
   description: str(10000, true),
   version: str(20),
   is_active: { ...str(1), values: ['0', '1'] },
+  intake_duration: { ...str(5, true), values: ['lt6w', 'gte6w'] },
 };
 const sectionFields: Fields = {
   title: str(255),
@@ -62,6 +62,27 @@ const optionFields: Fields = {
 function present(row: Input): Input {
   const { sort_order, ...rest } = row;
   return sort_order === undefined ? rest : { ...rest, order: sort_order };
+}
+
+function conditionValues(value: unknown, parentId: string): string[] {
+  let condition = value;
+  if (typeof condition === 'string') {
+    try {
+      condition = JSON.parse(condition) as unknown;
+    } catch {
+      fail('2003', 'Invalid question display condition');
+    }
+  }
+  if (!condition || typeof condition !== 'object' || Array.isArray(condition))
+    fail('2003', 'Invalid question display condition');
+  const allowed = (condition as Record<string, unknown>)[parentId];
+  if (
+    !Array.isArray(allowed) ||
+    !allowed.length ||
+    allowed.some((answer) => typeof answer !== 'string')
+  )
+    fail('2003', 'Invalid question display condition');
+  return allowed;
 }
 
 @Injectable()
@@ -224,8 +245,6 @@ export class TemplatesService {
     const fields = { ...questionFields };
     if (questionId) {
       delete fields.question_id;
-      delete fields.type_question;
-      delete fields.parent_question_id;
     }
     const data = validate(
       rest,
@@ -234,12 +253,19 @@ export class TemplatesService {
         ? []
         : ['question_id', 'question_text', 'type_question', 'order'],
     );
-    const optionData =
-      options === undefined
-        ? undefined
-        : array(options).map((option) =>
-            validate(option, optionFields, ['option_text', 'option_value']),
-          );
+    let optionData: Input[] | undefined;
+    if (options !== undefined) {
+      if (!Array.isArray(options) || options.length > 100)
+        fail('2003', 'Invalid question options');
+      optionData = options.map((option) =>
+        validate(option, optionFields, ['option_text', 'option_value']),
+      );
+      if (
+        new Set(optionData.map((option) => option.option_value)).size !==
+        optionData.length
+      )
+        fail('2003', 'Option values must be unique');
+    }
     if (!Object.keys(data).length && !optionData)
       fail('2001', 'No changes supplied');
     return this.db.transaction(async (tx) => {
@@ -263,6 +289,18 @@ export class TemplatesService {
       );
       if (!section.rows[0]) fail('4103', 'Section not found', 404);
       await this.editable(tx, section.rows[0].template_id);
+      const current = questionId
+        ? (
+            await tx.query(
+              'SELECT parent_question_id FROM questions WHERE question_id = $1',
+              [text(questionId, 50)],
+            )
+          ).rows[0]
+        : undefined;
+      const parentQuestionId =
+        data.parent_question_id === undefined
+          ? current?.parent_question_id
+          : data.parent_question_id;
       if (data.parent_question_id) {
         const parent = await tx.query(
           'SELECT s.template_id FROM questions q JOIN template_sections s USING(section_id) WHERE q.question_id = $1',
@@ -273,6 +311,22 @@ export class TemplatesService {
           parent.rows[0].template_id !== section.rows[0].template_id
         )
           fail('2003', 'Parent question must belong to the same template');
+      }
+      if (questionId && parentQuestionId) {
+        const cycle = await tx.query(
+          `WITH RECURSIVE descendants(question_id, path) AS (
+             SELECT question_id, ARRAY[question_id] FROM questions WHERE question_id = $1
+             UNION ALL
+             SELECT child.question_id, descendants.path || child.question_id
+             FROM questions child
+             JOIN descendants ON child.parent_question_id = descendants.question_id
+             WHERE NOT child.question_id = ANY(descendants.path)
+           )
+           SELECT 1 FROM descendants WHERE question_id = $2 LIMIT 1`,
+          [questionId, parentQuestionId],
+        );
+        if (cycle.rowCount)
+          fail('2003', 'Question display conditions cannot contain a cycle');
       }
       let question: Input;
       if (!questionId)
@@ -324,10 +378,76 @@ export class TemplatesService {
             question_id: question.question_id,
           });
       }
+      if (optionData) {
+        await tx.query(
+          'DELETE FROM question_options WHERE question_id = $1 AND NOT (option_value = ANY($2::varchar[]))',
+          [
+            question.question_id,
+            optionData.map((option) => String(option.option_value)),
+          ],
+        );
+      }
       const choices = await tx.query(
         'SELECT option_id AS id, option_text, option_value, sort_order AS "order", trigger_image_upload FROM question_options WHERE question_id = $1 ORDER BY sort_order, option_id',
         [question.question_id],
       );
+      if (
+        ['radio', 'checkbox', 'select'].includes(
+          String(question.type_question),
+        ) &&
+        !choices.rowCount
+      )
+        fail('2001', 'Choice questions require options');
+      if (question.parent_question_id || question.show_if_answer) {
+        const conditionParentId = question.parent_question_id;
+        if (typeof conditionParentId !== 'string' || !question.show_if_answer)
+          fail(
+            '2003',
+            'A display condition requires both a parent and an answer',
+          );
+        const allowed = conditionValues(
+          question.show_if_answer,
+          conditionParentId,
+        );
+        const parent = await tx.query(
+          'SELECT type_question FROM questions WHERE question_id = $1',
+          [conditionParentId],
+        );
+        if (
+          !parent.rows[0] ||
+          !['radio', 'checkbox', 'select'].includes(
+            parent.rows[0].type_question,
+          )
+        )
+          fail('2003', 'Parent question must have selectable answers');
+        const parentOptions = await tx.query(
+          'SELECT option_value FROM question_options WHERE question_id = $1',
+          [conditionParentId],
+        );
+        const validValues = new Set(
+          parentOptions.rows.map((option) => option.option_value),
+        );
+        if (allowed.some((answer) => !validValues.has(answer)))
+          fail('2003', 'Display condition references an unknown parent answer');
+      }
+      const childConditions = await tx.query(
+        'SELECT show_if_answer FROM questions WHERE parent_question_id = $1',
+        [question.question_id],
+      );
+      const optionValues = new Set(
+        choices.rows.map((option) => option.option_value),
+      );
+      for (const child of childConditions.rows) {
+        const allowed = conditionValues(
+          child.show_if_answer,
+          String(question.question_id),
+        );
+        if (allowed.some((answer) => !optionValues.has(answer)))
+          fail(
+            '2003',
+            'An option is used by a dependent question and cannot be removed or changed',
+          );
+      }
       return success(
         {
           ...present(question),

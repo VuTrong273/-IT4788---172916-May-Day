@@ -23,7 +23,7 @@ export async function apiRequest<T>(
     ...init,
     headers: {
       Accept: 'application/json',
-      ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(init.body && !(init.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
@@ -39,6 +39,7 @@ export async function apiRequest<T>(
   const envelope = payload as Partial<ApiEnvelope<T>>;
   if (!response.ok || !['1000', '1001'].includes(envelope.code ?? '')) {
     const code = typeof envelope.code === 'string' ? envelope.code : undefined;
+    if (token && response.status === 403 && code === '3101') window.dispatchEvent(new Event('mayday:permissions-changed'));
     const message = typeof envelope.message === 'string' ? envelope.message : 'Không thể hoàn tất yêu cầu.';
     if (token && (response.status === 401 || ['3001', '3002', '3003'].includes(code ?? ''))) {
       window.dispatchEvent(new Event('mayday:session-expired'));

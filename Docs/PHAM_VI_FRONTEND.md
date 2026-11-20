@@ -20,6 +20,8 @@ Phát triển ứng dụng đa nền tảng cho hai bề mặt sử dụng: **mo
 | Bác sĩ/nhân viên | Thao tác nhanh, xem hàng đợi và bệnh án khi di chuyển | Làm việc với danh sách, tìm kiếm và nghiệp vụ nhân viên trên màn hình lớn |
 | Quản trị viên | Không gian admin không phải mục tiêu chính của mobile | Quản lý tài khoản, cơ sở khám, mẫu phiếu và RBAC |
 
+Bản triển khai hiện có cả màn hình quản trị trên mobile. Vai trò nhân viên tùy chỉnh chọn luồng qua `base_role` từ backend; quyền API tra DB mỗi request. Web đã có phiếu khám và dữ liệu theo dõi theo [biên bản nghiệm thu](./NGHIEM_THU.md). Tạo nhật ký/vị trí/ảnh theo mốc là luồng bệnh nhân trên mobile; bác sĩ web xem các dữ liệu đó theo phân công.
+
 Expo hỗ trợ chạy cùng app mobile trên iOS, Android và trình duyệt. Lệnh `npm start` hiển thị QR để mở app trên thiết bị; nhấn `w` mở bản web của **app Expo**. `web/` là web portal riêng cho nhân viên/admin, chạy bằng Vite tại cổng riêng. Vì vậy việc thấy cả QR lẫn đường dẫn web trong Expo là bình thường; trang trắng sau khi mở thì không phải trạng thái mong đợi và cần xem log/lỗi runtime.
 
 ## Phạm vi công việc frontend

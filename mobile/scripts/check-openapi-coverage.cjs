@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { parse } = require('yaml');
 
-const EXPECTED_OPERATION_COUNT = 106;
+const EXPECTED_OPERATION_COUNT = 107;
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete']);
 const MOBILE_ROOT = path.resolve(__dirname, '..');
 const PROJECT_ROOT = path.resolve(MOBILE_ROOT, '..');

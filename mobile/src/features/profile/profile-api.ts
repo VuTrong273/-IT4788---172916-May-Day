@@ -7,6 +7,7 @@ export type Profile = {
   phone: string;
   recovery_email?: string | null;
   role_id: number;
+  base_role?: 'admin' | 'doctor' | 'patient' | null;
   gender?: 'male' | 'female' | 'other' | null;
   year_of_birth?: number | null;
   career?: string | null;

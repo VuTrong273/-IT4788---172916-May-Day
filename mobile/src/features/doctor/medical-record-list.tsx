@@ -11,7 +11,8 @@ import {
   type MedicalRecordStatus,
   type PatientHistoryItem,
 } from './medical-records-api';
-import { getDemoRole } from '@/features/navigation/feature-routes';
+import { getDemoRole , canOpenFeature } from '@/features/navigation/feature-routes';
+
 
 function dateLabel(value: string) {
   const parsed = new Date(value);
@@ -111,7 +112,7 @@ export function MedicalRecordList({
 
   const isPendingQueue = status === 'pending';
   const isInProgressQueue = status === 'in_progress';
-  const isDoctor = getDemoRole(session.user.role_id) === 'doctor';
+  const isDoctor = getDemoRole(session.user) === 'doctor';
   const title = clinicalFocus === 'lab'
     ? 'Xét nghiệm theo bệnh án'
     : clinicalFocus === 'prescription'
@@ -132,7 +133,7 @@ export function MedicalRecordList({
               ? 'Các bệnh án đã được tiếp nhận và đang xử lý.'
               : 'Tra cứu bệnh án theo trạng thái. Quyền xem/xóa vẫn do máy chủ quyết định.'}
         </Text>
-        {isDoctor ? (
+        {isDoctor && canOpenFeature(session, 'create-medical-record') ? (
           <Pressable
             accessibilityRole="button"
             onPress={() => router.push('/feature/create-medical-record')}

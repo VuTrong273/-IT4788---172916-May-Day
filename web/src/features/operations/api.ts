@@ -9,17 +9,19 @@ export type Result<T> = ApiEnvelope<T> & {
   limit?: number;
 };
 export function useApi() {
-  const { session } = useAuth();
+  const { session, can } = useAuth();
   const token = session?.token;
   return useCallback(
-    <T>(path: string, method = 'GET', body?: unknown, signal?: AbortSignal) =>
-      apiRequest<Result<T>>(path, {
+    <T>(path: string, method = 'GET', body?: unknown, signal?: AbortSignal) => {
+      if (!can(method, path)) return Promise.reject(new Error('Bạn chưa được cấp quyền thực hiện thao tác này.'));
+      return apiRequest<Result<T>>(path, {
         token,
         method,
         signal,
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-      }),
-    [token],
+      });
+    },
+    [token, can],
   );
 }
 export const message = (error: unknown) =>
@@ -39,6 +41,8 @@ export const rowId = (row: Row) =>
   );
 export function useData<T>(path: string | null, initial: T) {
   const api = useApi();
+  const { can } = useAuth();
+  const permittedPath = path && can('GET', path) ? path : null;
   const [data, setData] = useState(initial);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(Boolean(path));
@@ -46,14 +50,15 @@ export function useData<T>(path: string | null, initial: T) {
   const reload = useCallback(() => setRevision((v) => v + 1), []);
   useEffect(() => {
     const controller = new AbortController();
-    if (!path) {
+    if (!permittedPath) {
+      setData(initial);
       setLoading(false);
       setError('');
       return;
     }
     setLoading(true);
     setError('');
-    api<T>(path, 'GET', undefined, controller.signal)
+    api<T>(permittedPath, 'GET', undefined, controller.signal)
       .then((result) => {
         if (!controller.signal.aborted) setData(result.data);
       })
@@ -64,7 +69,7 @@ export function useData<T>(path: string | null, initial: T) {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [api, path, revision]);
+  }, [api, permittedPath, revision]);
   return { data, error, loading, reload };
 }
 

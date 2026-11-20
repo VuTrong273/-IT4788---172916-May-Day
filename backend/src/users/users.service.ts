@@ -93,10 +93,15 @@ export class UsersService {
               "SELECT role_id, name FROM roles WHERE name = 'patient'",
             )
           : await tx.query(
-              'SELECT role_id, name FROM roles WHERE role_id = $1',
+              'SELECT role_id, base_role(role_id) AS name FROM roles WHERE role_id = $1',
               [data.role_id],
             );
       if (!role.rows[0]) fail('2003', 'Unknown role');
+      if (!role.rows[0].name)
+        fail(
+          '2003',
+          'Configure staff role inheritance before assigning accounts',
+        );
       if (kind === 'staff' && role.rows[0].name === 'patient')
         fail('2003', 'Patient cannot be assigned as staff');
       data.role_id = role.rows[0].role_id;
@@ -208,7 +213,7 @@ export class UsersService {
     return this.db.transaction(async (tx) => {
       await tx.query('LOCK TABLE users IN SHARE ROW EXCLUSIVE MODE');
       const current = await tx.query(
-        'SELECT u.*, r.name AS role_name FROM users u JOIN roles r USING(role_id) WHERE user_id = $1 FOR UPDATE OF u',
+        'SELECT u.*, base_role(u.role_id) AS role_name FROM users u JOIN roles r USING(role_id) WHERE user_id = $1 FOR UPDATE OF u',
         [userId],
       );
       const user = current.rows[0];
@@ -220,11 +225,15 @@ export class UsersService {
       )
         fail('2003', 'Cannot deactivate or change your own role');
       if (data.role_id !== undefined && data.role_id !== user.role_id) {
-        const target = await tx.query(
-          'SELECT name FROM roles WHERE role_id = $1',
-          [data.role_id],
-        );
+        const target = await tx.query('SELECT base_role($1) AS name', [
+          data.role_id,
+        ]);
         if (!target.rows[0]) fail('2003', 'Unknown role');
+        if (!target.rows[0].name)
+          fail(
+            '2003',
+            'Configure staff role inheritance before assigning accounts',
+          );
         if (
           (target.rows[0].name === 'patient') !==
           (user.role_name === 'patient')
@@ -262,7 +271,7 @@ export class UsersService {
     ]);
     return this.db.transaction(async (tx) => {
       const user = await tx.query(
-        'SELECT r.name FROM users u JOIN roles r USING(role_id) WHERE user_id = $1 FOR UPDATE OF u',
+        'SELECT base_role(u.role_id) AS name FROM users u JOIN roles r USING(role_id) WHERE user_id = $1 FOR UPDATE OF u',
         [userId],
       );
       if (!user.rows[0]) fail('3007', 'User account not found', 404);
@@ -283,7 +292,7 @@ export class UsersService {
       await tx.query('LOCK TABLE users IN SHARE ROW EXCLUSIVE MODE');
       const user = (
         await tx.query(
-          'SELECT u.is_active, r.name FROM users u JOIN roles r USING(role_id) WHERE user_id = $1',
+          'SELECT u.is_active, base_role(u.role_id) AS name FROM users u JOIN roles r USING(role_id) WHERE user_id = $1',
           [userId],
         )
       ).rows[0];
