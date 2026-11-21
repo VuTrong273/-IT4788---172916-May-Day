@@ -3,6 +3,7 @@ import { useFocusEffect } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { appColors } from '@/constants/app-theme';
+import { AppIcon } from '@/components/ui/app-icon';
 import type { Session } from '@/features/auth/session';
 import { canAccess } from '@/features/auth/permissions';
 import {
@@ -16,6 +17,7 @@ type Props = {
   session: Session;
   recordId: number;
   canWrite: boolean;
+  mode?: 'lab' | 'prescription' | 'both';
 };
 
 type PrescriptionDraft = PrescriptionItemInput;
@@ -29,7 +31,7 @@ const emptyPrescriptionItem = (): PrescriptionDraft => ({
   instruction: '',
 });
 
-export function ClinicalRecordPanel({ session, recordId, canWrite }: Props) {
+export function ClinicalRecordPanel({ session, recordId, canWrite, mode = 'both' }: Props) {
   const [labRequests, setLabRequests] = useState<LabRequestWithResults[] | null>(null);
   const [prescription, setPrescription] = useState<Prescription | null>(null);
   const [prescriptionLoaded, setPrescriptionLoaded] = useState(false);
@@ -49,8 +51,8 @@ export function ClinicalRecordPanel({ session, recordId, canWrite }: Props) {
     setLabError(null);
     setPrescriptionError(null);
     const [labsResult, prescriptionResult] = await Promise.allSettled([
-      canAccess(session,'GET',`/lab-results/${recordId}`) ? clinicalApi.listLabResults(session, recordId) : Promise.resolve([]),
-      canAccess(session,'GET',`/prescriptions/${recordId}`) ? clinicalApi.getPrescription(session, recordId) : Promise.resolve(null),
+      mode !== 'prescription' && canAccess(session,'GET',`/lab-results/${recordId}`) ? clinicalApi.listLabResults(session, recordId) : Promise.resolve([]),
+      mode !== 'lab' && canAccess(session,'GET',`/prescriptions/${recordId}`) ? clinicalApi.getPrescription(session, recordId) : Promise.resolve(null),
     ]);
 
     if (active()) {
@@ -82,7 +84,7 @@ export function ClinicalRecordPanel({ session, recordId, canWrite }: Props) {
       }
       setLoading(false);
     }
-  }, [recordId, session]);
+  }, [recordId, session, mode]);
 
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -191,25 +193,24 @@ export function ClinicalRecordPanel({ session, recordId, canWrite }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.heading}>
-        <View>
+        <View style={styles.headingCopy}>
           <Text style={styles.kicker}>KẾT QUẢ / ĐIỀU TRỊ</Text>
-          <Text style={styles.title}>Xét nghiệm và đơn thuốc</Text>
+          <Text style={styles.title}>{mode === 'lab' ? 'Kết quả xét nghiệm' : mode === 'prescription' ? 'Đơn thuốc' : 'Xét nghiệm và đơn thuốc'}</Text>
         </View>
         <Pressable accessibilityRole="button" disabled={loading} onPress={() => void load()} style={styles.refresh}>
-          <Text style={styles.refreshText}>{loading ? 'Đang tải...' : 'Tải lại'}</Text>
+          <AppIcon name="refresh" size={18} /><Text style={styles.refreshText}>{loading ? 'Đang tải...' : 'Tải lại'}</Text>
         </Pressable>
       </View>
-      <Text style={styles.help}>Dữ liệu và xác nhận thao tác chỉ hiển thị sau phản hồi thực tế từ máy chủ.</Text>
       {loading ? <ActivityIndicator color={appColors.primary} style={styles.loading} /> : null}
       {success ? <Text accessibilityLiveRegion="polite" style={styles.success}>{success}</Text> : null}
 
-      {canAccess(session,'GET',`/lab-results/${recordId}`) ? <View style={styles.section}>
+      {mode !== 'prescription' && canAccess(session,'GET',`/lab-results/${recordId}`) ? <View style={styles.section}>
         <Text style={styles.sectionTitle}>Chỉ định và kết quả xét nghiệm</Text>
         {labError ? <Text accessibilityLiveRegion="polite" style={styles.error}>{labError}</Text> : null}
-        {labRequests?.length === 0 ? <Text style={styles.help}>Máy chủ chưa trả về phiếu xét nghiệm nào cho bệnh án này.</Text> : null}
+        {labRequests?.length === 0 ? <View style={styles.emptyState}><AppIcon name="labs" size={28} /><Text style={styles.itemTitle}>Chưa có chỉ định xét nghiệm</Text><Text style={styles.help}>Kết quả sẽ xuất hiện tại đây khi được cập nhật.</Text></View> : null}
         {labRequests?.map((request) => (
           <View key={request.id} style={styles.dataCard}>
-            <Text style={styles.cardTitle}>Phiếu #{request.id} · {labStatus(request.status)}</Text>
+            <View style={styles.dataHeading}><Text style={styles.cardTitle}>Phiếu #{request.id}</Text><Text style={styles.labBadge}>{labStatus(request.status)}</Text></View>
             {request.note ? <Text style={styles.help}>{request.note}</Text> : null}
             {request.items.map((item) => {
               const hasResult = item.result_value !== null && item.result_value !== undefined;
@@ -239,7 +240,7 @@ export function ClinicalRecordPanel({ session, recordId, canWrite }: Props) {
                       <Text style={styles.value}>{item.result_value}</Text>
                       {item.result_note ? <Text style={styles.help}>{item.result_note}</Text> : null}
                     </>
-                  ) : <Text style={styles.help}>Chưa có kết quả được máy chủ trả về.</Text>}
+                  ) : <Text style={styles.pendingResult}>Đang chờ kết quả</Text>}
                 </View>
               );
             })}
@@ -276,22 +277,22 @@ export function ClinicalRecordPanel({ session, recordId, canWrite }: Props) {
         ) : null}
       </View> : null}
 
-      {canAccess(session,'GET',`/prescriptions/${recordId}`) ? <View style={styles.section}>
+      {mode !== 'lab' && canAccess(session,'GET',`/prescriptions/${recordId}`) ? <View style={styles.section}>
         <Text style={styles.sectionTitle}>Đơn thuốc</Text>
         {prescriptionError ? <Text accessibilityLiveRegion="polite" style={styles.error}>{prescriptionError}</Text> : null}
         {prescriptionLoaded && !prescription ? (
-          <Text style={styles.help}>Máy chủ xác nhận bệnh án chưa có đơn thuốc.</Text>
+          <View style={styles.emptyState}><AppIcon name="prescriptions" size={28} /><Text style={styles.itemTitle}>Chưa có đơn thuốc</Text><Text style={styles.help}>Đơn thuốc sẽ hiển thị sau khi bác sĩ kê đơn.</Text></View>
         ) : null}
         {prescription ? (
           <View style={styles.dataCard}>
-            <Text style={styles.cardTitle}>Đơn thuốc #{prescription.prescription_id}</Text>
+            <View style={styles.dataHeading}><AppIcon name="prescriptions" size={22} /><Text style={styles.cardTitle}>Đơn thuốc #{prescription.prescription_id}</Text></View>
             {prescription.note ? <Text style={styles.help}>{prescription.note}</Text> : null}
             {prescription.items.map((item) => (
               <View key={item.prescription_item_id} style={styles.listItem}>
                 <Text style={styles.itemTitle}>{item.medicine_name}</Text>
-                <Text style={styles.value}>
-                  {item.dosage ?? 'Chưa có thông tin liều'} · {item.frequency ?? 'Chưa có thông tin tần suất'} · {item.duration ?? 'Chưa có thông tin thời gian'}
-                </Text>
+                <View style={styles.doseGrid}>
+                  {[['Liều dùng', item.dosage], ['Tần suất', item.frequency], ['Thời gian', item.duration]].map(([label, value]) => <View key={label} style={styles.doseCell}><Text style={styles.doseLabel}>{label}</Text><Text style={styles.doseValue}>{value || 'Chưa ghi nhận'}</Text></View>)}
+                </View>
                 {item.instruction ? <Text style={styles.help}>{item.instruction}</Text> : null}
               </View>
             ))}
@@ -356,17 +357,26 @@ function Button({ label, disabled, onPress }: { label: string; disabled: boolean
 const styles = StyleSheet.create({
   container: { marginTop: 26, gap: 18 },
   heading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  headingCopy: { flex: 1, minWidth: 0 },
   kicker: { color: appColors.primary, fontSize: 10, fontWeight: '800', letterSpacing: 0.9 },
-  title: { marginTop: 5, color: appColors.ink, fontSize: 20, fontWeight: '800' },
+  title: { marginTop: 5, color: appColors.ink, fontSize: 20, fontWeight: '700' },
   section: { gap: 12, borderWidth: 1, borderColor: appColors.border, borderRadius: 16, backgroundColor: appColors.surface, padding: 16 },
   sectionTitle: { color: appColors.ink, fontSize: 17, fontWeight: '800' },
   help: { color: appColors.muted, fontSize: 13, lineHeight: 19 },
   loading: { marginVertical: 6 },
-  refresh: { minHeight: 38, justifyContent: 'center', paddingHorizontal: 12, borderWidth: 1, borderColor: appColors.border, borderRadius: 10 },
+  refresh: { minHeight: 44, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, borderWidth: 1, borderColor: appColors.border, borderRadius: 10 },
   refreshText: { color: appColors.primary, fontWeight: '700' },
   success: { color: '#117447', fontSize: 14, fontWeight: '700' },
   error: { color: '#A62F3D', fontSize: 13, lineHeight: 19 },
-  dataCard: { gap: 9, padding: 13, backgroundColor: '#F6F9FC', borderRadius: 12, borderWidth: 1, borderColor: appColors.border },
+  dataCard: { gap: 12, padding: 14, backgroundColor: appColors.surface, borderRadius: 12, borderWidth: 1, borderColor: appColors.border },
+  dataHeading: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
+  labBadge: { fontSize: 11, color: appColors.primary, backgroundColor: appColors.primarySoft, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 5, overflow: 'hidden' },
+  pendingResult: { color: appColors.warmInk, fontSize: 13 },
+  emptyState: { alignItems: 'center', padding: 20, gap: 9, backgroundColor: appColors.canvas, borderRadius: 12 },
+  doseGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 12, backgroundColor: appColors.canvas, borderRadius: 10 },
+  doseCell: { flex: 1, minWidth: 74, gap: 5 },
+  doseLabel: { color: appColors.muted, fontSize: 11 },
+  doseValue: { color: appColors.ink, fontSize: 13, lineHeight: 19, fontWeight: '500' },
   formCard: { gap: 10, padding: 13, borderRadius: 12, borderWidth: 1, borderColor: appColors.border },
   cardTitle: { color: appColors.ink, fontSize: 15, fontWeight: '800' },
   listItem: { gap: 8, paddingTop: 10, borderTopWidth: 1, borderTopColor: appColors.border },

@@ -39,7 +39,7 @@ export const featureRoutes: FeatureRoute[] = [
     slug: 'my-results',
     title: 'Kết quả và đơn thuốc',
     description: 'Xem xét nghiệm và đơn thuốc đã được bác sĩ ghi nhận.',
-    roles: ['patient'],
+    roles: ['patient', 'doctor', 'admin'],
   },
   {
     slug: 'pending-records',
@@ -133,6 +133,14 @@ export function canOpenFeature(session: Session | null, slug: string): boolean {
   const feature = getFeatureRoute(slug);
   if (!session || !role || !feature || (role === 'patient' && !feature.roles.includes(role))) return false;
   if (slug === 'create-medical-record' && role === 'admin') return false;
+  if (slug === 'my-results') {
+    const canReadResults = canAccess(session, 'GET', '/lab-results/:record_id') ||
+      canAccess(session, 'GET', '/prescriptions/:medical_record_id');
+    const canSelectRecord = role === 'patient'
+      ? canAccess(session, 'GET', '/medical_records/patients/:id/history')
+      : canAccess(session, 'GET', '/medical_records/all') && canAccess(session, 'GET', '/medical_records/:id');
+    return canReadResults && canSelectRecord;
+  }
   const requirements = featureRequirements[slug];
   if (!requirements) return false;
   if (slug === 'access-control' || slug === 'clinic-branches') return requirements.some(([method,path]) => canAccess(session,method,path));

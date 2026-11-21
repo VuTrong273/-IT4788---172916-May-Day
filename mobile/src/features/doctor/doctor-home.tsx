@@ -98,6 +98,21 @@ export function DoctorHome({ fullName }: Props) {
           </Pressable>
         </View> : null}
 
+        {/* Quick features */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Lối vào nhanh</Text>
+
+          <View style={styles.featureList}>
+            {quickFeatures.map((feature, index) => (
+              <FeatureCard
+                key={feature.slug}
+                feature={feature}
+                index={index}
+              />
+            ))}
+          </View>
+        </View>
+
         {/* Workflow */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quy trình xử lý</Text>
@@ -117,27 +132,12 @@ export function DoctorHome({ fullName }: Props) {
 
                 <View style={styles.workflowCopy}>
                   <Text style={styles.workflowTitle}>{item.title}</Text>
-                  <Text style={styles.workflowDetail}>{item.detail}</Text>
                 </View>
               </View>
             ))}
           </View>
         </View>
 
-        {/* Quick features */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Lối vào nhanh</Text>
-
-          <View style={styles.featureList}>
-            {quickFeatures.map((feature, index) => (
-              <FeatureCard
-                key={feature.slug}
-                feature={feature}
-                index={index}
-              />
-            ))}
-          </View>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -153,8 +153,8 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 760,
     alignSelf: 'center',
-    paddingHorizontal: 22,
-    paddingTop: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
     paddingBottom: 38,
   },
 
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   greeting: {
     marginTop: 12,
     color: appColors.ink,
-    fontFamily: typography.extraBold,
+    fontFamily: typography.bold,
     fontSize: fontSizes['3xl'],
   },
   subtitle: {
@@ -181,10 +181,10 @@ const styles = StyleSheet.create({
   hero: {
     overflow: 'hidden',
     position: 'relative',
-    marginTop: 26,
-    borderRadius: 22,
+    marginTop: 20,
+    borderRadius: 18,
     backgroundColor: appColors.primaryDark,
-    padding: 24,
+    padding: 20,
   },
   heroDecoration: {
     position: 'absolute',
@@ -248,21 +248,22 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xl,
   },
   workflowCard: {
+    flexDirection: 'row',
     borderWidth: 1,
     borderColor: appColors.border,
     borderRadius: 18,
     backgroundColor: appColors.surface,
-    paddingHorizontal: 18,
+    paddingHorizontal: 10,
   },
   workflowRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 14,
-    paddingVertical: 16,
+    flex: 1,
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 14,
   },
   workflowDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: appColors.border,
+    borderRightWidth: 1,
+    borderRightColor: appColors.border,
   },
   stepBadge: {
     width: 36,
@@ -283,7 +284,8 @@ const styles = StyleSheet.create({
   workflowTitle: {
     color: appColors.ink,
     fontFamily: typography.bold,
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.sm,
+    textAlign: 'center',
   },
   workflowDetail: {
     marginTop: 5,

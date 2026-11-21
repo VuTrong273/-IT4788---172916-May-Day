@@ -5,6 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { appColors } from '@/constants/app-theme';
 import type { Session } from '@/features/auth/session';
+import { AppIcon } from '@/components/ui/app-icon';
+import { RecordStatus } from '@/components/ui/record-status';
 import {
   medicalRecordsApi,
   type MedicalRecordListItem,
@@ -33,26 +35,31 @@ function RecordCard({
   templateId,
   status,
   createdAt,
+  clinicalFocus,
 }: {
   id: number;
   patientId: number;
   templateId?: string;
   status: MedicalRecordStatus;
   createdAt: string;
+  clinicalFocus?: 'lab' | 'prescription' | 'results';
 }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`Mở bệnh án ${id}, ${statusLabel(status)}`}
-      onPress={() => router.push({ pathname: '/medical-records/[id]', params: { id: String(id) } })}
+      onPress={() => router.push(clinicalFocus
+        ? { pathname: '/feature/[slug]', params: { slug: clinicalFocus === 'results' ? 'my-results' : clinicalFocus === 'lab' ? 'lab-requests' : 'prescriptions', medicalRecordId: String(id) } }
+        : { pathname: '/medical-records/[id]', params: { id: String(id) } })}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
       <View style={styles.cardTop}>
-        <Text style={styles.cardTitle}>Bệnh án #{id}</Text>
-        <Text style={styles.status}>{statusLabel(status)}</Text>
+        <View style={styles.recordHeading}><AppIcon name={clinicalFocus === 'prescription' ? 'prescriptions' : clinicalFocus === 'lab' ? 'labs' : 'records'} size={21} /><Text style={styles.cardTitle}>Bệnh án #{id}</Text></View>
+        <RecordStatus status={status} />
       </View>
-      <Text style={styles.cardDetail}>Bệnh nhân #{patientId}{templateId ? ` · Mẫu ${templateId}` : ''}</Text>
+      <Text style={styles.cardDetail}>Bệnh nhân #{patientId}</Text>
+      {templateId ? <Text style={styles.templateLabel}>Mẫu phiếu · {templateId}</Text> : null}
       <Text style={styles.date}>Tạo lúc {dateLabel(createdAt)}</Text>
-      <Text style={styles.openAction}>Mở chi tiết ›</Text>
+      <Text style={styles.openAction}>{clinicalFocus === 'results' ? 'Xem kết quả và đơn thuốc' : clinicalFocus === 'lab' ? 'Xem xét nghiệm' : clinicalFocus === 'prescription' ? 'Xem đơn thuốc' : 'Mở chi tiết'} ›</Text>
     </Pressable>
   );
 }
@@ -64,7 +71,7 @@ export function MedicalRecordList({
 }: {
   session: Session;
   status?: MedicalRecordStatus;
-  clinicalFocus?: 'lab' | 'prescription';
+  clinicalFocus?: 'lab' | 'prescription' | 'results';
 }) {
   const [records, setRecords] = useState<MedicalRecordListItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -117,6 +124,7 @@ export function MedicalRecordList({
     ? 'Xét nghiệm theo bệnh án'
     : clinicalFocus === 'prescription'
       ? 'Đơn thuốc theo bệnh án'
+      : clinicalFocus === 'results' ? 'Kết quả và đơn thuốc'
       : isPendingQueue ? 'Bệnh án chờ' : isInProgressQueue ? 'Đang khám' : 'Quản lý bệnh án';
 
   return (
@@ -126,7 +134,7 @@ export function MedicalRecordList({
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.subtitle}>
           {clinicalFocus
-            ? 'Chọn một bệnh án đang khám để xem kết quả xét nghiệm và thực hiện các thao tác được máy chủ cho phép.'
+            ? 'Chọn bệnh án để xem thông tin điều trị. Có thể cập nhật khi bạn là bác sĩ phụ trách và bệnh án đang khám.'
             : isPendingQueue
             ? 'Hồ sơ đang chờ bác sĩ tiếp nhận.'
             : isInProgressQueue
@@ -228,6 +236,7 @@ export function MedicalRecordList({
             templateId={record.template_id}
             status={record.status}
             createdAt={record.created_at}
+            clinicalFocus={clinicalFocus}
           />
         )) : null}
         {!loading && !error && total > 20 ? (
@@ -308,9 +317,9 @@ export function MedicalRecordHistory({ session }: { session: Session }) {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: appColors.canvas },
-  content: { flexGrow: 1, width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: 22, paddingTop: 30, paddingBottom: 40 },
+  content: { flexGrow: 1, width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 32 },
   eyebrow: { color: appColors.primary, fontSize: 11, fontWeight: '800', letterSpacing: 1 },
-  title: { marginTop: 12, color: appColors.ink, fontSize: 29, fontWeight: '800' },
+  title: { marginTop: 8, color: appColors.ink, fontSize: 26, fontWeight: '700' },
   subtitle: { marginTop: 8, color: appColors.muted, fontSize: 14, lineHeight: 21 },
   summary: { marginTop: 23, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 },
   createButton: { minHeight: 46, alignSelf: 'flex-start', justifyContent: 'center', marginTop: 18, paddingHorizontal: 15, borderRadius: 13, backgroundColor: appColors.primary },
@@ -320,6 +329,8 @@ const styles = StyleSheet.create({
   card: { marginBottom: 11, padding: 18, borderRadius: 18, borderWidth: 1, borderColor: appColors.border, backgroundColor: appColors.surface },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' },
   cardTitle: { color: appColors.ink, fontSize: 17, fontWeight: '800' },
+  recordHeading: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
+  templateLabel: { marginTop: 5, color: appColors.muted, fontSize: 12 },
   status: { color: appColors.primaryDark, fontSize: 12, fontWeight: '700' },
   cardDetail: { marginTop: 9, color: appColors.muted, fontSize: 13 },
   date: { marginTop: 12, color: appColors.muted, fontSize: 12 },

@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { appColors } from '@/constants/app-theme';
 import { fontSizes, typography } from '@/constants/typography';
 import type { FeatureRoute } from '@/features/navigation/feature-routes';
+import { AppIcon } from './ui/app-icon';
 
 type Props = {
   feature: FeatureRoute;
@@ -14,7 +15,6 @@ type Props = {
 
 export function FeatureCard({
   feature,
-  index,
   prominent = false,
 }: Props) {
   return (
@@ -34,11 +34,7 @@ export function FeatureCard({
       ]}
     >
       <View style={[styles.iconBox, prominent && styles.prominentIconBox]}>
-        <Text style={[styles.iconText, prominent && styles.prominentIconText]}>
-          {index === undefined
-            ? '＋'
-            : String(index + 1).padStart(2, '0')}
-        </Text>
+        <AppIcon name={feature.slug} size={23} color={prominent ? '#FFFFFF' : appColors.primary} />
       </View>
 
       <View style={styles.copy}>
@@ -61,9 +57,7 @@ export function FeatureCard({
       </View>
 
       <View style={[styles.arrowBox, prominent && styles.prominentArrowBox]}>
-        <Text style={[styles.arrow, prominent && styles.prominentText]}>
-          ›
-        </Text>
+        <AppIcon name="chevron" size={17} color={prominent ? '#FFFFFF' : appColors.muted} />
       </View>
     </Pressable>
   );
@@ -71,10 +65,10 @@ export function FeatureCard({
 
 const styles = StyleSheet.create({
   card: {
-    minHeight: 88,
+    minHeight: 80,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 12,
     borderWidth: 1,
     borderColor: appColors.border,
     borderRadius: 16,
@@ -82,9 +76,9 @@ const styles = StyleSheet.create({
     padding: 16,
     shadowColor: '#477C9A',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.045,
+    shadowOpacity: 0,
     shadowRadius: 8,
-    elevation: 1,
+    elevation: 0,
   },
   prominentCard: {
     borderColor: appColors.primary,

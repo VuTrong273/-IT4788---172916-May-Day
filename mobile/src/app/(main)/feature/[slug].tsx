@@ -14,6 +14,7 @@ import { LesionEpisodeScreen } from '@/features/lesion-tracking/lesion-episode-s
 import { TemplateCatalogScreen } from '@/features/templates/template-catalog-screen';
 import { Uas7Screen } from '@/features/uas7/uas7-screen';
 import { typography } from '@/constants/typography';
+import { ClinicalWorkspace } from '@/features/clinical/clinical-workspace';
 
 export default function FeatureScreen() {
   const { slug, medicalRecordId } = useLocalSearchParams<{ slug: string; medicalRecordId?: string }>();
@@ -28,16 +29,22 @@ export default function FeatureScreen() {
     return <MedicalRecordList session={session} status={slug === 'pending-records' ? 'pending' : 'in_progress'} />;
   }
   if (isAllowed && (slug === 'lab-requests' || slug === 'prescriptions') && role !== 'patient') {
+    if (medicalRecordId !== undefined) {
+      return <ClinicalWorkspace session={session} recordId={Number(medicalRecordId)} initialMode={slug === 'lab-requests' ? 'lab' : 'prescription'} />;
+    }
     return (
       <MedicalRecordList
         clinicalFocus={slug === 'lab-requests' ? 'lab' : 'prescription'}
         session={session}
-        status="in_progress"
       />
     );
   }
-  if (isAllowed && slug === 'my-results' && role === 'patient') {
-    return <Redirect href="/records" />;
+  if (isAllowed && slug === 'my-results') {
+    if (role === 'patient') return <ClinicalWorkspace session={session} />;
+    if (medicalRecordId !== undefined) {
+      return <ClinicalWorkspace session={session} recordId={Number(medicalRecordId)} />;
+    }
+    return <MedicalRecordList session={session} clinicalFocus="results" />;
   }
   if (isAllowed && slug === 'clinic-branches' && (role === 'admin' || role === 'doctor')) {
     return <ClinicStructureScreen session={session} role={role} />;

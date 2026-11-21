@@ -15,6 +15,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { appColors } from '@/constants/app-theme';
+import { AppIcon } from '@/components/ui/app-icon';
 import { roleLabels, type UserRole } from '@/features/auth/roles';
 import { clearAuthenticatedSession } from '@/features/auth/sign-out';
 import type { Session } from '@/features/auth/session';
@@ -191,7 +192,7 @@ export function WorkspaceShell({ session, role, children }: Props) {
                   }}
                   onPress={() => setMoreOpen(true)}
                   style={({ pressed }) => [styles.bottomItem, pressed && styles.pressed]}>
-                  <Text style={styles.bottomGlyph}>•••</Text>
+                  <AppIcon name="more" size={24} color={moreOpen || isAnyNavigationItemActive(pathname, mobileNavigation.overflow) ? appColors.primary : appColors.muted} />
                   <Text style={styles.bottomLabel}>Thêm</Text>
                 </Pressable>
               ) : null}
@@ -240,6 +241,7 @@ export function WorkspaceShell({ session, role, children }: Props) {
             style={styles.modalBackdrop}
           />
           <View accessibilityViewIsModal style={styles.moreSheet}>
+            <View style={styles.sheetHandle} />
             <View style={styles.sheetHeading}>
               <View>
                 <Text accessibilityRole="header" style={styles.sheetTitle}>Thêm chức năng</Text>
@@ -250,7 +252,7 @@ export function WorkspaceShell({ session, role, children }: Props) {
                 accessibilityRole="button"
                 onPress={() => setMoreOpen(false)}
                 style={styles.closeButton}>
-                <Text style={styles.closeGlyph}>×</Text>
+                <AppIcon name="close" size={20} color={appColors.muted} />
               </Pressable>
             </View>
             <ScrollView contentContainerStyle={styles.sheetItems}>
@@ -268,7 +270,7 @@ export function WorkspaceShell({ session, role, children }: Props) {
                 disabled={signingOut}
                 onPress={() => void signOut()}
                 style={({ pressed }) => [styles.signOutButton, pressed && styles.pressed]}>
-                <Text style={styles.signOutGlyph}>↪</Text>
+                <AppIcon name="logout" size={20} color={appColors.danger} />
                 <Text style={styles.signOutLabel}>{signingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}</Text>
               </Pressable>
             </ScrollView>
@@ -400,7 +402,7 @@ function NavigationButton({
         active && (compact ? styles.bottomItemActive : styles.navItemActive),
         pressed && styles.pressed,
       ]}>
-      <Text style={[compact ? styles.bottomGlyph : styles.navGlyph, active && styles.activeGlyph]}>{item.glyph}</Text>
+      <View style={[styles.navigationIcon, compact && styles.navigationIconCompact, active && styles.navigationIconActive]}><AppIcon name={item.id} size={compact ? 23 : 21} color={active ? appColors.primary : appColors.muted} /></View>
       <Text numberOfLines={1} style={[compact ? styles.bottomLabel : styles.navLabel, active && styles.activeLabel]}>
         {item.label}
       </Text>
@@ -424,11 +426,11 @@ const styles = StyleSheet.create({
   workspaceCaption: { marginTop: 3, color: appColors.muted, fontSize: 11 },
   main: { flex: 1, minWidth: 0, backgroundColor: appColors.canvas },
   topbar: { height: 64, flexDirection: 'row', alignItems: 'center', gap: 17, borderBottomWidth: 1, borderBottomColor: appColors.border, backgroundColor: appColors.surface, paddingHorizontal: 26 },
-  topbarCompact: { paddingHorizontal: 16, gap: 12 },
+  topbarCompact: { paddingHorizontal: 20, gap: 12, height: 58 },
   breadcrumb: { minWidth: 0, flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
   breadcrumbBrand: { color: appColors.muted, fontSize: 13 },
   breadcrumbDivider: { color: appColors.muted, fontSize: 19 },
-  breadcrumbTitle: { flexShrink: 1, color: appColors.ink, fontSize: 14, fontWeight: '800' },
+  breadcrumbTitle: { flexShrink: 1, color: appColors.ink, fontSize: 15, fontWeight: '700' },
   headerIconButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: appColors.primarySoft },
   headerGlyph: { color: appColors.primary, fontSize: 18 },
   jumpSearch: { width: 250, height: 38, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: appColors.border, borderRadius: 10, backgroundColor: appColors.canvas, paddingHorizontal: 10 },
@@ -449,11 +451,14 @@ const styles = StyleSheet.create({
   navGroupHeader: { minHeight: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, marginBottom: 4, paddingHorizontal: 10 },
   navGroupLabel: { color: appColors.muted, fontSize: 10, fontWeight: '800', letterSpacing: 0.8 },
   navGroupChevron: { color: appColors.muted, fontSize: 16 },
-  navItem: { minHeight: 42, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 3, borderRadius: 9, paddingHorizontal: 11 },
+  navItem: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 4, borderRadius: 12, paddingHorizontal: 11 },
   navItemActive: { backgroundColor: appColors.primarySoft },
   navGlyph: { width: 20, textAlign: 'center', color: appColors.muted, fontSize: 17 },
   activeGlyph: { color: appColors.primary },
-  navLabel: { flex: 1, color: appColors.ink, fontSize: 12, fontWeight: '600' },
+  navLabel: { flex: 1, color: appColors.ink, fontSize: 14, fontWeight: '600' },
+  navigationIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: appColors.canvas },
+  navigationIconCompact: { width: 48, height: 30, backgroundColor: 'transparent', borderRadius: 18 },
+  navigationIconActive: { backgroundColor: appColors.primarySoft },
   activeLabel: { color: appColors.primary, fontWeight: '900' },
   navFooter: { borderTopWidth: 1, borderTopColor: appColors.border, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 10 },
   scopeCard: { marginBottom: 11, borderRadius: 10, backgroundColor: appColors.canvas, padding: 11 },
@@ -468,11 +473,11 @@ const styles = StyleSheet.create({
   logoutGlyph: { color: '#A43B3B', fontSize: 18 },
   sidebarLogout: { minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 2 },
   sidebarLogoutText: { color: '#A43B3B', fontSize: 11, fontWeight: '700' },
-  bottomBar: { minHeight: 58, flexDirection: 'row', alignItems: 'stretch', justifyContent: 'space-around', borderTopWidth: 1, borderTopColor: appColors.border, backgroundColor: appColors.surface, paddingTop: 4 },
+  bottomBar: { minHeight: 66, flexDirection: 'row', alignItems: 'stretch', justifyContent: 'space-around', borderTopWidth: 1, borderTopColor: appColors.border, backgroundColor: appColors.surface, paddingTop: 6 },
   bottomItem: { minWidth: 54, flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, paddingHorizontal: 3, paddingVertical: 3 },
-  bottomItemActive: { backgroundColor: appColors.primarySoft, borderRadius: 9, marginHorizontal: 2 },
+  bottomItemActive: { borderRadius: 12, marginHorizontal: 2 },
   bottomGlyph: { minHeight: 21, color: appColors.muted, fontSize: 17, fontWeight: '700' },
-  bottomLabel: { maxWidth: 78, color: appColors.muted, fontSize: 9, fontWeight: '700' },
+  bottomLabel: { maxWidth: 90, color: appColors.muted, fontSize: 10, fontWeight: '600' },
   modalRoot: { flex: 1, flexDirection: 'row' },
   modalBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(10, 37, 64, 0.35)' },
   drawer: { width: 320, maxWidth: '86%', alignSelf: 'stretch', backgroundColor: appColors.surface, paddingHorizontal: 12 },
@@ -482,6 +487,7 @@ const styles = StyleSheet.create({
   closeGlyph: { color: appColors.ink, fontSize: 25, lineHeight: 28 },
   sheetRoot: { flex: 1, justifyContent: 'flex-end' },
   moreSheet: { maxHeight: '82%', borderTopLeftRadius: 22, borderTopRightRadius: 22, backgroundColor: appColors.surface, paddingHorizontal: 20, paddingTop: 19 },
+  sheetHandle: { width: 36, height: 4, borderRadius: 3, backgroundColor: '#D6E1E8', alignSelf: 'center', marginBottom: 18 },
   sheetHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9 },
   sheetTitle: { color: appColors.ink, fontSize: 19, fontWeight: '900' },
   sheetSubtitle: { marginTop: 4, color: appColors.muted, fontSize: 12 },

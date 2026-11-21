@@ -1,6 +1,7 @@
 import { canAccess, hasEndpoint, type EndpointGrant } from '@/features/auth/permissions';
 import { canOpenFeature } from '@/features/navigation/feature-routes';
 import type { Session } from '@/features/auth/session';
+import { getWorkspaceNavigation } from '@/features/navigation/workspace-navigation';
 
 const detail = { method: 'GET', path: '/api/v1/medical_records/:id' };
 const list = { method: 'GET', path: '/api/v1/medical_records/all' };
@@ -26,5 +27,26 @@ describe('effective endpoint permissions', () => {
     expect(canOpenFeature(nurse, 'prescriptions')).toBe(false);
     expect(canAccess(nurse, 'POST', '/lab-results')).toBe(false);
     expect(canOpenFeature(sessionFor([{ method: 'GET', path: '/api/v1/rooms' }]), 'clinic-branches')).toBe(true);
+  });
+  test('opens doctor results using record list and clinical grants without requiring personal patient history', () => {
+    const doctor = sessionFor([detail, list, { method: 'GET', path: '/api/v1/lab-results/:id' }]);
+    expect(canOpenFeature(doctor, 'my-results')).toBe(true);
+    expect(getWorkspaceNavigation('doctor', doctor).some((item) => item.href === '/feature/my-results')).toBe(true);
+  });
+  test('supports prescription-only result access and hides results without record or clinical grants', () => {
+    const prescription = { method: 'GET', path: '/api/v1/prescriptions/:id' };
+    expect(canOpenFeature(sessionFor([detail, list, prescription]), 'my-results')).toBe(true);
+    expect(canOpenFeature(sessionFor([detail, list]), 'my-results')).toBe(false);
+    expect(canOpenFeature(sessionFor([prescription]), 'my-results')).toBe(false);
+    expect(canOpenFeature(sessionFor([{ method: 'GET', path: '/medical_records/patients/:id/history' }]), 'my-results')).toBe(false);
+  });
+  test('patient results continue to require personal history and a clinical read grant', () => {
+    const patient = sessionFor([
+      { method: 'GET', path: '/medical_records/patients/:id/history' },
+      { method: 'GET', path: '/prescriptions/:id' },
+    ]);
+    patient.user.base_role = 'patient';
+    patient.access!.base_role = 'patient';
+    expect(canOpenFeature(patient, 'my-results')).toBe(true);
   });
 });

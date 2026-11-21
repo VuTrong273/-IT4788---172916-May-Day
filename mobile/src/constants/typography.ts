@@ -1,4 +1,6 @@
 
+import { appColors } from './app-theme';
+
 export const typography = {
   regular: 'BeVietnamPro_400Regular',
   medium: 'BeVietnamPro_500Medium',
@@ -20,19 +22,19 @@ export const fontSizes = {
 };
 
 export const palette = {
-  primary: '#168ACB',
-  primaryDark: '#126A9D',
-  primarySoft: '#E5F4FC',
-  primaryLight: '#F0F8FD',
+  primary: appColors.primary,
+  primaryDark: appColors.primaryDark,
+  primarySoft: appColors.primarySoft,
+  primaryLight: appColors.canvas,
 
-  canvas: '#F0F8FD',
+  canvas: appColors.canvas,
   surface: '#FFFFFF',
 
-  ink: '#174B6D',
+  ink: appColors.ink,
   text: '#24465D',
-  muted: '#71899A',
+  muted: appColors.muted,
 
-  border: '#D9EAF4',
+  border: appColors.border,
   divider: '#E8F1F7',
 
   success: '#15966B',
